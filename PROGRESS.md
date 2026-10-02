@@ -190,3 +190,12 @@ Only observed command output is recorded here.
 - P3.3 PASS — fixed a bad redis pin (`7.2-alpine3.22` does not exist upstream);
   image choices recorded in DECISIONS.md, digests in VERSIONS.md.
 - Next action: implement P3.4 platform_services module.
+- P3.4 PASS — `tofu -chdir=infra/modules/platform_services validate` reports
+  Success with no warnings; `fmt -check` clean. New module installs
+  metrics-server 3.14.0 (`--kubelet-insecure-tls`, as in P2.3) plus the three own
+  charts into ns `data`, with `random_password` -> `kubernetes_secret_v1` wiring
+  (`auth.existingSecret`; alphanumeric passwords for URL safety).
+- P3.4 PASS — used `kubernetes_namespace_v1`/`kubernetes_secret_v1` (the
+  non-deprecated names in provider 3.3.0); first draft with the old names
+  produced deprecation warnings, now resolved.
+- Next action: implement P3.5 (local env composition, make up/down).

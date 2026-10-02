@@ -31,6 +31,9 @@ Project dependency versions are pinned in `uv.lock`; container, Helm, action, an
 | kind local registry | `registry:2@sha256:a3d8aaa63ed8681a604f1dea0aa03f100d5895b6a58ace528858a7b332415373` | P2.1 |
 | kind node image | `kindest/node:v1.37.0@sha256:a1ed56cfb0e7b93589bdf97c8cd566405a265939e3620fc4f5de89adff580ae5` (selected by kind v0.33.0; digest verified via `docker images --digests`) | P2.2, pinned P3.1 |
 | OpenTofu kind provider | `tehcyx/kind 0.11.0` (latest on registry.opentofu.org as of 2026-10-02) | P3.1 |
+| OpenTofu helm provider | `hashicorp/helm 3.3.0` (latest as of 2026-10-02) | P3.4 |
+| OpenTofu kubernetes provider | `hashicorp/kubernetes 3.3.0` (latest as of 2026-10-02) | P3.4 |
+| OpenTofu random provider | `hashicorp/random 3.9.1` (latest as of 2026-10-02) | P3.4 |
 | metrics-server chart | `metrics-server/metrics-server 3.14.0` (app `v0.9.0`), `--kubelet-insecure-tls` on kind | P2.3 |
 | rootful Docker Engine | client `29.8.2`, server `29.1.3` (`docker.io` package) | P2 migration |
 | postgres image | `postgres:16.15-bookworm@sha256:efedf3595f1d6f415c08568ba171029bf54052e754cc9f030e3f2412b21f3d67` (official image, latest 16.x) | P3.3 |
