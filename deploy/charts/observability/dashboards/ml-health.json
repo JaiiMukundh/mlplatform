@@ -1,0 +1,23 @@
+{
+  "title": "ML Health",
+  "uid": "mlp-ml-health",
+  "timezone": "utc",
+  "schemaVersion": 39,
+  "version": 1,
+  "panels": [
+    {
+      "id": 1, "title": "Model in service", "type": "table",
+      "datasource": {"type": "prometheus", "uid": "prometheus"},
+      "targets": [{"expr": "model_info{job=\"model-api\"}", "refId": "A", "format": "table"}]
+    },
+    {
+      "id": 2, "title": "Predictions by label", "type": "timeseries",
+      "datasource": {"type": "prometheus", "uid": "prometheus"},
+      "targets": [{"expr": "sum by (label)(rate(predictions_total{job=\"model-api\"}[5m]))", "refId": "A"}]
+    },
+    {
+      "id": 3, "title": "Drift / retrain (P8)", "type": "text",
+      "options": {"content": "PSI per feature, drift flag, retrain count, and candidate/champion AUC populate in P8. Live model identity and prediction rates above are real.", "mode": "markdown"}
+    }
+  ]
+}

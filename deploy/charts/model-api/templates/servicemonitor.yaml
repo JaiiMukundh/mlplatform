@@ -7,6 +7,9 @@ metadata:
   labels:
     {{- include "model-api.labels" . | nindent 4 }}
 spec:
+  # Keep the Prometheus job name stable ("model-api") so alerts and
+  # dashboards can use job="model-api" regardless of release/namespace.
+  jobLabel: app.kubernetes.io/name
   selector:
     matchLabels:
       {{- include "model-api.selectorLabels" . | nindent 6 }}

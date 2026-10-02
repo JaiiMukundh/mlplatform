@@ -69,7 +69,7 @@ autoscaling:
   scaleDownStabilizationSeconds: 60
 
 serviceMonitor:
-  enabled: false
+  enabled: true
 
 probes:
   startup:

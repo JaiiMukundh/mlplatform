@@ -49,11 +49,10 @@ resource "kubernetes_secret_v1" "minio_auth" {
 }
 
 resource "helm_release" "metrics_server" {
-  name       = "metrics-server"
-  repository = var.metrics_server_repository
-  chart      = "metrics-server"
-  version    = var.metrics_server_version
-  namespace  = "kube-system"
+  name  = "metrics-server"
+  chart = "${path.module}/../../../infra/charts/metrics-server-3.14.0.tgz"
+  # Vendored (see docs/DECISIONS.md): the asset host times out for helm/tofu.
+  namespace = "kube-system"
 
   # Required on kind (same flag as the P2.3 imperative install).
   set = [{

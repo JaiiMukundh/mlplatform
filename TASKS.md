@@ -55,13 +55,13 @@ Checkboxes are changed only after the corresponding acceptance check has been ob
 
 ## P5 — Observability and Automated Response
 
-- [ ] P5.1 Install the Prometheus stack.
-- [ ] P5.2 Install Loki and Grafana Alloy.
-- [ ] P5.3 Enable model-api service discovery.
-- [ ] P5.4 Provision three dashboards.
-- [ ] P5.5 Define alert rules.
-- [ ] P5.6 Implement the remediator.
-- [ ] P5.7 Prove the alert-response drill.
+- [x] P5.1 Install the Prometheus stack.
+- [x] P5.2 Install Loki and Grafana Alloy.
+- [x] P5.3 Enable model-api service discovery.
+- [x] P5.4 Provision three dashboards.
+- [x] P5.5 Define alert rules.
+- [x] P5.6 Implement the remediator.
+- [x] P5.7 Prove the alert-response drill.
 - [ ] P5.8 Add a Loki-based alert. (stretch)
 
 ## P6 — Feature Store and Model Registry

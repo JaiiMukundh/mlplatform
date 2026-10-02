@@ -46,6 +46,9 @@ Project dependency versions are pinned in `uv.lock`; container, Helm, action, an
 | minio image | `bitnamilegacy/minio:2025.7.23-debian-12-r3@sha256:953d489a81cc4de7975f90e07202189c4325da39b0b92470b6a13c7ea99e36cd` | P3.3 |
 | minio-client image | `bitnamilegacy/minio-client:2025.7.21-debian-12-r2@sha256:7a6b4b93998903f1673d2bd2140ac26b807c4224627b743778c5a8f70db561f1` | P3.3 |
 | redis image | `redis:7.2.16-alpine3.21@sha256:29e8589c3f9ba699b5f7aa4b3c7733c58852a3626439e619aa0ee78de08c6ca0` (last BSD line) | P3.3 |
+| kube-prometheus-stack chart | `prometheus-community/kube-prometheus-stack 91.8.2` (app `v0.94.1`) | P5.1 |
+| loki chart | `grafana/loki 7.3.0` (app `3.6.12`), vendored `.tgz` in `infra/charts/` | P5.2 |
+| alloy chart | `grafana/alloy 1.13.0` (app `v1.20.0`) | P5.2 |
 
 Observed cluster versions (kind v0.33.0): Kubernetes v1.37.0, containerd 2.3.4, and
 Debian GNU/Linux 13 (trixie) node images.

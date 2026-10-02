@@ -239,3 +239,12 @@ Only observed command output is recorded here.
 - P4.6 PASS — broken image fails staging (atomic uninstall), prod still 200 on p4demo. Evidence `docs/demo/cicd-failure-path.md`.
 - Note: GitHub workflow execution + P4.1 runner install pending HUMAN (docs ready). P4.7 stretch: `.actrc` only.
 - Next action: start P5 (observability).
+- P5.1 PASS — kube-prometheus-stack 91.8.2 via tofu (Grafana :3000, Prometheus :9090, Alertmanager :9093; retention 2d; all-namespaces ServiceMonitors; sidecar dashboards).
+- P5.2 PASS — Loki 7.3.0 SingleBinary + Alloy DaemonSet; serving logs in Loki with namespace/pod/container/app labels; Loki datasource in Grafana.
+- P5.3 PASS — model-api ServiceMonitor (jobLabel=app name) UP x2 in Prometheus.
+- P5.4 PASS — Service Health / Logs / ML Health dashboards provisioned via ConfigMaps, all load.
+- P5.5 PASS — 6 rules loaded (ModelApiDown, PodCrashLooping, HighErrorRate, HighP95Latency + P8 stubs); runbook anchors written.
+- P5.6 PASS — remediator (FastAPI /alert, HPA-floor action, Grafana annotate, rollout restart, debounce, metrics) deployed; 7 unit tests pass.
+- P5.7 PASS — chaos_alert drill: 500ms+10rps → HighP95Latency firing → HPA 2→4 + Grafana annotation; cleanup restored. Evidence docs/demo/alert-drill.md.
+- Note: upstream charts vendored to infra/charts/ (asset host timeouts); metrics-server also vendored. Charts recorded in VERSIONS.md.
+- Next action: start P6 (feature store + model registry).

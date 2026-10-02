@@ -12,6 +12,7 @@ dependencies = [
   "fastapi==0.142.2",
   "httpx==0.28.1",
   "joblib==1.6.0",
+  "kubernetes==36.0.3",
   "numpy==2.4.6",
   "pandas==3.0.6",
   "prometheus-client==0.26.0",

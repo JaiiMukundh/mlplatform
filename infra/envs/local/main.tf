@@ -17,6 +17,11 @@ module "platform_services" {
   depends_on = [module.cluster]
 }
 
+module "observability" {
+  source     = "../../modules/observability"
+  depends_on = [module.platform_services]
+}
+
 provider "kubernetes" {
   config_path = module.cluster.kubeconfig_path
 }

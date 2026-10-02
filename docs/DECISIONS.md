@@ -104,3 +104,23 @@ Architecture and implementation decisions are recorded chronologically.
   AZs and a major-version pin keep `validate`/`plan` offline-capable; the exact
   minor is pinned at the P9.6 human apply. IRSA roles mirror the local static
   creds (model-api read-only; retrain/mlflow read-write).
+
+## 2026-10-02 — Upstream charts vendored (P5)
+
+- **Decision:** `infra/charts/` commits the pinned `.tgz` files
+  (`kube-prometheus-stack-91.8.2`, `loki-7.3.0`, `alloy-1.13.0`,
+  `metrics-server-3.14.0`) and tofu installs from those local files instead
+  of the helm repositories.
+- **Reason:** the upstream asset host (`release-assets.githubusercontent.com`)
+  consistently times out for helm/tofu chart downloads on this laptop, while a
+  direct `curl` of the same pinned URLs succeeds and the files are byte-identical
+  valid gzip. Vendoring keeps every apply reproducible and offline-capable.
+
+## 2026-10-02 — Remediator scales the HPA floor, not Deployment replicas (P5.6)
+
+- **Decision:** on `HighP95Latency` the remediator patches the `model-api`
+  HPA `minReplicas` +2 (capped at HPA max) instead of scaling the Deployment.
+- **Reason:** the HPA controller owns Deployment replicas; a manual
+  `scale` would be reverted within seconds (controller fight). Raising the HPA
+  floor is the conflict-free equivalent and self-documents in the HPA spec.
+  Verified by the P5.7 drill (floor 2→4, Grafana annotation, then restore).
