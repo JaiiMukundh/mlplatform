@@ -41,3 +41,9 @@ Only observed command output is recorded here.
   `git log --oneline` showed six Conventional Commits from `chore`, `build`, `feat`,
   and `docs` types.
 - Next action: implement P1.1 deterministic synthetic data.
+- P1.1 PASS — `make seed-data` wrote all three Parquet assets and reported
+  `rows=80000 customers=20000 positive_rate=0.1184`.
+- P1.1 PASS — `pytest -q ml/tests/test_generate.py` reported 3 passed, covering
+  exact shapes, no missing values, the 10–14% base rate, fixed-seed determinism,
+  and documented feature ranges.
+- Next action: implement P1.2 temporal training and calibrate its hold-out AUC.

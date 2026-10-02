@@ -13,7 +13,7 @@ Checkboxes are changed only after the corresponding acceptance check has been ob
 
 ## P1 — Data, Model, Serving Stub, Containers
 
-- [ ] P1.1 Generate deterministic synthetic data.
+- [x] P1.1 Generate deterministic synthetic data.
 - [ ] P1.2 Train and evaluate the file-backed model.
 - [ ] P1.3 Implement model-api and provider protocols.
 - [ ] P1.4 Implement asynchronous prediction logging.
