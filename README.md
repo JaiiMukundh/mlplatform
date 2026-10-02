@@ -11,3 +11,9 @@ interface.
 ## Current status
 
 Foundation work is in progress. Run `make help` to see implemented and planned targets.
+
+## Contribution workflow
+
+Create `feat/<phase>-<topic>` branches from `main`, use Conventional Commits, and
+open pull requests with the repository template. See
+[`docs/git-workflow.md`](docs/git-workflow.md).

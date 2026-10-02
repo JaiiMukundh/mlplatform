@@ -9,7 +9,7 @@ Checkboxes are changed only after the corresponding acceptance check has been ob
 - [x] P0.3 Implement prerequisite verification.
 - [x] P0.4 Build the shared `mlp_common` package.
 - [x] P0.5 Configure linting, tests, formatting, and pre-commit.
-- [ ] P0.6 Establish the Git workflow and PR template.
+- [x] P0.6 Establish the Git workflow and PR template.
 
 ## P1 — Data, Model, Serving Stub, Containers
 

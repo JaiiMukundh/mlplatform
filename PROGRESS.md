@@ -33,3 +33,6 @@ Only observed command output is recorded here.
 - P0.5 PASS — `uv run pre-commit run --all-files` passed Ruff lint/format,
   end-of-file, YAML, TOML, and gitleaks secret scanning hooks.
 - Next action: add the P0.6 Git/PR conventions and close the P0 acceptance gate.
+- P0.6 PASS — added the pull-request verification/risk template and documented
+  `main`, `feat/<phase>-<topic>`, Conventional Commits, and task evidence discipline.
+- Next action: run the complete P0 acceptance gate, then start P1.1.
