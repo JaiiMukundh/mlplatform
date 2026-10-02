@@ -232,3 +232,4 @@ Only observed command output is recorded here.
 - P3 ACCEPTANCE PASS — post-cycle `make deploy` smoke green; `make lint`
   (All checks passed) and `make test` (28 passed, 88.07%) still green.
 - Next action: start P4 (CI/CD).
+- Infra: removed rootless Docker (binaries in ~/.local/bin, systemd user unit, socket). Real daemon is now /usr/bin/docker 29.1.3 on unix:///var/run/docker.sock; plain `docker` works after a fresh login (docker group); use `sg docker -c` in the current session. Residual rootless data ~2.3M left under ~/.local/share/docker (inert).

@@ -1,0 +1,68 @@
+name: cd
+
+# P4.3 — continuous deployment on the self-hosted laptop runner.
+# Triggered on push to main; re-runs quick CI checks first, then builds,
+# scans, publishes, deploys to staging, smokes, and rolls out to serving.
+on:
+  push:
+    branches: [main]
+  workflow_dispatch:
+
+concurrency:
+  group: cd-main
+  cancel-in-progress: false
+
+jobs:
+  deploy:
+    runs-on: [self-hosted, mlp-local]
+    steps:
+      - uses: actions/checkout@v7
+      - uses: astral-sh/setup-uv@v7
+      - name: Quick checks
+        run: |
+          ruff check .
+          tofu -chdir=infra/envs/local validate
+      - name: Build changed images
+        run: |
+          TAG="${GITHUB_SHA::8}"
+          docker buildx build --no-cache -f docker/model_api.Dockerfile \
+            -t "localhost:5001/model-api:${TAG}" -t "localhost:5001/model-api:dev" .
+          for svc in drift_monitor retrain remediator; do
+            [ -f "docker/${svc}.Dockerfile" ] && \
+              docker buildx build -f "docker/${svc}.Dockerfile" \
+                -t "localhost:5001/${svc}:${TAG}" -t "localhost:5001/${svc}:dev" .
+          done
+          echo "TAG=${TAG}" >> "$GITHUB_ENV"
+      - name: trivy image scan
+        uses: aquasecurity/trivy-action@v0.34.0
+        with:
+          image-ref: "localhost:5001/model-api:${{ env.TAG }}"
+          scan-type: image
+          severity: CRITICAL
+          exit-code: "1"
+      - name: Push to local registry
+        run: |
+          docker push "localhost:5001/model-api:${TAG}"
+          docker push "localhost:5001/model-api:dev"
+      - name: Deploy staging + smoke
+        run: |
+          scripts/deploy.sh model-api-staging staging "${TAG}" --set service.nodePort=30081
+          scripts/smoke.sh staging model-api-staging "http://localhost:8081"
+      - name: Promote to serving + smoke
+        run: |
+          scripts/deploy.sh model-api serving "${TAG}"
+          scripts/smoke.sh serving model-api "http://localhost:8080"
+      - name: Rollout summary
+        run: kubectl get deploy -n serving -o wide
+      - name: Rollback on failure
+        if: failure()
+        run: |
+          helm rollback model-api -n serving || true
+          helm rollback model-api-staging -n staging || true
+          kubectl get pods -n serving
+      - name: Upload logs on failure
+        if: failure()
+        uses: actions/upload-artifact@v4
+        with:
+          name: deploy-logs
+          path: /tmp/*.log

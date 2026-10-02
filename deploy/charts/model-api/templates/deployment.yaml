@@ -46,6 +46,39 @@ spec:
           labelSelector:
             matchLabels:
               {{- include "model-api.selectorLabels" . | nindent 14 }}
+      {{- if .Values.modelFiles.enabled }}
+      initContainers:
+        - name: fetch-model
+          image: "{{ .Values.modelFiles.clientImage.repository }}:{{ .Values.modelFiles.clientImage.tag }}@{{ .Values.modelFiles.clientImage.digest }}"
+          imagePullPolicy: {{ .Values.modelFiles.clientImage.pullPolicy }}
+          env:
+            - name: MINIO_USER
+              valueFrom:
+                secretKeyRef: {name: {{ .Values.modelFiles.secretName }}, key: {{ .Values.modelFiles.secretKeys.accessKey }}}
+            - name: MINIO_PASSWORD
+              valueFrom:
+                secretKeyRef: {name: {{ .Values.modelFiles.secretName }}, key: {{ .Values.modelFiles.secretKeys.secretKey }}}
+            - {name: HOME, value: /home/mc}
+          volumeMounts:
+            - {name: artifacts, mountPath: /app/artifacts}
+            - {name: data, mountPath: /app/data}
+            - {name: mc-home, mountPath: /home/mc}
+          command: ["/bin/bash", "-c"]
+          args:
+            - |
+              set -Eeuo pipefail
+              mc alias set minio "{{ .Values.modelFiles.endpoint }}" "$MINIO_USER" "$MINIO_PASSWORD" >/dev/null
+              mc mirror --overwrite "minio/{{ .Values.modelFiles.bucket }}/artifacts" /app/artifacts
+              mc cp "minio/{{ .Values.modelFiles.bucket }}/features_latest.parquet" /app/data/features_latest.parquet
+              ls -la /app/artifacts /app/data
+          securityContext:
+            allowPrivilegeEscalation: false
+            readOnlyRootFilesystem: true
+            runAsNonRoot: true
+            runAsUser: 10001
+            capabilities:
+              drop: [ALL]
+      {{- end }}
       containers:
         - name: api
           image: "{{ .Values.image.repository }}:{{ .Values.image.tag }}"
@@ -72,6 +105,10 @@ spec:
             {{- toYaml .Values.resources | nindent 12 }}
           volumeMounts:
             - {name: tmp, mountPath: /tmp}
+            {{- if .Values.modelFiles.enabled }}
+            - {name: artifacts, mountPath: /app/artifacts}
+            - {name: data, mountPath: /app/data}
+            {{- end }}
           securityContext:
             allowPrivilegeEscalation: false
             readOnlyRootFilesystem: true
@@ -82,4 +119,12 @@ spec:
       volumes:
         - name: tmp
           emptyDir: {}
+        {{- if .Values.modelFiles.enabled }}
+        - name: artifacts
+          emptyDir: {}
+        - name: data
+          emptyDir: {}
+        - name: mc-home
+          emptyDir: {}
+        {{- end }}
 

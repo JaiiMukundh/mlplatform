@@ -25,8 +25,6 @@ RUN groupadd --system --gid 10001 mlplatform \
 
 WORKDIR /app
 COPY --from=builder /install /usr/local
-COPY --chown=10001:10001 artifacts/ artifacts/
-COPY --chown=10001:10001 data/features_latest.parquet data/features_latest.parquet
 
 USER 10001:10001
 EXPOSE 8080
