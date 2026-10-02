@@ -12,3 +12,6 @@ Only observed command output is recorded here.
   `TASKS.md`, `PROGRESS.md`, `BLOCKERS.md`, decision/version logs, `.gitignore`,
   `.env.example`, and the README now exist.
 - Next action: implement P0.2, then execute P0 tasks in order.
+- P0.2 PASS — `make help` lists all 18 required targets; targets not implemented in
+  P0 print their owning phase and exit successfully.
+- Next action: implement the prerequisite verifier for P0.3.

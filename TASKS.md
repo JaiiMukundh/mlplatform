@@ -5,7 +5,7 @@ Checkboxes are changed only after the corresponding acceptance check has been ob
 ## P0 — Foundations
 
 - [x] P0.1 Create repository layout and foundational files.
-- [ ] P0.2 Create the Makefile interface.
+- [x] P0.2 Create the Makefile interface.
 - [ ] P0.3 Implement prerequisite verification.
 - [ ] P0.4 Build the shared `mlp_common` package.
 - [ ] P0.5 Configure linting, tests, formatting, and pre-commit.
