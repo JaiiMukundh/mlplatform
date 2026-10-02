@@ -35,7 +35,7 @@ Checkboxes are changed only after the corresponding acceptance check has been ob
 ## P3 — Infrastructure as Code
 
 - [x] P3.1 Implement the kind OpenTofu module.
-- [ ] P3.2 Implement the registry OpenTofu module.
+- [x] P3.2 Implement the registry OpenTofu module.
 - [ ] P3.3 Create data-service Helm charts.
 - [ ] P3.4 Implement the platform-services module.
 - [ ] P3.5 Compose the local environment.

@@ -175,3 +175,10 @@ Only observed command output is recorded here.
   provider `tehcyx/kind 0.11.0` confirmed latest on registry.opentofu.org;
   node image digest verified via `docker images --digests`.
 - Next action: finish P3.2 (registry module; fix builtin-provider version pin).
+- P3.2 PASS — `tofu -chdir=infra/modules/registry init -backend=false` succeeded
+  after removing the explicit version constraint on `terraform.io/builtin/terraform`
+  (built-in providers forbid it); `validate` reports Success, `fmt -check` clean.
+- P3.2 PASS — `sg docker -c 'bash scripts/registry.sh'` is idempotent
+  (`already running`, `already attached`, ConfigMap `unchanged`);
+  `curl localhost:5001/v2/` returns HTTP 200.
+- Next action: fix the redis image pin, then verify P3.3 charts.
