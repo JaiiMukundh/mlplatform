@@ -6,7 +6,7 @@ Checkboxes are changed only after the corresponding acceptance check has been ob
 
 - [x] P0.1 Create repository layout and foundational files.
 - [x] P0.2 Create the Makefile interface.
-- [ ] P0.3 Implement prerequisite verification.
+- [x] P0.3 Implement prerequisite verification.
 - [ ] P0.4 Build the shared `mlp_common` package.
 - [ ] P0.5 Configure linting, tests, formatting, and pre-commit.
 - [ ] P0.6 Establish the Git workflow and PR template.

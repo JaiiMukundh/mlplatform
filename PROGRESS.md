@@ -15,3 +15,9 @@ Only observed command output is recorded here.
 - P0.2 PASS — `make help` lists all 18 required targets; targets not implemented in
   P0 print their owning phase and exit successfully.
 - Next action: implement the prerequisite verifier for P0.3.
+- P0.3 PASS — `make bootstrap` exited 0 after checking every required binary and
+  the managed Python 3.11 runtime. Observed pins include Docker 29.8.2, kind 0.33.0,
+  kubectl 1.37.1, Helm 3.22.0, OpenTofu 1.13.1, jq 1.8.2, and yq 4.54.1.
+- P0.3 PASS — the command regenerated `docs/VERSIONS.md` from observed output and
+  explicitly reported optional tools that are not installed.
+- Next action: implement and test `mlp_common` for P0.4.
