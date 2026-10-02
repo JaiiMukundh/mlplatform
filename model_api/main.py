@@ -143,6 +143,7 @@ def create_app(
 
     @application.post("/predict", response_model=PredictResponse)
     async def predict(payload: PredictRequest, request: Request) -> PredictResponse:
+        # P4.5 trivial change (branch-to-deployment demo): no behavior change.
         if runtime.model_source is None or runtime.feature_source is None:
             return JSONResponse(status_code=503, content={"status": "not_ready"})
         await chaos.delay()
