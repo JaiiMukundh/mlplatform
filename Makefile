@@ -27,16 +27,22 @@ build: ## Build local service images.
 		--tag localhost:5001/model-api:dev .
 
 up: ## Build the complete local platform from scratch.
-	@echo "TODO(P3.5): up"
+	@tofu -chdir=infra/envs/local init
+	@tofu -chdir=infra/envs/local apply -auto-approve \
+		-target=module.registry -target=module.cluster
+	@tofu -chdir=infra/envs/local apply -auto-approve
+	@bash scripts/bootstrap-post.sh
 
 down: ## Destroy the local platform.
-	@echo "TODO(P3.5): down"
+	@tofu -chdir=infra/envs/local destroy -auto-approve || true
+	@kind delete cluster --name mlp || true
+	@docker rm -f kind-registry || true
 
 deploy: ## Deploy model-api to the local cluster.
 	@bash scripts/deploy.sh model-api serving dev
 
 forward: ## Open local port-forwards when NodePorts are unavailable.
-	@echo "TODO(P3.5): forward"
+	@bash scripts/forward.sh
 
 seed-data: ## Generate deterministic synthetic model data.
 	@uv run python -m ml.data.generate --out data --seed 42
@@ -57,7 +63,7 @@ reset-demo: ## Restore the repeatable demo baseline.
 	@echo "TODO(P8.7): reset-demo"
 
 tofu-local-apply: ## Apply the local OpenTofu stack.
-	@echo "TODO(P3.5): tofu-local-apply"
+	@tofu -chdir=infra/envs/local apply -auto-approve
 
 tofu-local-destroy: ## Destroy the local OpenTofu stack.
-	@echo "TODO(P3.5): tofu-local-destroy"
+	@tofu -chdir=infra/envs/local destroy -auto-approve

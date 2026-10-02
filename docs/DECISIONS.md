@@ -62,3 +62,32 @@ Architecture and implementation decisions are recorded chronologically.
 - **Evidence:** `docker images --digests` confirms postgres `efedf359…`, minio
   `953d489a…`, minio-client `7a6b4b93…`, redis `29e8589c…`; `redis-server --version`
   reports `v=7.2.16`.
+
+## 2026-10-02 — Drive kind via CLI from OpenTofu, not the kind provider
+
+- **Decision:** `infra/modules/cluster_kind` renders `kind-config.yaml` from its
+  variables and manages the cluster with `terraform_data` + `local-exec` running
+  `kind create/delete cluster` (same imperative pattern as the registry module),
+  instead of the `tehcyx/kind` provider's `kind_cluster` resource.
+- **Reason:** provider v0.11.0 (latest) bundles kind 0.31.0, whose kubeadm cannot
+  init the pinned Kubernetes v1.37.0 nodes (`kubeadm init exit status 1`,
+  reproduced twice on a clean slate), while the kind v0.33.0 CLI creates the
+  identical config cleanly (proven with a probe cluster). Downgrading K8s to suit
+  the provider would diverge CLI and IaC; driving the verified CLI keeps one
+  Kubernetes version everywhere. Module inputs/outputs are unchanged, so
+  `infra/envs/local` is unaffected.
+- **Consequence:** `make up` applies in two phases (cluster targets first, then
+  everything): the kubernetes/helm providers stat the kubeconfig file at
+  configuration time, so they can only be configured after the cluster has
+  written it. Both phases are no-ops when converged.
+
+## 2026-10-02 — Harden data-layer init jobs for cold starts
+
+- **Decision:** the postgres init job waits for `pg_isready` and the minio buckets
+  job waits for `mc alias set` to succeed (10-minute budget) before doing work;
+  the buckets job runs under `/bin/bash` with a writable `$HOME` emptyDir.
+- **Reason:** on a fresh cluster the nodes pull ~800MB of images while the helm
+  hooks already run; without waits the jobs burn their backoff budget. Separately,
+  the buckets job died instantly twice: `/bin/sh` in the minio-client image is
+  dash (no `pipefail`), and `mc` needs a writable `$HOME` under the read-only
+  root filesystem. Diagnosed by replicating the container with debug pods.

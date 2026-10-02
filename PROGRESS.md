@@ -199,3 +199,16 @@ Only observed command output is recorded here.
   non-deprecated names in provider 3.3.0); first draft with the old names
   produced deprecation warnings, now resolved.
 - Next action: implement P3.5 (local env composition, make up/down).
+- P3.5 PASS — `make down` removed the P2 cluster and registry; `make up`
+  rebuilt from nothing: registry (tofu), 3-node kind v1.37.0 cluster (tofu via
+  kind CLI), metrics-server + postgres/minio/redis (tofu helm_release).
+- P3.5 PASS — `kubectl get pods -A`: data ns postgres/minio/redis Running,
+  metrics-server Running, `kubectl top nodes` reports all 3 nodes.
+- P3.5 PASS — `make tofu-local-apply` second run: `No changes. Your
+  infrastructure matches the configuration`; `make up` twice: both applies
+  no-op, `bootstrap complete`.
+- P3.5 PASS — in-cluster psql `\dt` shows `prediction_log`, `drift_state`,
+  `labels_log`; all four helm releases `deployed`.
+- P3.5 PASS — model-api restored on the new cluster (`docker push` +
+  `make deploy`): smoke `/readyz` 200, `/predict` 3 bounded probabilities.
+- Next action: implement P3.6 (AWS parity modules, plan-only).

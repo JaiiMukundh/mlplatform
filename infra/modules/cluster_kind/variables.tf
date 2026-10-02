@@ -42,3 +42,9 @@ variable "port_mappings" {
     "9093" = 30093
   }
 }
+
+variable "registry_script_path" {
+  description = "Registry bootstrap script, relative to this module (re-run after the cluster exists)."
+  type        = string
+  default     = "../../../scripts/registry.sh"
+}
