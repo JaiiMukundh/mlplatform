@@ -47,3 +47,8 @@ Only observed command output is recorded here.
   exact shapes, no missing values, the 10–14% base rate, fixed-seed determinism,
   and documented feature ranges.
 - Next action: implement P1.2 temporal training and calibrate its hold-out AUC.
+- P1.2 PASS — `make train` used the 56k/12k/12k temporal split and reported
+  validation AUC 0.8562 and test AUC 0.8581, within the required [0.82, 0.92].
+- P1.2 PASS — `pytest -q ml/tests/test_train.py` reported 2 passed; the test loaded
+  the persisted joblib model and verified metrics, reference Parquet, and feature schema.
+- Next action: implement the P1.3 FastAPI service and file-backed providers.

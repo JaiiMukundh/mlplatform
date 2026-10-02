@@ -40,7 +40,7 @@ seed-data: ## Generate deterministic synthetic model data.
 	@uv run python -m ml.data.generate --out data --seed 42
 
 train: ## Train and evaluate a model locally.
-	@echo "TODO(P1.2): train"
+	@uv run python -m ml.train --mode file --data-dir data --artifacts-dir artifacts
 
 traffic: ## Generate prediction traffic.
 	@echo "TODO(P2.7): traffic"
