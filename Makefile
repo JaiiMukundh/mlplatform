@@ -22,7 +22,9 @@ test: ## Run the unit test suite and coverage gate.
 	@uv run pytest --cov=mlp_common --cov=model_api --cov-report=term-missing
 
 build: ## Build local service images.
-	@echo "TODO(P1.7): build"
+	@hadolint services/model_api/Dockerfile
+	@docker build --file services/model_api/Dockerfile \
+		--tag localhost:5001/model-api:dev .
 
 up: ## Build the complete local platform from scratch.
 	@echo "TODO(P3.5): up"

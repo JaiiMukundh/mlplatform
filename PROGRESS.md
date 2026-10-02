@@ -78,3 +78,9 @@ Only observed command output is recorded here.
 - P1.6 PASS — `make test` remained green at 28 passed / 88.07% after moving the
   serving feature schema into the container-installed shared library.
 - Next action: wire and attempt the P1.7 image build acceptance check.
+- P1.7 BLOCKED — `make build` is wired to hadolint and the pinned Docker build,
+  but `docker info` failed because no daemon socket exists.
+- P1.7 BLOCKED — rootless setup attempts isolated the missing system prerequisite:
+  RootlessKit reported `newuidmap ... executable file not found`. See BLK-001.
+- Next action after BLK-001: start rootless Docker, rerun `make seed-data train build`,
+  then prove the live curl acceptance sequence before checking P1.7.
