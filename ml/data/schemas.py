@@ -3,19 +3,13 @@
 from __future__ import annotations
 
 import pandas as pd
+from mlp_common.schemas import MODEL_FEATURES
 
 ENTITY_COLUMN = "customer_id"
 TIMESTAMP_COLUMN = "event_timestamp"
 LABEL_COLUMN = "default_next_90d"
 
-FEATURE_COLUMNS = [
-    "income",
-    "debt_to_income",
-    "credit_history_months",
-    "num_late_payments_90d",
-    "avg_monthly_balance",
-    "utilization_ratio",
-]
+FEATURE_COLUMNS = list(MODEL_FEATURES)
 
 FEATURE_DTYPES = {
     "income": "float64",

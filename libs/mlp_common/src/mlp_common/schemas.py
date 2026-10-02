@@ -10,6 +10,15 @@ from pydantic import BaseModel, ConfigDict, Field
 CustomerId = Annotated[int, Field(ge=0)]
 Probability = Annotated[float, Field(ge=0.0, le=1.0)]
 
+MODEL_FEATURES = [
+    "income",
+    "debt_to_income",
+    "credit_history_months",
+    "num_late_payments_90d",
+    "avg_monthly_balance",
+    "utilization_ratio",
+]
+
 
 class StrictSchema(BaseModel):
     """Base schema that rejects misspelled or unexpected fields."""

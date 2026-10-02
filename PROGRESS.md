@@ -72,3 +72,9 @@ Only observed command output is recorded here.
   before/after startup and provider failure, metrics, metadata, chaos opt-in, bounded
   buffering, no-DB flushing, and both file-backed providers.
 - Next action: implement the P1.6 multi-stage non-root container.
+- P1.6 PASS — `hadolint services/model_api/Dockerfile` exited 0 with no findings.
+  The multi-stage image pins Python 3.11.15 slim by digest, installs local packages,
+  runs as UID/GID 10001, uses one uvicorn worker, and contains no Docker HEALTHCHECK.
+- P1.6 PASS — `make test` remained green at 28 passed / 88.07% after moving the
+  serving feature schema into the container-installed shared library.
+- Next action: wire and attempt the P1.7 image build acceptance check.

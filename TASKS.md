@@ -18,7 +18,7 @@ Checkboxes are changed only after the corresponding acceptance check has been ob
 - [x] P1.3 Implement model-api and provider protocols.
 - [x] P1.4 Implement asynchronous prediction logging.
 - [x] P1.5 Add model-api tests.
-- [ ] P1.6 Add the model-api container image.
+- [x] P1.6 Add the model-api container image.
 - [ ] P1.7 Wire seed, train, build, and hadolint checks.
 
 ## P2 — Kubernetes, HPA, Fault Tolerance

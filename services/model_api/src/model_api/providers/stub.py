@@ -8,8 +8,10 @@ from typing import Any
 import joblib
 import numpy as np
 import pandas as pd
+from mlp_common.schemas import MODEL_FEATURES
 
-from ml.data.schemas import ENTITY_COLUMN, FEATURE_COLUMNS
+ENTITY_COLUMN = "customer_id"
+FEATURE_COLUMNS = MODEL_FEATURES
 
 
 class ParquetFeatureSource:
