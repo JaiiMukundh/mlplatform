@@ -29,6 +29,7 @@ from model_api.deps import (
     build_model_source,
 )
 from model_api.metrics import create_metrics
+from model_api.predlog import PredictionLogger, PredictionRecord
 from model_api.providers.base import FeatureSource, ModelSource
 
 LOGGER = logging.getLogger(__name__)
@@ -41,6 +42,7 @@ class RuntimeState:
     feature_source: FeatureSource | None = None
     model_source: ModelSource | None = None
     loaded_at: datetime | None = None
+    prediction_logger: PredictionLogger | None = None
 
 
 def create_app(
@@ -61,6 +63,8 @@ def create_app(
         runtime.feature_source = feature_source or build_feature_source(config)
         runtime.model_source = model_source or build_model_source(config)
         runtime.loaded_at = datetime.now(UTC)
+        runtime.prediction_logger = PredictionLogger(config.database_url, metrics)
+        runtime.prediction_logger.start()
         metrics.model.labels(
             model_name=config.model_name,
             model_version=runtime.model_source.version,
@@ -68,7 +72,10 @@ def create_app(
         LOGGER.info(
             "model loaded", extra={"model_version": runtime.model_source.version}
         )
-        yield
+        try:
+            yield
+        finally:
+            await runtime.prediction_logger.stop()
 
     application = FastAPI(
         title="MLPlatform model API", version="0.1.0", lifespan=lifespan
@@ -165,6 +172,20 @@ def create_app(
                     label=label,
                 )
             )
+            if runtime.prediction_logger is not None:
+                runtime.prediction_logger.enqueue(
+                    PredictionRecord(
+                        ts=datetime.now(UTC),
+                        request_id=request.state.request_id,
+                        model_version=runtime.model_source.version,
+                        customer_id=customer_id,
+                        features={
+                            name: _json_number(features.loc[customer_id, name])
+                            for name in runtime.model_source.feature_names
+                        },
+                        score=float(probability),
+                    )
+                )
         return PredictResponse(
             request_id=request.state.request_id,
             model_version=runtime.model_source.version,
@@ -184,6 +205,18 @@ def create_app(
             return {"latency_ms": chaos.latency_ms}
 
     return application
+
+
+def _json_number(value: object) -> int | float:
+    """Convert NumPy/Pandas numeric scalars into JSON-compatible primitives."""
+    item_method = getattr(value, "item", None)
+    if callable(item_method):
+        value = item_method()
+    if isinstance(value, bool):
+        return int(value)
+    if isinstance(value, int | float):
+        return value
+    raise TypeError(f"feature value is not numeric: {value!r}")
 
 
 app = create_app()

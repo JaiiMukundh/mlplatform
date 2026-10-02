@@ -20,6 +20,7 @@ class ModelApiSettings(ServiceSettings):
     feature_source: str = "parquet"
     model_path: Path = Path("artifacts/model.joblib")
     feature_path: Path = Path("data/features_latest.parquet")
+    database_url: str | None = None
     enable_chaos: bool = False
 
 

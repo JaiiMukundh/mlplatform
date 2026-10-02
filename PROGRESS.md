@@ -58,3 +58,10 @@ Only observed command output is recorded here.
 - P1.3 PASS — observed stdout lines were JSON with timestamp, level, service,
   request ID, message, method, path, and status context fields.
 - Next action: implement the non-blocking P1.4 prediction log buffer.
+- P1.4 PASS — a three-customer request returned 200 while the bounded background
+  worker independently emitted three structured no-DB prediction records and stopped
+  cleanly during application shutdown.
+- P1.4 PASS — implementation caps the queue at 10,000, flushes at 200 rows or two
+  seconds, moves blocking SQL work to a thread, increments the failure counter, and
+  retries with bounded exponential backoff.
+- Next action: add the P1.5 API and prediction-buffer test suite.
