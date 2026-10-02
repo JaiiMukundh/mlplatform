@@ -12,4 +12,10 @@
   `uidmap` package is absent. This process cannot use interactive `sudo`.
 - Human unblock (minimal): run `sudo apt update && sudo apt install -y uidmap`, then
   tell the agent to continue. Rootless Docker setup and validation can then resume.
-- Status: active; P1.7 remains unchecked.
+- Resolved: 2026-10-02. The `uidmap` package is now installed (`/usr/bin/newuidmap`
+  present) and the rootless Docker daemon is active (`docker info` reports
+  `Context: rootless`). `make build` now completes.
+- Residual note: the default bridge has no working DNS resolution (even public resolvers
+  fail from the container netns), so the image build uses host networking
+  (`DOCKER_BUILD_NETWORK=host`). Recorded in `docs/DECISIONS.md`.
+- Status: closed.

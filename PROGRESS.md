@@ -84,3 +84,29 @@ Only observed command output is recorded here.
   RootlessKit reported `newuidmap ... executable file not found`. See BLK-001.
 - Next action after BLK-001: start rootless Docker, rerun `make seed-data train build`,
   then prove the live curl acceptance sequence before checking P1.7.
+- Blockers update — Docker was unblocked independently (human installed `uidmap`); the
+  rootless daemon is now active, so BLK-001 is closed and container work can proceed.
+- Restructure — replaced the nested `libs/<pkg>/src/<pkg>/` + `services/<svc>/src/<svc>/`
+  uv-workspace layout (3 pyprojects, 4 test dirs, 10 empty chart dirs, 7 empty tofu
+  modules) with a flat mono-repo: one root `pyproject.toml`, top-level packages
+  `mlp_common/ ml/ model_api/ drift_monitor/ retrain/ remediator/`, one `tests/` tree, and
+  `docker/*.Dockerfile`. Import roots are unchanged, so no source imports changed. Recorded
+  in `docs/DECISIONS.md`; SPEC Sections 1 and 4 updated to match.
+- Restructure PASS — `uv sync` rebuilt one `mlplatform` package; `make lint` reported
+  `All checks passed!` (63 files formatted); `make test` reported 28 passed with 88.07%
+  branch-aware coverage; all six pre-commit hooks passed including gitleaks; hadolint
+  reported no findings.
+- Next action: execute the P1.7 image build acceptance check.
+- P1.7 PASS — `make seed-data train build` exited 0: generated
+  `rows=80000 customers=20000 positive_rate=0.1184`, trained
+  `validation_auc=0.8562 test_auc=0.8581`, hadolint clean, and produced the image
+  `localhost:5001/model-api:dev`.
+- P1.7 PASS — the running container returned `/readyz` 200 within 4s, `/predict` 200 with
+  three probabilities in [0,1], `/model-info` version `file-v1` with six features, and
+  `/metrics` contained `http_requests_total`; stdout logs were JSON with ts, level,
+  service, request_id, msg plus method/path/status.
+- P1.7 PASS — rootless Docker could not resolve DNS on the default bridge, so the build
+  uses host networking (`DOCKER_BUILD_NETWORK=host`, overridable); recorded in DECISIONS.
+- P1 ACCEPTANCE PASS — P1.1–P1.7 complete: `make seed-data train build`, the container
+  run sequence, and `make test` (28 passed, ≥80% coverage) all pass.
+- Next action: start P2 with the local registry script (P2.1), then the kind cluster (P2.2).
