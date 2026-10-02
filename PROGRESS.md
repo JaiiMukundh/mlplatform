@@ -220,3 +220,15 @@ Only observed command output is recorded here.
   GetCallerIdentity (InvalidClientTokenId): no syntax/type errors, resource
   graph builds fully. No apply was run (cost safety).
 - Next action: P3.7 formatting/validation checks, then the P3 acceptance gate.
+- P3.7 PASS — `tofu fmt -check -recursive` clean on both envs; `validate`
+  Success on both; minimal `.github/workflows/ci.yml` ships the `iac` job
+  (action majors verified: checkout v7, setup-opentofu v2; SHA pins in P4.2).
+- P3 ACCEPTANCE PASS — final `make down && make up` from nothing: 3 Ready nodes
+  (v1.37.0), data ns postgres/minio/redis Running, bucket Job Completed
+  (hook-cleaned), `make tofu-local-apply` No changes, AWS `validate` Success,
+  AWS `plan` fails only on dummy-creds STS, psql shows prediction_log.
+- Note: one transient `plan` failure ("Planning failed", no detail captured)
+  right after bootstrap; 4 subsequent plan/apply runs all report No changes.
+- P3 ACCEPTANCE PASS — post-cycle `make deploy` smoke green; `make lint`
+  (All checks passed) and `make test` (28 passed, 88.07%) still green.
+- Next action: start P4 (CI/CD).

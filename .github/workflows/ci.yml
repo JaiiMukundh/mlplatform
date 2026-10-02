@@ -1,0 +1,26 @@
+name: ci
+
+# P3.7 ships only the `iac` job. P4 adds lint, test, chart, and security jobs.
+on:
+  pull_request:
+  push:
+    branches: [main]
+
+jobs:
+  iac:
+    runs-on: ubuntu-latest
+    steps:
+      # Majors verified 2026-10-02 (checkout v7.0.1, setup-opentofu v2.0.2).
+      # P4.2 pins these to SHAs and adds the remaining jobs.
+      - uses: actions/checkout@v7
+      - uses: opentofu/setup-opentofu@v2
+        with:
+          tofu_version: 1.13.1
+      - name: fmt (local)
+        run: tofu -chdir=infra/envs/local fmt -check -recursive
+      - name: validate (local)
+        run: tofu -chdir=infra/envs/local init -backend=false && tofu -chdir=infra/envs/local validate
+      - name: fmt (aws)
+        run: tofu -chdir=infra/envs/aws fmt -check -recursive
+      - name: validate (aws)
+        run: tofu -chdir=infra/envs/aws init -backend=false && tofu -chdir=infra/envs/aws validate
