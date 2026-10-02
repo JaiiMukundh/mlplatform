@@ -26,11 +26,11 @@ Checkboxes are changed only after the corresponding acceptance check has been ob
 - [x] P2.1 Create the local registry script.
 - [x] P2.2 Add the three-node kind configuration.
 - [x] P2.3 Install and verify metrics-server.
-- [ ] P2.4 Create the model-api Helm chart.
-- [ ] P2.5 Implement atomic deployment and smoke scripts.
-- [ ] P2.6 Add pod and load chaos scripts.
-- [ ] P2.7 Add the traffic generator.
-- [ ] P2.8 Prove zero-error rolling updates.
+- [x] P2.4 Create the model-api Helm chart.
+- [x] P2.5 Implement atomic deployment and smoke scripts.
+- [x] P2.6 Add pod and load chaos scripts.
+- [x] P2.7 Add the traffic generator.
+- [x] P2.8 Prove zero-error rolling updates.
 
 ## P3 — Infrastructure as Code
 

@@ -1,0 +1,65 @@
+replicaCount: 2
+
+image:
+  repository: localhost:5001/model-api
+  tag: dev
+  pullPolicy: IfNotPresent
+
+nameOverride: ""
+fullnameOverride: ""
+
+service:
+  type: NodePort
+  port: 8080
+  nodePort: 30080
+
+env:
+  MODEL_NAME: loan-default
+  MODEL_VERSION: file-v1
+  MODEL_SOURCE: file
+  FEATURE_SOURCE: parquet
+  LOG_LEVEL: INFO
+
+chaos:
+  enabled: true
+
+model:
+  version: file-v1
+
+resources:
+  requests:
+    cpu: 100m
+    memory: 256Mi
+  limits:
+    cpu: 500m
+    memory: 512Mi
+
+strategy:
+  type: RollingUpdate
+  rollingUpdate:
+    maxUnavailable: 0
+    maxSurge: 1
+
+podDisruptionBudget:
+  enabled: true
+  minAvailable: 1
+
+autoscaling:
+  enabled: true
+  minReplicas: 2
+  maxReplicas: 6
+  targetCPUUtilizationPercentage: 60
+  scaleDownStabilizationSeconds: 60
+
+serviceMonitor:
+  enabled: false
+
+probes:
+  startup:
+    path: /healthz
+    periodSeconds: 2
+    failureThreshold: 30
+  liveness:
+    path: /healthz
+  readiness:
+    path: /readyz

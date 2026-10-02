@@ -33,7 +33,7 @@ down: ## Destroy the local platform.
 	@echo "TODO(P3.5): down"
 
 deploy: ## Deploy model-api to the local cluster.
-	@echo "TODO(P2.5): deploy"
+	@bash scripts/deploy.sh model-api serving dev
 
 forward: ## Open local port-forwards when NodePorts are unavailable.
 	@echo "TODO(P3.5): forward"
@@ -45,7 +45,7 @@ train: ## Train and evaluate a model locally.
 	@uv run python -m ml.train --mode file --data-dir data --artifacts-dir artifacts
 
 traffic: ## Generate prediction traffic.
-	@echo "TODO(P2.7): traffic"
+	@uv run python scripts/traffic.py --rps 10 --duration 30 --url http://localhost:8080
 
 demo-infra: ## Demonstrate Kubernetes and alert self-healing.
 	@echo "TODO(P5.7): demo-infra"

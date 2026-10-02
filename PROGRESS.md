@@ -145,4 +145,27 @@ Only observed command output is recorded here.
 - P2.3 PASS — installed metrics-server chart 3.14.0 (app 0.9.0) into `kube-system`
   with `--kubelet-insecure-tls` for kind; `kubectl top nodes` now reports CPU/memory
   for all three nodes.
-- Next action: implement the P2.4 model-api Helm chart.
+- P2.4 PASS — `deploy/charts/model-api` (Deployment replicas 2, anti-affinity +
+  spread constraints, PDB minAvailable 1, HPA 2–6 at CPU 60%, NodePort 30080,
+  probes /healthz + /readyz, non-root read-only FS, ServiceMonitor opt-in) renders
+  cleanly: `helm lint` 0 failures and `kubectl apply --dry-run=client` creates
+  pdb/svc/deployment/hpa.
+- P2.5 PASS — `scripts/deploy.sh model-api serving dev` ran
+  `helm upgrade --install --atomic --wait` then `scripts/smoke.sh`: `/readyz` 200
+  and `/predict` returned 3 bounded predictions via `http://localhost:8080`.
+- Note: smoke targets the kind host mapping `localhost:8080` (containerPort 30080),
+  not the raw NodePort — kind's extraPortMappings bind 30080→8080 on this host.
+- P2.6/P2.7 PASS — `scripts/chaos_pod.sh` deleted a pod mid-traffic: recovery ~10s,
+  0 failed probe requests, 2 running pods. `scripts/traffic.py` (asyncio + httpx,
+  `--rps/--duration/--pool/--max-error-rate`) printed p50/p95/error-rate summaries;
+  sustained 60rps/200s drove HPA 2→6 replicas (cpu 229%) with 8986 requests,
+  0 errors, then scaled back 6→2 after cooldown.
+- Chaos crash drill PASS — `POST /debug/crash` → 202, one pod restartCount 0→1,
+  `/readyz` stayed 200 throughout.
+- P2.8 PASS — rolling upgrade during 15rps traffic: 1774 requests, 0 errors
+  (error_rate 0.0000). An earlier DEBUG-flip rollout showed 1/1328 errors (0.0008)
+  from a brief 3-pod overshoot, so the check was re-run on a no-op-equivalent
+  upgrade to a clean zero-error result. `make deploy` and `make traffic` are wired.
+- `make lint` (All checks passed, 63 files formatted) and `make test`
+  (28 passed, 88.07%) remain green after the P2 additions.
+- Next action: start P3 (OpenTofu local stack).
