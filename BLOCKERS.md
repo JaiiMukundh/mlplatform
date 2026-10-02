@@ -37,7 +37,9 @@
   (persist via `/etc/sysctl.d/99-kind.conf`), then:
   `kind delete cluster --name mlp`
   `kind create cluster --name mlp --config infra/kind-config.yaml`
-- Status: active; P2.2 remains unchecked.
+BLK-002's inotify limits were raised by the human (`fs.inotify.max_user_instances=512`,
+`fs.inotify.max_user_watches=524288`) and confirmed via `/proc/sys/fs/inotify/*`.
+- Status: resolved.
 
 ## BLK-003 — Rootful Docker Engine is not installed
 
@@ -58,4 +60,8 @@
   `docker context use default`
 - Verify: `docker info` shows the server; `make build` succeeds; then
   `kind create cluster --name mlp --config infra/kind-config.yaml` and `kubectl get nodes`.
-- Status: active; blocks `make build` re-verification and P2.2 onward.
+- **Status update (2026-10-02):** the rootful Docker Engine is now installed
+  (`docker.io`, server 29.1.3) and this user is a member of the `docker` group
+  (`getent group docker` lists the user; works now via `sg docker`, and directly
+  after a fresh login for the group membership to take effect).
+- Status: resolved.

@@ -24,8 +24,8 @@ Checkboxes are changed only after the corresponding acceptance check has been ob
 ## P2 — Kubernetes, HPA, Fault Tolerance
 
 - [x] P2.1 Create the local registry script.
-- [ ] P2.2 Add the three-node kind configuration.
-- [ ] P2.3 Install and verify metrics-server.
+- [x] P2.2 Add the three-node kind configuration.
+- [x] P2.3 Install and verify metrics-server.
 - [ ] P2.4 Create the model-api Helm chart.
 - [ ] P2.5 Implement atomic deployment and smoke scripts.
 - [ ] P2.6 Add pod and load chaos scripts.

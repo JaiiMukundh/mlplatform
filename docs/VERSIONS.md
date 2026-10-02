@@ -30,6 +30,8 @@ Project dependency versions are pinned in `uv.lock`; container, Helm, action, an
 |---|---|---|
 | kind local registry | `registry:2@sha256:a3d8aaa63ed8681a604f1dea0aa03f100d5895b6a58ace528858a7b332415373` | P2.1 |
 | kind node image | `kindest/node:v1.37.0` (selected by kind v0.33.0) | P2.2 |
+| metrics-server chart | `metrics-server/metrics-server 3.14.0` (app `v0.9.0`), `--kubelet-insecure-tls` on kind | P2.3 |
+| rootful Docker Engine | client `29.8.2`, server `29.1.3` (`docker.io` package) | P2 migration |
 
 Observed cluster versions (kind v0.33.0): Kubernetes v1.37.0, containerd 2.3.4, and
 Debian GNU/Linux 13 (trixie) node images.

@@ -125,5 +125,24 @@ Only observed command output is recorded here.
   `--network=host`) and the prior DECISIONS entry is marked superseded. The rootful engine is
   not yet installed on this machine, so BLK-003 was raised. Image builds and the kind cluster
   must be re-verified once `docker info` reports the system daemon.
-- Next action after BLK-003: install/enable rootful Docker and raise the inotify limits
-  (human), then re-run `make build`, recreate the kind cluster, and confirm three Ready nodes.
+- Human setup completed: rootful Docker Engine installed (client 29.8.2, server
+  29.1.3), user added to the `docker` group (`sg docker` works now; direct access
+  after re-login), inotify limits raised to 512/524288. Rootless kind leftovers were
+  removed; see the P2 entries below.
+- Root-Docker migration PASS — recreated the registry and kind cluster on the rootful
+  daemon; `kubectl get nodes` reports 3 Ready (control-plane + 2 workers, v1.37.0).
+  A plain default-bridge container resolved `pypi.org` (151.101.0.223), so the
+  `DOCKER_BUILD_NETWORK` workaround stays removed.
+- `make build` re-verification PASS on real Docker — plain `docker build` produced
+  `localhost:5001/model-api:dev`; live probes returned `/readyz` 200,
+  `/model-info` 200 (`file-v1`, six features), `/metrics` 200, and `/predict` 200
+  for `{"customer_ids":[101,102]}` with two bounded probabilities.
+- Note: the container API contract is exactly `{"customer_ids":[...]}` (ids only;
+  features come from the parquet source). Earlier `/predict` 422s used out-of-contract
+  `instances`/`features` bodies; in-contract integer ids succeed.
+- P2.2 PASS — `kubectl get nodes` reports 3 Ready on rootful Docker (control-plane +
+  2 workers, Kubernetes v1.37.0, containerd 2.3.4).
+- P2.3 PASS — installed metrics-server chart 3.14.0 (app 0.9.0) into `kube-system`
+  with `--kubelet-insecure-tls` for kind; `kubectl top nodes` now reports CPU/memory
+  for all three nodes.
+- Next action: implement the P2.4 model-api Helm chart.
