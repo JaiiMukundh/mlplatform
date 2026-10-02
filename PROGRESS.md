@@ -21,3 +21,9 @@ Only observed command output is recorded here.
 - P0.3 PASS — the command regenerated `docs/VERSIONS.md` from observed output and
   explicitly reported optional tools that are not installed.
 - Next action: implement and test `mlp_common` for P0.4.
+- P0.4 PASS — `uv run --python 3.11 --with pytest==9.0.2 --with-editable
+  libs/mlp_common pytest -q libs/mlp_common/tests` built the editable package and
+  reported `8 passed in 0.40s`.
+- P0.4 PASS — tests exercise environment settings, log-level validation, the five
+  required JSON fields plus request context, request batch limits, and probability bounds.
+- Next action: configure the repository-wide P0.5 quality gates.
