@@ -1,0 +1,39 @@
+# Python
+__pycache__/
+*.py[cod]
+.pytest_cache/
+.ruff_cache/
+.coverage
+coverage.xml
+htmlcov/
+.venv/
+dist/
+build/
+*.egg-info/
+
+# Secrets and local overrides
+.env
+.env.*
+!.env.example
+
+# Generated ML data and artifacts
+data/*.parquet
+artifacts/
+mlruns/
+
+# OpenTofu / Terraform
+*.tfstate
+*.tfstate.*
+.terraform/
+.terraform.lock.hcl
+.tofu*
+crash.log
+
+# Local cluster and IDE state
+kubeconfig*
+.idea/
+.vscode/
+.DS_Store
+
+# Generated evidence
+gate_report.json
