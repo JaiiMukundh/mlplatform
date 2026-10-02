@@ -233,3 +233,9 @@ Only observed command output is recorded here.
   (All checks passed) and `make test` (28 passed, 88.07%) still green.
 - Next action: start P4 (CI/CD).
 - Infra: removed rootless Docker (binaries in ~/.local/bin, systemd user unit, socket). Real daemon is now /usr/bin/docker 29.1.3 on unix:///var/run/docker.sock; plain `docker` works after a fresh login (docker group); use `sg docker -c` in the current session. Residual rootless data ~2.3M left under ~/.local/share/docker (inert).
+- P4 PASS — full `ci.yml` (lint/test/iac/chart/security) valid YAML; `helm lint` clean; `cd.yml` written (staging 30081→8081, prod 30080→8080, trivy image, rollback).
+- P4.4 PASS — slim image (no baked artifacts) + MinIO initContainer (`mc mirror`); `publish_model_file.sh` clean layout; serving redeployed, smoke `/readyz` 200 + `/predict` 3.
+- P4.5 PASS — branch→merge→build→deploy; serving image now `localhost:5001/model-api:p4demo`; smoke PASS. Evidence `docs/demo/branch-to-deployment.md`.
+- P4.6 PASS — broken image fails staging (atomic uninstall), prod still 200 on p4demo. Evidence `docs/demo/cicd-failure-path.md`.
+- Note: GitHub workflow execution + P4.1 runner install pending HUMAN (docs ready). P4.7 stretch: `.actrc` only.
+- Next action: start P5 (observability).

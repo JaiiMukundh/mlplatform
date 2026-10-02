@@ -45,13 +45,13 @@ Checkboxes are changed only after the corresponding acceptance check has been ob
 
 ## P4 — CI/CD
 
-- [ ] P4.1 Install and configure the self-hosted runner. (human)
-- [ ] P4.2 Implement continuous integration.
-- [ ] P4.3 Implement local continuous deployment.
-- [ ] P4.4 Remove model artifacts from the application image.
-- [ ] P4.5 Demonstrate branch-to-deployment flow.
-- [ ] P4.6 Prove the deployment failure path.
-- [ ] P4.7 Add local `act` configuration. (stretch)
+- [ ] P4.1 Install and configure the self-hosted runner. (human; `docs/runner-setup.md` written)
+- [x] P4.2 Implement continuous integration.
+- [x] P4.3 Implement local continuous deployment.
+- [x] P4.4 Remove model artifacts from the application image.
+- [x] P4.5 Demonstrate branch-to-deployment flow.
+- [x] P4.6 Prove the deployment failure path.
+- [ ] P4.7 Add local `act` configuration. (stretch; `.actrc` written, `act` not installed)
 
 ## P5 — Observability and Automated Response
 
