@@ -39,7 +39,7 @@ Checkboxes are changed only after the corresponding acceptance check has been ob
 - [x] P3.3 Create data-service Helm charts.
 - [x] P3.4 Implement the platform-services module.
 - [x] P3.5 Compose the local environment.
-- [ ] P3.6 Create AWS-parity modules and environment.
+- [x] P3.6 Create AWS-parity modules and environment.
 - [ ] P3.7 Add OpenTofu formatting and validation checks.
 - [ ] P3.8 Add report-only infrastructure scanning. (stretch)
 

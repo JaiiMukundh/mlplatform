@@ -35,6 +35,11 @@ Project dependency versions are pinned in `uv.lock`; container, Helm, action, an
 | OpenTofu kubernetes provider | `hashicorp/kubernetes 3.3.0` (latest as of 2026-10-02) | P3.4 |
 | OpenTofu random provider | `hashicorp/random 3.9.1` (latest as of 2026-10-02) | P3.4 |
 | OpenTofu local provider | `hashicorp/local 2.9.1` (latest as of 2026-10-02) | P3.5 |
+| OpenTofu AWS provider | `hashicorp/aws 6.67.0` (latest as of 2026-10-02) | P3.6 |
+| OpenTofu TLS provider | `hashicorp/tls 4.4.1` (latest as of 2026-10-02) | P3.6 |
+| OpenTofu time provider | `hashicorp/time 0.14.2` (latest as of 2026-10-02) | P3.6 |
+| terraform-aws-modules/vpc | `6.7.3` | P3.6 |
+| terraform-aws-modules/eks | `21.26.0` (K8s `1.33`, 2x `t3.medium`, EBS CSI) | P3.6 |
 | metrics-server chart | `metrics-server/metrics-server 3.14.0` (app `v0.9.0`), `--kubelet-insecure-tls` on kind | P2.3 |
 | rootful Docker Engine | client `29.8.2`, server `29.1.3` (`docker.io` package) | P2 migration |
 | postgres image | `postgres:16.15-bookworm@sha256:efedf3595f1d6f415c08568ba171029bf54052e754cc9f030e3f2412b21f3d67` (official image, latest 16.x) | P3.3 |

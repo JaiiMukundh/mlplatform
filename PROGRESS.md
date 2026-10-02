@@ -212,3 +212,11 @@ Only observed command output is recorded here.
 - P3.5 PASS — model-api restored on the new cluster (`docker push` +
   `make deploy`): smoke `/readyz` 200, `/predict` 3 bounded probabilities.
 - Next action: implement P3.6 (AWS parity modules, plan-only).
+- P3.6 PASS — `tofu -chdir=infra/envs/aws init -backend=false` ok;
+  `validate` reports Success; `fmt -check` clean. Six modules created
+  (network_vpc, cluster_eks, object_storage, database, image_registry, iam)
+  plus a monthly budget alarm; env contract outputs written.
+- P3.6 PASS — `plan -lock=false` with dummy creds fails ONLY at STS
+  GetCallerIdentity (InvalidClientTokenId): no syntax/type errors, resource
+  graph builds fully. No apply was run (cost safety).
+- Next action: P3.7 formatting/validation checks, then the P3 acceptance gate.

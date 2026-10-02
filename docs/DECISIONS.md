@@ -91,3 +91,16 @@ Architecture and implementation decisions are recorded chronologically.
   the buckets job died instantly twice: `/bin/sh` in the minio-client image is
   dash (no `pipefail`), and `mc` needs a writable `$HOME` under the read-only
   root filesystem. Diagnosed by replicating the container with debug pods.
+
+## 2026-10-02 — AWS parity module choices (plan-only)
+
+- **Decision:** VPC and EKS use the community modules (`terraform-aws-modules/vpc`
+  6.7.3, `.../eks` 21.26.0) as SPEC P3.6 names; S3/RDS/ECR/IAM/budget are raw
+  `aws_*` resources. AZ names derive from the region string (`<region>a/b`) and
+  the RDS engine pins major `"16"` only.
+- **Reason:** wiring the two big modules blind is already risky; raw resources keep
+  the rest exactly reviewable. `data.aws_availability_zones` and exact RDS minors
+  need live AWS APIs, which `plan` with dummy credentials cannot reach — derived
+  AZs and a major-version pin keep `validate`/`plan` offline-capable; the exact
+  minor is pinned at the P9.6 human apply. IRSA roles mirror the local static
+  creds (model-api read-only; retrain/mlflow read-write).
