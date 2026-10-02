@@ -58,7 +58,9 @@ class PredictionLogger:
         flush_interval: float = 2.0,
     ) -> None:
         """Configure buffering and create a lazy database engine when requested."""
-        self._queue: asyncio.Queue[PredictionRecord] = asyncio.Queue(maxsize=max_size)
+        self._queue: asyncio.Queue[PredictionRecord | None] = asyncio.Queue(
+            maxsize=max_size
+        )
         self._metrics = metrics
         self._batch_size = batch_size
         self._flush_interval = flush_interval
@@ -81,6 +83,8 @@ class PredictionLogger:
     async def stop(self) -> None:
         """Drain buffered rows and stop the worker during graceful shutdown."""
         self._stopping.set()
+        with suppress(asyncio.QueueFull):
+            self._queue.put_nowait(None)
         if self._task is not None:
             await self._task
             self._task = None
@@ -138,6 +142,8 @@ class PredictionLogger:
             )
         except TimeoutError:
             return []
+        if first is None:
+            return []
         batch = [first]
         deadline = asyncio.get_running_loop().time() + self._flush_interval
         while len(batch) < self._batch_size:
@@ -145,7 +151,10 @@ class PredictionLogger:
             if remaining <= 0:
                 break
             try:
-                batch.append(await asyncio.wait_for(self._queue.get(), remaining))
+                record = await asyncio.wait_for(self._queue.get(), remaining)
+                if record is None:
+                    break
+                batch.append(record)
             except TimeoutError:
                 break
         return batch

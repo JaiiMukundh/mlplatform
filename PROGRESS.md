@@ -65,3 +65,10 @@ Only observed command output is recorded here.
   seconds, moves blocking SQL work to a thread, increments the failure counter, and
   retries with bounded exponential backoff.
 - Next action: add the P1.5 API and prediction-buffer test suite.
+- P1.5 PASS — `make test` collected 28 tests and reported all 28 passed in 4.53s
+  with 87.99% combined branch-aware coverage (model-api modules individually total
+  above 80%).
+- P1.5 PASS — tests cover happy path, exact 404 contract, 422 validation, readiness
+  before/after startup and provider failure, metrics, metadata, chaos opt-in, bounded
+  buffering, no-DB flushing, and both file-backed providers.
+- Next action: implement the P1.6 multi-stage non-root container.

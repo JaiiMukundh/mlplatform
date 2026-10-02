@@ -17,7 +17,7 @@ Checkboxes are changed only after the corresponding acceptance check has been ob
 - [x] P1.2 Train and evaluate the file-backed model.
 - [x] P1.3 Implement model-api and provider protocols.
 - [x] P1.4 Implement asynchronous prediction logging.
-- [ ] P1.5 Add model-api tests.
+- [x] P1.5 Add model-api tests.
 - [ ] P1.6 Add the model-api container image.
 - [ ] P1.7 Wire seed, train, build, and hadolint checks.
 

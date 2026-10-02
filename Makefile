@@ -19,7 +19,7 @@ fmt: ## Format all implemented Python code.
 	@uv run ruff format .
 
 test: ## Run the unit test suite and coverage gate.
-	@uv run pytest --cov=mlp_common --cov-report=term-missing
+	@uv run pytest --cov=mlp_common --cov=model_api --cov-report=term-missing
 
 build: ## Build local service images.
 	@echo "TODO(P1.7): build"
