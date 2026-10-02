@@ -44,3 +44,21 @@ Architecture and implementation decisions are recorded chronologically.
   `/var/run/docker.sock`, no `docker.service`, no `docker` group, and `dockerd`/`docker`
   exist only under `~/.local/bin`. See BLK-003 for the human install steps. Image builds
   cannot be re-verified until the daemon is available.
+
+## 2026-10-02 — P3 data-layer image choices
+
+- **Decision:** Postgres uses the official `postgres:16.15-bookworm` image; MinIO uses
+  `bitnamilegacy/minio` + `bitnamilegacy/minio-client` (2025.7.23 lineage); Redis stays
+  on the last BSD-licensed `7.2.x` line at exactly `7.2.16-alpine3.21`.
+- **Reason:** SPEC 2 requires checking MinIO availability/licensing at implementation
+  time (LocalStack free tier is restricted, so it is not used). The official
+  `minio/minio` pull requires authentication from this host, while the
+  `bitnamilegacy` fork (community continuation after the Bitnami catalog changes)
+  pulls cleanly by digest — same S3 API, so service code is unaffected. Our own Helm
+  charts are used throughout, so the "avoid Bitnami charts" rule still holds.
+  The `7.2-alpine3.22` redis tag does not exist upstream (alpine3.22 was never
+  published for 7.2.x); `7.2.16-alpine3.21` is the latest 7.2 patch and its digest
+  matches the pulled image.
+- **Evidence:** `docker images --digests` confirms postgres `efedf359…`, minio
+  `953d489a…`, minio-client `7a6b4b93…`, redis `29e8589c…`; `redis-server --version`
+  reports `v=7.2.16`.

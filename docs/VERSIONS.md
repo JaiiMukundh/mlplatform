@@ -33,6 +33,10 @@ Project dependency versions are pinned in `uv.lock`; container, Helm, action, an
 | OpenTofu kind provider | `tehcyx/kind 0.11.0` (latest on registry.opentofu.org as of 2026-10-02) | P3.1 |
 | metrics-server chart | `metrics-server/metrics-server 3.14.0` (app `v0.9.0`), `--kubelet-insecure-tls` on kind | P2.3 |
 | rootful Docker Engine | client `29.8.2`, server `29.1.3` (`docker.io` package) | P2 migration |
+| postgres image | `postgres:16.15-bookworm@sha256:efedf3595f1d6f415c08568ba171029bf54052e754cc9f030e3f2412b21f3d67` (official image, latest 16.x) | P3.3 |
+| minio image | `bitnamilegacy/minio:2025.7.23-debian-12-r3@sha256:953d489a81cc4de7975f90e07202189c4325da39b0b92470b6a13c7ea99e36cd` | P3.3 |
+| minio-client image | `bitnamilegacy/minio-client:2025.7.21-debian-12-r2@sha256:7a6b4b93998903f1673d2bd2140ac26b807c4224627b743778c5a8f70db561f1` | P3.3 |
+| redis image | `redis:7.2.16-alpine3.21@sha256:29e8589c3f9ba699b5f7aa4b3c7733c58852a3626439e619aa0ee78de08c6ca0` (last BSD line) | P3.3 |
 
 Observed cluster versions (kind v0.33.0): Kubernetes v1.37.0, containerd 2.3.4, and
 Debian GNU/Linux 13 (trixie) node images.

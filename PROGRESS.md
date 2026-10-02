@@ -182,3 +182,11 @@ Only observed command output is recorded here.
   (`already running`, `already attached`, ConfigMap `unchanged`);
   `curl localhost:5001/v2/` returns HTTP 200.
 - Next action: fix the redis image pin, then verify P3.3 charts.
+- P3.3 PASS — `helm lint` clean on all three charts; `helm template` renders
+  postgres StatefulSet+init Job (prediction_log + index, drift_state, labels_log;
+  0 Secrets with `auth.existingSecret`), minio Deployment+buckets Job
+  (NodePorts 30900/30901, 3 buckets), redis Deployment (fixed pin
+  `7.2.16-alpine3.21@sha256:29e8589c…`, `--appendonly no`).
+- P3.3 PASS — fixed a bad redis pin (`7.2-alpine3.22` does not exist upstream);
+  image choices recorded in DECISIONS.md, digests in VERSIONS.md.
+- Next action: implement P3.4 platform_services module.

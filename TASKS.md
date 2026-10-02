@@ -36,7 +36,7 @@ Checkboxes are changed only after the corresponding acceptance check has been ob
 
 - [x] P3.1 Implement the kind OpenTofu module.
 - [x] P3.2 Implement the registry OpenTofu module.
-- [ ] P3.3 Create data-service Helm charts.
+- [x] P3.3 Create data-service Helm charts.
 - [ ] P3.4 Implement the platform-services module.
 - [ ] P3.5 Compose the local environment.
 - [ ] P3.6 Create AWS-parity modules and environment.
