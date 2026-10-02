@@ -11,13 +11,15 @@ bootstrap: ## Verify the laptop prerequisites and record their versions.
 	@bash scripts/bootstrap.sh
 
 lint: ## Lint all implemented Python code.
-	@echo "TODO(P0.5): lint"
+	@uv run ruff check .
+	@uv run ruff format --check .
 
 fmt: ## Format all implemented Python code.
-	@echo "TODO(P0.5): fmt"
+	@uv run ruff check --fix .
+	@uv run ruff format .
 
 test: ## Run the unit test suite and coverage gate.
-	@echo "TODO(P0.5): test"
+	@uv run pytest --cov=mlp_common --cov-report=term-missing
 
 build: ## Build local service images.
 	@echo "TODO(P1.7): build"

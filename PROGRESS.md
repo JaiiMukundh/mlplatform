@@ -27,3 +27,9 @@ Only observed command output is recorded here.
 - P0.4 PASS — tests exercise environment settings, log-level validation, the five
   required JSON fields plus request context, request batch limits, and probability bounds.
 - Next action: configure the repository-wide P0.5 quality gates.
+- P0.5 PASS — `make lint` reported `All checks passed` and all 54 Python files
+  formatted; `make test` reported `8 passed` with 88.89% branch-aware coverage,
+  above the required 80% floor.
+- P0.5 PASS — `uv run pre-commit run --all-files` passed Ruff lint/format,
+  end-of-file, YAML, TOML, and gitleaks secret scanning hooks.
+- Next action: add the P0.6 Git/PR conventions and close the P0 acceptance gate.
