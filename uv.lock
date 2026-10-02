@@ -7,13 +7,6 @@ resolution-markers = [
     "sys_platform != 'emscripten' and sys_platform != 'win32'",
 ]
 
-[manifest]
-members = [
-    "mlp-common",
-    "mlplatform",
-    "model-api",
-]
-
 [[package]]
 name = "annotated-doc"
 version = "0.0.5"
@@ -231,33 +224,24 @@ wheels = [
 ]
 
 [[package]]
-name = "mlp-common"
-version = "0.1.0"
-source = { editable = "libs/mlp_common" }
-dependencies = [
-    { name = "pydantic" },
-    { name = "pydantic-settings" },
-]
-
-[package.metadata]
-requires-dist = [
-    { name = "pydantic", specifier = "==2.13.5" },
-    { name = "pydantic-settings", specifier = "==2.15.0" },
-]
-
-[[package]]
 name = "mlplatform"
 version = "0.1.0"
-source = { virtual = "." }
+source = { editable = "." }
 dependencies = [
+    { name = "fastapi" },
+    { name = "httpx" },
     { name = "joblib" },
-    { name = "mlp-common" },
-    { name = "model-api" },
     { name = "numpy" },
     { name = "pandas" },
+    { name = "prometheus-client" },
+    { name = "psycopg", extra = ["binary"] },
     { name = "pyarrow" },
+    { name = "pydantic" },
+    { name = "pydantic-settings" },
     { name = "scikit-learn" },
     { name = "scipy" },
+    { name = "sqlalchemy" },
+    { name = "uvicorn" },
 ]
 
 [package.dev-dependencies]
@@ -270,14 +254,20 @@ dev = [
 
 [package.metadata]
 requires-dist = [
+    { name = "fastapi", specifier = "==0.142.2" },
+    { name = "httpx", specifier = "==0.28.1" },
     { name = "joblib", specifier = "==1.6.0" },
-    { name = "mlp-common", editable = "libs/mlp_common" },
-    { name = "model-api", editable = "services/model_api" },
     { name = "numpy", specifier = "==2.4.6" },
     { name = "pandas", specifier = "==3.0.6" },
+    { name = "prometheus-client", specifier = "==0.26.0" },
+    { name = "psycopg", extras = ["binary"], specifier = "==3.3.6" },
     { name = "pyarrow", specifier = "==25.0.1" },
+    { name = "pydantic", specifier = "==2.13.5" },
+    { name = "pydantic-settings", specifier = "==2.15.0" },
     { name = "scikit-learn", specifier = "==1.9.1" },
     { name = "scipy", specifier = "==1.17.1" },
+    { name = "sqlalchemy", specifier = "==2.1.2" },
+    { name = "uvicorn", specifier = "==0.54.0" },
 ]
 
 [package.metadata.requires-dev]
@@ -286,41 +276,6 @@ dev = [
     { name = "pytest", specifier = "==9.1.1" },
     { name = "pytest-cov", specifier = "==7.1.0" },
     { name = "ruff", specifier = "==0.16.10" },
-]
-
-[[package]]
-name = "model-api"
-version = "0.1.0"
-source = { editable = "services/model_api" }
-dependencies = [
-    { name = "fastapi" },
-    { name = "httpx" },
-    { name = "joblib" },
-    { name = "mlp-common" },
-    { name = "numpy" },
-    { name = "pandas" },
-    { name = "prometheus-client" },
-    { name = "psycopg", extra = ["binary"] },
-    { name = "pydantic" },
-    { name = "pydantic-settings" },
-    { name = "sqlalchemy" },
-    { name = "uvicorn" },
-]
-
-[package.metadata]
-requires-dist = [
-    { name = "fastapi", specifier = "==0.142.2" },
-    { name = "httpx", specifier = "==0.28.1" },
-    { name = "joblib", specifier = "==1.6.0" },
-    { name = "mlp-common", editable = "libs/mlp_common" },
-    { name = "numpy", specifier = "==2.4.6" },
-    { name = "pandas", specifier = "==3.0.6" },
-    { name = "prometheus-client", specifier = "==0.26.0" },
-    { name = "psycopg", extras = ["binary"], specifier = "==3.3.6" },
-    { name = "pydantic", specifier = "==2.13.5" },
-    { name = "pydantic-settings", specifier = "==2.15.0" },
-    { name = "sqlalchemy", specifier = "==2.1.2" },
-    { name = "uvicorn", specifier = "==0.54.0" },
 ]
 
 [[package]]

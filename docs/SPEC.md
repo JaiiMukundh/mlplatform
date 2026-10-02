@@ -40,7 +40,7 @@ Begin with P0.
 5. **Makefile is the interface.** Every repeatable action is a `make` target. README documents targets, not raw commands.
 6. **Idempotent and re-runnable.** `make up` twice must not break. Scripts must be safe to rerun. `make down && make up` must rebuild everything from scratch with zero manual steps (this is itself a P3 acceptance test).
 7. **No secrets in git.** Credentials come from `.env` (gitignored) → OpenTofu `random_password` / Kubernetes Secrets. Provide `.env.example`. Add a secret-scan step (gitleaks) to CI.
-8. **Small files, clear names, type hints, docstrings** on public functions. Python 3.11. Lint with `ruff`, format with `ruff format`, test with `pytest`. Target ≥ 80% line coverage on `services/` and `libs/`.
+8. **Small files, clear names, type hints, docstrings** on public functions. Python 3.11. Lint with `ruff`, format with `ruff format`, test with `pytest`. Target ≥ 80% line coverage on the runtime Python packages (`mlp_common/`, `model_api/`, and later `drift_monitor/`, `retrain/`, `remediator/`).
 9. **Structured logging.** All Python services log JSON lines to stdout with fields: `ts, level, service, request_id, msg` plus context fields.
 10. **Fail loudly.** No bare `except:`; no swallowed errors. Services must exit non-zero on unrecoverable startup errors so Kubernetes can restart them.
 11. **Resource-conscious.** Target machine: 8 CPU / 16 GB RAM laptop. Set requests/limits on every pod. Prefer single-replica for infra components locally. If the cluster is starved, reduce replicas of infra components, not of `model-api`.
@@ -124,38 +124,33 @@ The synopsis names AWS services. Phase P0–P8 use the open-source column. P9 po
 
 ---
 
-## 4. Repository Layout (create exactly this)
+## 4. Repository Layout
+
+Flat, single-project mono-repo: one `pyproject.toml`, one top-level package per Python
+import root, one `tests/` tree, and one `docker/` directory. Import roots stay
+`mlp_common`, `ml`, `model_api`, `drift_monitor`, `retrain`, `remediator` (Section 5.5).
+Helm charts and OpenTofu modules are created in their owning phases.
 
 ```
 mlplatform/
 ├─ AGENTS.md  TASKS.md  PROGRESS.md  BLOCKERS.md  README.md  Makefile  .env.example  .gitignore
-├─ docs/  SPEC.md  DECISIONS.md  VERSIONS.md  architecture.md  runbook.md  demo/  viva/
-├─ libs/mlp_common/                 # shared python package: logging, config, schemas, metrics, drift math
-│   ├─ pyproject.toml  src/mlp_common/{__init__,logging,config,schemas,drift,s3}.py  tests/
-├─ ml/
-│   ├─ data/generate.py             # synthetic data generator (seeded)
-│   ├─ data/schemas.py
-│   ├─ train.py                     # training entrypoint (file mode in P1, MLflow+Feast mode in P6)
-│   ├─ evaluate.py
-│   └─ tests/
-├─ feature_repo/                    # Feast repo (P6)
-│   ├─ feature_store.yaml  definitions.py  materialize.py
-├─ services/
-│   ├─ model_api/    {Dockerfile, pyproject.toml, src/model_api/{main,deps,providers/{base,stub,mlflow_model,feast_features},predlog,metrics,chaos}.py, tests/}
-│   ├─ mlflow/       {Dockerfile}
-│   ├─ drift_monitor/{Dockerfile, src/drift_monitor/{main,detector,trigger,perf}.py, tests/}
-│   ├─ retrain/      {Dockerfile, src/retrain/{main,register,dispatch}.py, tests/}
-│   └─ remediator/   {Dockerfile, src/remediator/{main,actions}.py, tests/}
-├─ deploy/charts/
-│   ├─ model-api/  drift-monitor/  retrain/ (Job template + RBAC)  remediator/
-│   ├─ postgres/   minio/   redis/   mlflow/          # small own charts
-│   └─ observability/ {dashboards/*.json, alerts/*.yaml, values-*.yaml}
-├─ infra/
-│   ├─ modules/{cluster_kind,cluster_eks,object_storage,database,registry,platform_services,iam}/
-│   ├─ envs/local/   {main.tf,variables.tf,outputs.tf,versions.tf}
-│   └─ envs/aws/     {same files; plan-only until P9}
+├─ pyproject.toml              # single project: dependencies, ruff, pytest, coverage
+├─ docs/  SPEC.md  DECISIONS.md  VERSIONS.md  architecture.md  runbook.md  git-workflow.md  demo/  viva/
+├─ mlp_common/  {__init__,logging,config,schemas,drift,s3}.py   # shared logging/config/schemas/drift/s3
+├─ ml/                         # model development
+│   ├─ data/{generate,schemas}.py   # synthetic data generator (seeded) + column contracts
+│   ├─ train.py                # file mode in P1, MLflow+Feast mode in P6
+│   └─ evaluate.py
+├─ model_api/       {main,deps,predlog,metrics,chaos}.py  providers/{base,stub,mlflow_model,feast_features}.py
+├─ drift_monitor/   {main,detector,trigger,perf}.py
+├─ retrain/         {main,register,dispatch}.py
+├─ remediator/      {main,actions}.py
+├─ feature_repo/    feature_store.yaml  definitions.py  materialize.py   # Feast repo (P6)
+├─ docker/          {model_api,drift_monitor,retrain,remediator,mlflow}.Dockerfile
+├─ deploy/charts/   # Helm charts, created in their owning phases
+├─ infra/           # OpenTofu: modules/ + envs/{local,aws}/
 ├─ scripts/ {registry.sh, bootstrap.sh, deploy.sh, gate.py, traffic.py, simulate_drift.py, reset_demo.py, smoke.sh, chaos_pod.sh, chaos_load.sh}
-├─ tests/e2e/ {test_serving.py, test_selfheal_infra.py, test_selfheal_model.py}
+├─ tests/  # unit tests + e2e/ {test_serving.py, test_selfheal_infra.py, test_selfheal_model.py}
 └─ .github/workflows/ {ci.yml, cd.yml, model-release.yml}
 ```
 

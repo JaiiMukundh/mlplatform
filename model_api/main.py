@@ -12,6 +12,8 @@ from datetime import UTC, datetime
 
 from fastapi import BackgroundTasks, FastAPI, Query, Request
 from fastapi.responses import JSONResponse, Response
+from prometheus_client import CONTENT_TYPE_LATEST, generate_latest
+
 from mlp_common.logging import bind_request_id, configure_logging, reset_request_id
 from mlp_common.schemas import (
     HealthResponse,
@@ -20,8 +22,6 @@ from mlp_common.schemas import (
     PredictRequest,
     PredictResponse,
 )
-from prometheus_client import CONTENT_TYPE_LATEST, generate_latest
-
 from model_api.chaos import ChaosController, crash_process
 from model_api.deps import (
     ModelApiSettings,

@@ -7,7 +7,14 @@
 .coverage
 coverage.xml
 .env
+.env.*
 .terraform
 *.tfstate*
 docs
+deploy
+infra
+tests
+scripts
+feature_repo
 mlruns
+docker

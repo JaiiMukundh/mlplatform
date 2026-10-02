@@ -5,7 +5,6 @@ from __future__ import annotations
 from pathlib import Path
 
 from mlp_common.config import ServiceSettings
-
 from model_api.providers.base import FeatureSource, ModelSource
 from model_api.providers.stub import JoblibModelSource, ParquetFeatureSource
 

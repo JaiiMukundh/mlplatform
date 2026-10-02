@@ -7,7 +7,7 @@
 5. **Makefile is the interface.** Every repeatable action is a `make` target. README documents targets, not raw commands.
 6. **Idempotent and re-runnable.** `make up` twice must not break. Scripts must be safe to rerun. `make down && make up` must rebuild everything from scratch with zero manual steps (this is itself a P3 acceptance test).
 7. **No secrets in git.** Credentials come from `.env` (gitignored) → OpenTofu `random_password` / Kubernetes Secrets. Provide `.env.example`. Add a secret-scan step (gitleaks) to CI.
-8. **Small files, clear names, type hints, docstrings** on public functions. Python 3.11. Lint with `ruff`, format with `ruff format`, test with `pytest`. Target ≥ 80% line coverage on `services/` and `libs/`.
+8. **Small files, clear names, type hints, docstrings** on public functions. Python 3.11. Lint with `ruff`, format with `ruff format`, test with `pytest`. Target ≥ 80% line coverage on the runtime Python packages (`mlp_common/`, `model_api/`, and later `drift_monitor/`, `retrain/`, `remediator/`).
 9. **Structured logging.** All Python services log JSON lines to stdout with fields: `ts, level, service, request_id, msg` plus context fields.
 10. **Fail loudly.** No bare `except:`; no swallowed errors. Services must exit non-zero on unrecoverable startup errors so Kubernetes can restart them.
 11. **Resource-conscious.** Target machine: 8 CPU / 16 GB RAM laptop. Set requests/limits on every pod. Prefer single-replica for infra components locally. If the cluster is starved, reduce replicas of infra components, not of `model-api`.

@@ -1,6 +1,11 @@
 SHELL := /usr/bin/env bash
 .DEFAULT_GOAL := help
 
+# Rootless Docker on this laptop cannot resolve DNS on the default bridge, so the
+# build-time network defaults to host (needed to reach PyPI). Override with
+# `make build DOCKER_BUILD_NETWORK=default` on hosts with working container DNS.
+DOCKER_BUILD_NETWORK ?= host
+
 .PHONY: help bootstrap lint fmt test build up down deploy forward seed-data train \
 	traffic demo-infra demo-model reset-demo tofu-local-apply tofu-local-destroy
 
@@ -22,8 +27,8 @@ test: ## Run the unit test suite and coverage gate.
 	@uv run pytest --cov=mlp_common --cov=model_api --cov-report=term-missing
 
 build: ## Build local service images.
-	@hadolint services/model_api/Dockerfile
-	@docker build --file services/model_api/Dockerfile \
+	@hadolint docker/model_api.Dockerfile
+	@docker build --network=$(DOCKER_BUILD_NETWORK) --file docker/model_api.Dockerfile \
 		--tag localhost:5001/model-api:dev .
 
 up: ## Build the complete local platform from scratch.

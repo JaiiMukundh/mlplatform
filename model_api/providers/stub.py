@@ -8,6 +8,7 @@ from typing import Any
 import joblib
 import numpy as np
 import pandas as pd
+
 from mlp_common.schemas import MODEL_FEATURES
 
 ENTITY_COLUMN = "customer_id"

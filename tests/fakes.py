@@ -1,15 +1,9 @@
-"""Reusable in-memory providers for model API tests."""
+"""Deterministic in-memory providers shared by the serving API tests."""
 
 from __future__ import annotations
 
-from collections.abc import Iterator
-
 import numpy as np
 import pandas as pd
-import pytest
-from fastapi.testclient import TestClient
-from model_api.deps import ModelApiSettings
-from model_api.main import create_app
 
 from ml.data.schemas import FEATURE_COLUMNS
 
@@ -47,17 +41,3 @@ class FakeModelSource:
         """Return a stable probability based on the first feature."""
         positive = np.clip(features.iloc[:, 0].to_numpy() / 4.0, 0.0, 1.0)
         return np.column_stack([1.0 - positive, positive])
-
-
-@pytest.fixture(scope="module")
-def api_client() -> Iterator[TestClient]:
-    """Run one application lifespan for the endpoint suite."""
-    settings = ModelApiSettings(model_version="test-v7")
-    with TestClient(
-        create_app(
-            settings,
-            feature_source=FakeFeatureSource(),
-            model_source=FakeModelSource(),
-        )
-    ) as client:
-        yield client

@@ -1,3 +1,7 @@
+[build-system]
+requires = ["hatchling==1.32.4"]
+build-backend = "hatchling.build"
+
 [project]
 name = "mlplatform"
 version = "0.1.0"
@@ -5,14 +9,20 @@ description = "Open-source-first laptop MLOps platform."
 readme = "README.md"
 requires-python = ">=3.11,<3.12"
 dependencies = [
+  "fastapi==0.142.2",
+  "httpx==0.28.1",
   "joblib==1.6.0",
-  "mlp-common",
-  "model-api",
   "numpy==2.4.6",
   "pandas==3.0.6",
+  "prometheus-client==0.26.0",
+  "psycopg[binary]==3.3.6",
   "pyarrow==25.0.1",
+  "pydantic==2.13.5",
+  "pydantic-settings==2.15.0",
   "scikit-learn==1.9.1",
   "scipy==1.17.1",
+  "sqlalchemy==2.1.2",
+  "uvicorn==0.54.0",
 ]
 
 [dependency-groups]
@@ -23,12 +33,18 @@ dev = [
   "ruff==0.16.10",
 ]
 
-[tool.uv.sources]
-mlp-common = { workspace = true }
-model-api = { workspace = true }
+[tool.uv]
+package = true
 
-[tool.uv.workspace]
-members = ["libs/mlp_common", "services/model_api"]
+[tool.hatch.build.targets.wheel]
+packages = [
+  "mlp_common",
+  "ml",
+  "model_api",
+  "drift_monitor",
+  "retrain",
+  "remediator",
+]
 
 [tool.ruff]
 target-version = "py311"
@@ -41,11 +57,11 @@ select = ["B", "E", "F", "I", "RUF", "SIM", "UP"]
 [tool.pytest.ini_options]
 addopts = "--strict-config --strict-markers"
 pythonpath = ["."]
-testpaths = ["libs/mlp_common/tests", "ml/tests", "services"]
+testpaths = ["tests"]
 
 [tool.coverage.run]
 branch = true
-source = ["mlp_common"]
+source = ["mlp_common", "model_api"]
 
 [tool.coverage.report]
 fail_under = 80

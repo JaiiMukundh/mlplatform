@@ -2,12 +2,12 @@
 
 from __future__ import annotations
 
-import model_api.main as main_module
 from fastapi.testclient import TestClient
+
+import model_api.main as main_module
 from model_api.deps import ModelApiSettings
 from model_api.main import create_app
-
-from .conftest import FakeFeatureSource, FakeModelSource
+from tests.fakes import FakeFeatureSource, FakeModelSource
 
 
 def test_happy_path_preserves_request_id(api_client: TestClient) -> None:
