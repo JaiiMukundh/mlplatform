@@ -38,3 +38,24 @@
   `kind delete cluster --name mlp`
   `kind create cluster --name mlp --config infra/kind-config.yaml`
 - Status: active; P2.2 remains unchecked.
+
+## BLK-003 — Rootful Docker Engine is not installed
+
+- First observed: 2026-10-02.
+- Impact: the project targets the standard Docker daemon
+  (`unix:///var/run/docker.sock`); image builds (`make build`) and the kind cluster must run
+  there. Only the rootless extras are currently installed.
+- Evidence: `/var/run/docker.sock` does not exist; `systemctl is-enabled docker` returns
+  `not-found`; no `docker-ce`/`docker.io` package is installed; `dockerd`, `docker`, and
+  `containerd` exist only under `~/.local/bin`; `sudo` requires a password, so the agent
+  cannot install or start the daemon.
+- Human unblock (Debian/Ubuntu/Mint):
+  `sudo apt-get update && sudo apt-get install -y docker.io`
+  `sudo systemctl enable --now docker`
+  `sudo usermod -aG docker "$USER"`        # then log out and back in (or: newgrp docker)
+  `sudo sysctl -w fs.inotify.max_user_instances=512`
+  `sudo sysctl -w fs.inotify.max_user_watches=524288`
+  `docker context use default`
+- Verify: `docker info` shows the server; `make build` succeeds; then
+  `kind create cluster --name mlp --config infra/kind-config.yaml` and `kubectl get nodes`.
+- Status: active; blocks `make build` re-verification and P2.2 onward.

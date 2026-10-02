@@ -120,3 +120,10 @@ Only observed command output is recorded here.
   `fs.inotify.max_user_instances=128` is too low for three node containers. See BLK-002.
 - Next action after BLK-002: raise the inotify limits (human), recreate the cluster, and
   confirm `kubectl get nodes` reports three Ready nodes before continuing P2.3.
+- Environment change (human directive): switch to the real rootful Docker daemon and drop
+  the rootless workaround. `make build` was reverted to a plain `docker build` (no
+  `--network=host`) and the prior DECISIONS entry is marked superseded. The rootful engine is
+  not yet installed on this machine, so BLK-003 was raised. Image builds and the kind cluster
+  must be re-verified once `docker info` reports the system daemon.
+- Next action after BLK-003: install/enable rootful Docker and raise the inotify limits
+  (human), then re-run `make build`, recreate the kind cluster, and confirm three Ready nodes.

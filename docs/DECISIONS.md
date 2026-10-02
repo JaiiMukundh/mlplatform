@@ -20,8 +20,9 @@ Architecture and implementation decisions are recorded chronologically.
   gratuitous rename). The coverage gate covers `mlp_common/` and `model_api/`; the offline
   `ml/` training code is validated by its own tests rather than the coverage floor.
 
-## 2026-10-02 — Host networking for image builds on rootless Docker
+## 2026-10-02 — Host networking for image builds on rootless Docker (superseded)
 
+- **Superseded** by the "Use the real Docker daemon" decision below.
 - **Decision:** `make build` passes `--network=host` to `docker build` by default,
   overridable with `make build DOCKER_BUILD_NETWORK=default`.
 - **Reason:** On this laptop the rootless Docker daemon's default bridge has no working
@@ -31,3 +32,15 @@ Architecture and implementation decisions are recorded chronologically.
   namespace, so `pip` can reach PyPI during the build. The produced image is unaffected.
 - **Evidence:** `docker run --network=host ... pip download hatchling==1.32.4` succeeded;
   default-bridge DNS lookups failed with `Temporary failure in name resolution`.
+
+## 2026-10-02 — Use the real Docker daemon; no build-network override
+
+- **Decision:** `make build` runs a plain `docker build` against the active Docker daemon
+  (the standard rootful engine at `unix:///var/run/docker.sock`). The `--network=host`
+  override was removed.
+- **Reason:** human directive — use real Docker, not the rootless host-network workaround.
+  A normal rootful engine has working container DNS, so no override is needed.
+- **Status:** the rootful Docker Engine is not installed on this machine yet — there is no
+  `/var/run/docker.sock`, no `docker.service`, no `docker` group, and `dockerd`/`docker`
+  exist only under `~/.local/bin`. See BLK-003 for the human install steps. Image builds
+  cannot be re-verified until the daemon is available.
