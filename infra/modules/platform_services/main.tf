@@ -118,3 +118,14 @@ resource "helm_release" "redis" {
 
   depends_on = [kubernetes_namespace_v1.data]
 }
+
+resource "helm_release" "mlflow" {
+  name      = "mlflow"
+  chart     = "${path.module}/../../../deploy/charts/mlflow"
+  namespace = kubernetes_namespace_v1.data.metadata[0].name
+
+  wait    = true
+  timeout = 600
+
+  depends_on = [kubernetes_secret_v1.minio_auth, kubernetes_secret_v1.postgres_auth]
+}

@@ -52,3 +52,4 @@ Project dependency versions are pinned in `uv.lock`; container, Helm, action, an
 
 Observed cluster versions (kind v0.33.0): Kubernetes v1.37.0, containerd 2.3.4, and
 Debian GNU/Linux 13 (trixie) node images.
+| mlflow server | `mlflow 3.16.1`, `psycopg[binary] 3.3.6`, `boto3 1.43.107` (image `localhost:5001/mlflow:dev`) | P6.1 |
