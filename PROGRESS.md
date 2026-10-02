@@ -35,4 +35,9 @@ Only observed command output is recorded here.
 - Next action: add the P0.6 Git/PR conventions and close the P0 acceptance gate.
 - P0.6 PASS — added the pull-request verification/risk template and documented
   `main`, `feat/<phase>-<topic>`, Conventional Commits, and task evidence discipline.
-- Next action: run the complete P0 acceptance gate, then start P1.1.
+- P0 ACCEPTANCE PASS — `make bootstrap` exited 0; `make lint` reported all checks
+  passed and 55 files formatted; `make test` reported 8 passed and 88.89% coverage.
+- P0 ACCEPTANCE PASS — all six pre-commit hooks passed, including gitleaks, and
+  `git log --oneline` showed six Conventional Commits from `chore`, `build`, `feat`,
+  and `docs` types.
+- Next action: implement P1.1 deterministic synthetic data.
