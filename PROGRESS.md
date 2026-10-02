@@ -52,3 +52,9 @@ Only observed command output is recorded here.
 - P1.2 PASS — `pytest -q ml/tests/test_train.py` reported 2 passed; the test loaded
   the persisted joblib model and verified metrics, reference Parquet, and feature schema.
 - Next action: implement the P1.3 FastAPI service and file-backed providers.
+- P1.3 PASS — an in-process FastAPI acceptance probe returned 200 from `/readyz`,
+  returned three predictions with `model_version=file-v1`, exposed
+  `http_requests_total`, and reported the exact six-feature model schema.
+- P1.3 PASS — observed stdout lines were JSON with timestamp, level, service,
+  request ID, message, method, path, and status context fields.
+- Next action: implement the non-blocking P1.4 prediction log buffer.

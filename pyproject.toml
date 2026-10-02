@@ -7,6 +7,7 @@ requires-python = ">=3.11,<3.12"
 dependencies = [
   "joblib==1.6.0",
   "mlp-common",
+  "model-api",
   "numpy==2.4.6",
   "pandas==3.0.6",
   "pyarrow==25.0.1",
@@ -24,9 +25,10 @@ dev = [
 
 [tool.uv.sources]
 mlp-common = { workspace = true }
+model-api = { workspace = true }
 
 [tool.uv.workspace]
-members = ["libs/mlp_common"]
+members = ["libs/mlp_common", "services/model_api"]
 
 [tool.ruff]
 target-version = "py311"
