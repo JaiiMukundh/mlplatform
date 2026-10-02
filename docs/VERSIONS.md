@@ -23,4 +23,13 @@ Project dependency versions are pinned in `uv.lock`; container, Helm, action, an
 
 | Image | Pin | Added |
 |---|---|---|
-| Python 3.11 slim (bookworm) | `python:3.11.15-slim-bookworm@sha256:d29f48a31a8b408ed19272ca1e7b10ebae13b240a27e862d3d4217c528e2e0c3` | P1.6 |
+
+## Local platform pins
+
+| Component | Pin | Added |
+|---|---|---|
+| kind local registry | `registry:2@sha256:a3d8aaa63ed8681a604f1dea0aa03f100d5895b6a58ace528858a7b332415373` | P2.1 |
+| kind node image | `kindest/node:v1.37.0` (selected by kind v0.33.0) | P2.2 |
+
+Observed cluster versions (kind v0.33.0): Kubernetes v1.37.0, containerd 2.3.4, and
+Debian GNU/Linux 13 (trixie) node images.

@@ -110,3 +110,13 @@ Only observed command output is recorded here.
 - P1 ACCEPTANCE PASS — P1.1–P1.7 complete: `make seed-data train build`, the container
   run sequence, and `make test` (28 passed, ≥80% coverage) all pass.
 - Next action: start P2 with the local registry script (P2.1), then the kind cluster (P2.2).
+- P2.1 PASS — `scripts/registry.sh` idempotently started the `kind-registry` container
+  (`registry:2`, `127.0.0.1:5001->5000`), attached it to the `kind` network, and applied the
+  `kube-public/local-registry-hosting` ConfigMap; `curl localhost:5001/v2/` returned HTTP 200.
+- P2.2 PARTIAL — `infra/kind-config.yaml` (1 control-plane + 2 workers, registry mirror,
+  host port mappings) was created and `kind create cluster --name mlp` exited 0, but only
+  `mlp-control-plane` and `mlp-worker` reached Ready. The third node's kubelet exits with
+  `inotify_init: too many open files` ("Failed to start cAdvisor") because the host's
+  `fs.inotify.max_user_instances=128` is too low for three node containers. See BLK-002.
+- Next action after BLK-002: raise the inotify limits (human), recreate the cluster, and
+  confirm `kubectl get nodes` reports three Ready nodes before continuing P2.3.

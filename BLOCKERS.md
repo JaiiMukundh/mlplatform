@@ -19,3 +19,22 @@
   fail from the container netns), so the image build uses host networking
   (`DOCKER_BUILD_NETWORK=host`). Recorded in `docs/DECISIONS.md`.
 - Status: closed.
+
+## BLK-002 — kind worker cannot join: host inotify limits too low
+
+- First observed: 2026-10-02 during P2.2.
+- Impact: a 3-node kind cluster only brings up two Ready nodes; the second worker's
+  kubelet and kube-proxy cannot start. P2.2's "3 Ready nodes" acceptance cannot pass.
+- Evidence: `docker exec mlp-worker2 journalctl -u kubelet` shows
+  `E1002 ... "Failed to start cAdvisor" err="inotify_init: too many open files"` and
+  `kubelet.service: Main process exited, code=exited, status=1/FAILURE`. The host reports
+  `fs.inotify.max_user_instances = 128`.
+- Cause: three node containers exhaust the default per-user inotify instance limit;
+  kind documents `fs.inotify.max_user_instances >= 512`. Raising it requires root.
+- Human unblock (minimal):
+  `sudo sysctl -w fs.inotify.max_user_instances=512`
+  `sudo sysctl -w fs.inotify.max_user_watches=524288`
+  (persist via `/etc/sysctl.d/99-kind.conf`), then:
+  `kind delete cluster --name mlp`
+  `kind create cluster --name mlp --config infra/kind-config.yaml`
+- Status: active; P2.2 remains unchecked.
