@@ -169,3 +169,9 @@ Only observed command output is recorded here.
 - `make lint` (All checks passed, 63 files formatted) and `make test`
   (28 passed, 88.07%) remain green after the P2 additions.
 - Next action: start P3 (OpenTofu local stack).
+- P3.1 PASS — `tofu -chdir=infra/modules/cluster_kind validate` reports
+  `Success! The configuration is valid`; `fmt -check` clean. Module reproduces
+  `infra/kind-config.yaml` (3 nodes, registry mirror, 8 port mappings from 5.3);
+  provider `tehcyx/kind 0.11.0` confirmed latest on registry.opentofu.org;
+  node image digest verified via `docker images --digests`.
+- Next action: finish P3.2 (registry module; fix builtin-provider version pin).
