@@ -178,3 +178,14 @@ def test_unknown_ids_are_excluded_not_fabricated() -> None:
     frame = source.get([known, 19_999_999])
 
     assert list(frame.index) == [known]
+
+
+def test_empty_store_returns_shaped_empty_frame() -> None:
+    """A wiped online store yields 404s, never a 500 KeyError."""
+    source = FeastFeatureSource(FakeRedis({}))
+
+    frame = source.get([1, 2, 3])
+
+    assert frame.empty
+    assert list(frame.columns) == MODEL_FEATURES
+    assert frame.index.name == "customer_id"

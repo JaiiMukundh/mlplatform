@@ -1,0 +1,42 @@
+name: model-release
+
+# P7.3 — model-aware CD on the self-hosted laptop runner. Triggered by the
+# retrain service (repository_dispatch from dispatch.py) or manually. Every
+# step delegates to the same scripts P8 and local drills use, so the workflow
+# and `scripts/model_release_local.sh` stay behaviorally identical.
+
+on:
+  repository_dispatch:
+    types: [model-candidate-ready]
+  workflow_dispatch:
+    inputs:
+      version:
+        description: candidate model version
+        required: true
+
+concurrency:
+  group: model-release
+  cancel-in-progress: false
+
+jobs:
+  release:
+    runs-on: [self-hosted, mlp-local]
+    env:
+      VERSION: ${{ github.event.client_payload.version || inputs.version }}
+      MLFLOW_TRACKING_URI: http://localhost:5000
+    steps:
+      - uses: actions/checkout@v7
+      - name: Release candidate
+        run: bash scripts/model_release_local.sh "${VERSION}" "${GITHUB_SHA::8}"
+      - name: Upload gate report
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: gate-report
+          path: gate_report.json
+      - name: Rollback on failure
+        if: failure()
+        run: |
+          helm rollback model-api -n serving || true
+          helm rollback model-api-staging -n staging || true
+          kubectl get pods -n serving

@@ -26,6 +26,7 @@ WORKDIR /app
 COPY --chown=10001:10001 ml/ ml/
 COPY --chown=10001:10001 mlp_common/ mlp_common/
 COPY --chown=10001:10001 feature_repo/ feature_repo/
+COPY --chown=10001:10001 scripts/gate.py scripts/gate.py
 COPY --chown=10001:10001 pyproject.toml README.md ./
 
 USER 10001:10001

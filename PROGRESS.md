@@ -348,3 +348,25 @@ Only observed command output is recorded here.
   feature service, and git SHA.
 - Gates: `make lint` clean, `make test` 48 passed / 84.34%.
 - Next action: implement P7 (model-aware CI/CD).
+- P7.1 PASS — `scripts/gate.py` (5 SPEC checks, `gate_report.json`, exit
+  0/1) + `tests/test_gate.py` 7 passed (each failure mode + pass case).
+  Scoring runs in-cluster (`make gate-candidate VERSION=N`, Job
+  `deploy/gate/gate-job.yaml`): v1 self-gate PASS (0.8581, 12000 rows).
+- P7.2 PASS — `scripts/loadcheck.py` (stdlib; N=2000 @20rps; p95≤150ms,
+  err≤0.5%): 200-req trial vs prod PASS (p95 ~15ms, exit 0).
+- P7.3 PASS — `scripts/model_release_local.sh` (gate→staging→loadcheck→
+  promote→prod→verify, reject-or-rollback everywhere) + thin
+  `.github/workflows/model-release.yml` wrapper calling the same scripts.
+- P7.4a PASS — v2 released green: gate PASS, staging 2000-req PASS, champion
+  1→2, all pods v2, 100-req check PASS.
+- P7.4b PASS — shuffled-label v3 (AUC 0.5079) gate-REJECTED on the floor;
+  tagged rejected, candidate alias removed, prod stayed v2.
+- P7.4c PASS — v4 passed gate, staging injected with 500ms chaos failed
+  loadcheck (p95 522ms); staging rolled back, v4 rejected, prod stayed v2.
+- P7.4d PASS — prod upgrade to bogus v999 failed (new RS 0 available,
+  old RS kept serving v2); `helm rollback` restored v2-only, champion 2.
+- Evidence: `docs/demo/model-release-drills.md`. Fixes kept: staging smoke
+  URL, `imagePullPolicy: Always`, empty-store 404 (not 500), full-range
+  `make feast-rematerialize` (incremental cannot refill a wiped Redis).
+- Gates: `make lint` clean, `make test` 56 passed / 84.53%.
+- Next action: implement P8 (drift detection + automated retraining).

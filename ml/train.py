@@ -163,6 +163,7 @@ def train_mlflow_model(
     feature_service_name: str,
     trigger: str,
     git_sha: str,
+    shuffle_labels: bool = False,
 ) -> dict[str, Any]:
     """Train on Feast point-in-time features and register the model in MLflow.
 
@@ -198,6 +199,11 @@ def train_mlflow_model(
     )
     if len(frame) != len(labels):
         raise ValueError("feast retrieval dropped label rows")
+    if shuffle_labels:
+        frame = frame.copy()
+        frame[LABEL_COLUMN] = (
+            frame[LABEL_COLUMN].sample(frac=1.0, random_state=7).to_numpy()
+        )
     splits = temporal_split(frame)
 
     hyperparameters = _model_hyperparameters()
@@ -311,6 +317,14 @@ def parse_args() -> argparse.Namespace:
     parser.add_argument("--feature-service", default="loan_default_v1")
     parser.add_argument("--trigger", default=os.environ.get("TRIGGER", "manual"))
     parser.add_argument("--git-sha", default=os.environ.get("GIT_SHA", "unknown"))
+    parser.add_argument(
+        "--shuffle-labels",
+        action="store_true",
+        help=(
+            "drill-only: randomly permute labels before the split, destroying "
+            "all signal so the candidate scores AUC~=0.5 (P7.4 drill b)"
+        ),
+    )
     return parser.parse_args()
 
 
@@ -327,6 +341,7 @@ def main() -> None:
             feature_service_name=args.feature_service,
             trigger=args.trigger,
             git_sha=args.git_sha,
+            shuffle_labels=args.shuffle_labels,
         )
         print(
             f"mlflow trained run_id={result['run_id']} "

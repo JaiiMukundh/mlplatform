@@ -156,12 +156,14 @@ class FeastFeatureSource:
         for customer_id, raw in zip(ids, pipe.execute(), strict=True):
             if not raw:
                 continue
-            record = self._decode_record(customer_id, raw)
-            rows[customer_id] = record
-        frame = pd.DataFrame.from_dict(rows, orient="index")
-        if not frame.empty:
-            frame.index.name = ENTITY_COLUMN
+            rows[customer_id] = self._decode_record(customer_id, raw)
         known_ids = [customer_id for customer_id in ids if customer_id in rows]
+        if not known_ids:
+            empty = pd.DataFrame(columns=self._features)
+            empty.index.name = ENTITY_COLUMN
+            return empty
+        frame = pd.DataFrame.from_dict(rows, orient="index")
+        frame.index.name = ENTITY_COLUMN
         return frame.loc[known_ids, self._features].copy()
 
     def _decode_record(

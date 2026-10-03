@@ -78,10 +78,10 @@ Checkboxes are changed only after the corresponding acceptance check has been ob
 
 ## P7 — Model-Aware CI/CD
 
-- [ ] P7.1 Implement candidate gates.
-- [ ] P7.2 Implement staging load checks.
-- [ ] P7.3 Implement model release automation.
-- [ ] P7.4 Run the release drills.
+- [x] P7.1 Implement candidate gates.
+- [x] P7.2 Implement staging load checks.
+- [x] P7.3 Implement model release automation.
+- [x] P7.4 Run the release drills.
 - [ ] P7.5 Add a canary path. (stretch)
 
 ## P8 — Drift Detection and Automated Retraining

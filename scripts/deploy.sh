@@ -40,4 +40,10 @@ helm upgrade --install "${RELEASE}" deploy/charts/model-api \
   --atomic --wait --timeout 5m
 
 echo "release ${RELEASE} deployed; running smoke checks"
-scripts/smoke.sh "${NAMESPACE}" "${RELEASE}"
+if [[ "${RELEASE}" == "model-api-staging" ]]; then
+  # The staging release serves host port 8081 (NodePort 30081); the default
+  # smoke URL would silently test production instead.
+  scripts/smoke.sh "${NAMESPACE}" "${RELEASE}" "http://localhost:8081"
+else
+  scripts/smoke.sh "${NAMESPACE}" "${RELEASE}"
+fi

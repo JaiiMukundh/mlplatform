@@ -4,7 +4,7 @@ SHELL := /usr/bin/env bash
 .PHONY: help bootstrap preflight lint fmt test build up down deploy forward seed-data train \
 	traffic demo-infra demo-model reset-demo tofu-local-apply tofu-local-destroy \
 	build-training publish-feast-data feast-apply feast-materialize feast-verify \
-	train-mlflow
+	train-mlflow gate-candidate feast-rematerialize model-release-local
 
 help: ## Show the supported project commands.
 	@awk 'BEGIN {FS = ":.*## "; printf "MLPlatform targets:\n\n"} /^[a-zA-Z0-9_-]+:.*## / {printf "  %-22s %s\n", $$1, $$2}' $(MAKEFILE_LIST)
@@ -46,11 +46,20 @@ feast-apply: build-training publish-feast-data ## Apply the Feast definitions (i
 feast-materialize: feast-apply ## Materialize Feast features into the Redis online store.
 	@bash scripts/run_job.sh deploy/feast/materialize-job.yaml
 
+feast-rematerialize: ## Rewrite the full feature window (recovery after a Redis wipe).
+	@bash scripts/run_job.sh deploy/feast/rematerialize-job.yaml
+
 feast-verify: ## Verify the Feast offline and online stores match (P6.3).
 	@bash scripts/run_job.sh deploy/feast/verify-job.yaml
 
 train-mlflow: build-training ## Train via Feast and register in MLflow (P6.4).
 	@bash scripts/train_mlflow.sh
+
+gate-candidate: build-training ## Score a candidate version (VERSION=N) in-cluster (P7.1).
+	@VERSION="${VERSION:?set VERSION=N}" bash scripts/run_gate.sh
+
+model-release-local: ## Release a candidate to prod (VERSION=N, TAG=dev) (P7.3).
+	@bash scripts/model_release_local.sh "${VERSION:?set VERSION=N}" "${TAG:-dev}"
 
 up: ## Build the complete local platform from scratch.
 	@bash scripts/check_host.sh
