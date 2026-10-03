@@ -124,3 +124,38 @@ Architecture and implementation decisions are recorded chronologically.
   `scale` would be reverted within seconds (controller fight). Raising the HPA
   floor is the conflict-free equivalent and self-documents in the HPA spec.
   Verified by the P5.7 drill (floor 2→4, Grafana annotation, then restore).
+
+## 2026-10-03 — Persist the inotify limits and enforce them with a preflight (P6)
+
+- **Decision:** ship `infra/sysctl/99-kind-inotify.conf` (the drop-in the human
+  installs once as root) and `scripts/check_host.sh`, which fails loudly when
+  `fs.inotify.max_user_instances < 512` or `fs.inotify.max_user_watches < 524288`.
+  The check runs as `make preflight` and as the first step of `make up`.
+- **Reason:** BLK-002 was fixed with a runtime-only `sysctl -w`, so the host
+  reboot on 2026-10-03 silently reverted the limits to the default 128, which
+  killed kube-proxy and CoreDNS and took down all in-cluster DNS (BLK-004). A
+  persisted drop-in makes the fix durable, and a preflight turns a confusing
+  cluster-wide outage into an immediate, actionable error before `make up`
+  builds anything. This follows the operating contract: fail loudly, and keep
+  `make` a reliable interface.
+- **Scope:** values are read from `/proc/sys` so the check needs no extra tools
+  and no privileges; `make bootstrap` is deliberately left untouched because it
+  regenerates `docs/VERSIONS.md` from scratch and would drop the phase-specific
+  pins appended in later phases.
+
+## 2026-10-03 — Feast config rendering and offline filename (P6.2)
+
+- **Decision:** `feature_repo/feature_store.yaml` is not committed. The versioned
+  artifact is `feature_repo/feature_store.yaml.tmpl` plus `feature_repo/render_config.py`,
+  which substitutes `${POSTGRES_*}`, `FEAST_POSTGRES_DB`, and `${REDIS_*}`
+  placeholders from the environment and fails loudly when any value is missing.
+- **Reason:** SPEC P6.2 requires a SQL registry whose path embeds the Postgres
+  password and explicitly says to render the file from a template with env vars
+  rather than commit creds. Keeping the rendered file out of git and out of the
+  image (`.gitignore` + `.dockerignore`) satisfies the "no secrets in git" rule;
+  in-cluster the values arrive from the `postgres-auth` Secret.
+- **Offline filename:** the generator writes `data/features.parquet`, while SPEC
+  P6.2 names the FileSource `s3://feast-offline/customer_features.parquet`. The
+  setup Job publishes `features.parquet` to MinIO under the spec's name, so
+  `definitions.py` can use the exact path P6.2 states without changing the data
+  tooling. `labels.parquet` is uploaded unchanged for the P6.4 entity frame.

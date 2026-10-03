@@ -1,7 +1,7 @@
 SHELL := /usr/bin/env bash
 .DEFAULT_GOAL := help
 
-.PHONY: help bootstrap lint fmt test build up down deploy forward seed-data train \
+.PHONY: help bootstrap preflight lint fmt test build up down deploy forward seed-data train \
 	traffic demo-infra demo-model reset-demo tofu-local-apply tofu-local-destroy
 
 help: ## Show the supported project commands.
@@ -9,6 +9,9 @@ help: ## Show the supported project commands.
 
 bootstrap: ## Verify the laptop prerequisites and record their versions.
 	@bash scripts/bootstrap.sh
+
+preflight: ## Verify host kernel limits required by kind.
+	@bash scripts/check_host.sh
 
 lint: ## Lint all implemented Python code.
 	@uv run ruff check .
@@ -27,6 +30,7 @@ build: ## Build local service images.
 		--tag localhost:5001/model-api:dev .
 
 up: ## Build the complete local platform from scratch.
+	@bash scripts/check_host.sh
 	@tofu -chdir=infra/envs/local init
 	@tofu -chdir=infra/envs/local apply -auto-approve \
 		-target=module.registry -target=module.cluster

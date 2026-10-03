@@ -65,3 +65,44 @@ BLK-002's inotify limits were raised by the human (`fs.inotify.max_user_instance
   (`getent group docker` lists the user; works now via `sg docker`, and directly
   after a fresh login for the group membership to take effect).
 - Status: resolved.
+
+## BLK-004 — BLK-002 recurrence: reboot reset the inotify limits, cluster DNS down
+
+- First observed: 2026-10-03 (P6, after the host rebooted ~5h earlier).
+- Impact: the whole cluster loses service networking. NodePorts from the host
+  reset the connection, and every in-cluster DNS lookup fails, so all podified
+  services crash-loop (MLflow `Temporary failure in name resolution`, CoreDNS
+  0/1, metrics-server / kube-state-metrics / loki-gateway CrashLoopBackOff,
+  model-api `Unknown`). No P6 acceptance check can run.
+- Evidence:
+  - `cat /proc/sys/fs/inotify/max_user_instances` -> `128` (the kernel default;
+    `max_user_watches` -> `248131`).
+  - `kubectl logs -n kube-system kube-proxy-bqwww` ->
+    `err="failed complete: fsnotify watcher init: too many open files"`.
+  - `kubectl logs -n kube-system deploy/coredns` ->
+    `Failed to watch ... dial tcp 10.96.0.1:443: i/o timeout` and
+    `Plugins not ready: "kubernetes"`.
+  - `kubectl logs -n data deploy/mlflow` ->
+    `failed to resolve host 'postgres.data.svc': [Errno -3] Temporary failure in name resolution`.
+  - `curl localhost:9090/-/ready`, `localhost:9000/minio/health/live`,
+    `localhost:5000/health` -> all `Recv failure: Connection reset by peer`.
+  - `kubectl get nodes` still shows all three nodes `Ready` (kubelet survived),
+    which is why this presents as a networking outage rather than a node outage.
+- Cause: BLK-002 was fixed with `sysctl -w` (runtime only). Nothing wrote the
+  values to `/etc/sysctl.d/`, so the reboot reverted the host to the default
+  128 inotify instances -- below the 512 kind documents for 3 nodes.
+- Human unblock (requires root; the agent has no passwordless sudo):
+  `sudo sysctl -w fs.inotify.max_user_instances=512`
+  `sudo sysctl -w fs.inotify.max_user_watches=524288`
+  then make it permanent:
+  `sudo install -m 0644 infra/sysctl/99-kind-inotify.conf /etc/sysctl.d/99-kind-inotify.conf`
+  `sudo sysctl --system`
+  then let the broken pods recover:
+  `kubectl delete pod -n kube-system -l k8s-app=kube-dns`
+  `kubectl delete pod -n kube-system -l k8s-app=kube-proxy`
+- Agent-side guard added while blocked: `scripts/check_host.sh` (target
+  `make preflight`, also the first step of `make up`) and the persistent drop-in
+  `infra/sysctl/99-kind-inotify.conf`, both recorded in `docs/DECISIONS.md`.
+- Status: **open -- waiting on the human; no local workaround exists** (the limit
+  is per-UID for the Docker daemon's root user, so it cannot be raised from an
+  unprivileged shell).

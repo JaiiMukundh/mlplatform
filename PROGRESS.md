@@ -248,3 +248,33 @@ Only observed command output is recorded here.
 - P5.7 PASS — chaos_alert drill: 500ms+10rps → HighP95Latency firing → HPA 2→4 + Grafana annotation; cleanup restored. Evidence docs/demo/alert-drill.md.
 - Note: upstream charts vendored to infra/charts/ (asset host timeouts); metrics-server also vendored. Charts recorded in VERSIONS.md.
 - Next action: start P6 (feature store + model registry).
+- P6.1 PARTIAL — MLflow 3.16.1 server deployed via `platform_services` (NodePort 30500->5000,
+  Postgres backend `mlflow`, MinIO artifacts bucket, `--serve-artifacts`), image
+  `localhost:5001/mlflow:dev`, chart `deploy/charts/mlflow`; committed and observed
+  serving at deploy time. Re-verification is blocked (BLK-004).
+- BLK-004 (2026-10-03) — the host rebooted ~5h earlier and reverted the inotify
+  limits that BLK-002 had raised at runtime. `fs.inotify.max_user_instances=128`
+  makes kube-proxy die with `fsnotify watcher init: too many open files`; CoreDNS
+  then cannot reach the API VIP, so *all* in-cluster DNS fails and every podified
+  service crash-loops (mlflow, coredns, metrics-server, kube-state-metrics,
+  loki-gateway; model-api `Unknown`; host NodePorts reset). Nodes still report
+  Ready. Needs root; the agent has no passwordless sudo. Fix in BLOCKERS.md.
+- Added while blocked (verified locally): `scripts/check_host.sh` + `make preflight`
+  fail loudly with the exact `sysctl` remediation, and `make up` now runs the same
+  check as its first step; `infra/sysctl/99-kind-inotify.conf` is the persistent
+  drop-in for the human. Decision recorded in docs/DECISIONS.md.
+- `make preflight` observed: `too low fs.inotify.max_user_instances 128 (required >= 512)`
+  and `too low fs.inotify.max_user_watches 248131 (required >= 524288)` -> exit 1.
+- P6.2 (config, verified locally) — `feature_repo/feature_store.yaml.tmpl` +
+  `feature_repo/render_config.py` render the SQL registry on Postgres and the Redis
+  online store from env vars and fail loudly on any missing value; the rendered
+  `feature_store.yaml` (which holds the Postgres password) is now gitignored and
+  dockerignored and removed from the index. `definitions.py` now uses the spec's
+  `ttl=timedelta(days=365)` and `FeatureService("loan_default_v1")`.
+  Evidence: `uv run pytest tests/test_feast_config.py -q` -> 3 passed;
+  `make lint` -> All checks passed; `make test` -> 38 passed, coverage 88.07%.
+- Still untracked WIP (needs a live cluster to exercise/verify): `deploy/feast-setup-job.yaml`
+  (must render the config before `feast apply`) and `docker/training.Dockerfile`.
+- Next action: human applies the sysctl fix (BLK-004); then re-verify P6.1 and
+  continue P6.2/P6.3 (publish parquet to `feast-offline`, render config, `feast apply`,
+  materialize into Redis).

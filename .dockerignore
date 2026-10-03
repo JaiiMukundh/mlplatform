@@ -15,6 +15,7 @@ deploy
 infra
 tests
 scripts
-feature_repo
+# Rendered Feast config contains the Postgres password: never bake it into an image.
+feature_repo/feature_store.yaml
 mlruns
 docker
