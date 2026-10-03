@@ -161,3 +161,44 @@ Architecture and implementation decisions are recorded chronologically.
   tooling. `labels.parquet` is uploaded unchanged for the P6.4 entity frame.
 
 - 2026-10-03: Training uses s3fs 2026.9.0 and boto3 1.43.106. PyPI aiobotocore 3.9.2 requires botocore <1.43.107; newer boto3 cannot resolve. Preserve the newest compatible exact pin for Feast S3 retrieval.
+
+## 2026-10-03 — Serving reads Feast-online Redis directly; models via mlflow-skinny (P6.5)
+
+- **Decision:** `model_api` serves Feast online features with a hand-rolled
+  reader (`redis` + `mmh3` only) and loads models with `mlflow-skinny` +
+  `skops`. The `feast` package itself is never installed in the serving
+  image or the root test env.
+- **Reason:** `feast 0.66.0` requires `pandas<3` while the serving stack pins
+  `pandas 3.0.6` (`pip install --dry-run` confirms the conflict is
+  unresolvable). Feast's Redis layout was reverse-engineered from the Feast
+  0.66 source and verified byte-for-byte against the live store: entity keys
+  are the v3 struct packing (`<I count, <I STRING, <I len, name, <I INT64,
+  <I 8, <q id` + project), fields are `_mmh3("{view}:{feature}")` (murmur3
+  x86_32, first 4 bytes little-endian), values are Feast `Value`-proto
+  encodings (float32 tag `0x35`, int64-varint tag `0x20`). The reader decodes
+  exactly those encodings and fails loudly on anything else, so a future
+  Feast upgrade that changes the layout breaks visibly, not silently.
+  `mlflow-skinny 3.16.1` + `redis 8.1.0` + `mmh3 5.3.1` resolve cleanly
+  alongside pandas 3 (dry-run verified; an earlier `skops` pin was dropped).
+  Models are logged with `serialization_format="cloudpickle"` because skops
+  refuses to persist HistGradientBoosting's TreePredictor without an explicit
+  trusted-types list at both save and load time; we train and serve only our
+  own registered versions, and cloudpickle round-trips with no trust gate.
+  Artifact proxying
+  (`--serve-artifacts` on the MLflow server) means the serving pods need no
+  S3 credentials for model download.
+- **Consequence:** `tests/test_parity.py` compares the serving reader
+  (against the materialized Redis data, via local Parquet snapshots) with a
+  pure-pandas point-in-time join, with no `feast` import; `verify.py`
+  (in-cluster, real Feast both sides) covers Feast's own offline==online
+  consistency. Together they prove training==serving with no skew.
+- **Presigned artifact URLs are cluster-internal (P6.4/P7):** MLflow serves
+  model artifacts via presigned URLs embedding `MLFLOW_S3_ENDPOINT_URL`
+  (`http://minio.data.svc:9000`), which resolves only inside the cluster. A
+  host-networked client hangs on DNS; in-cluster download of
+  `models:/loan-default/1` takes ~4s. Consequence: anything that loads model
+  bytes (`gate.py` scoring, release verification) runs as an in-cluster Job
+  (training image), orchestrated from the runner/workflow via `make` targets
+  — never directly on the laptop. Run artifacts (`eval_set.parquet`,
+  `reference.parquet`) remain fetchable from the host through the tracking
+  server's artifact-proxy endpoint.

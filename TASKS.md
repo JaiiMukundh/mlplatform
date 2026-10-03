@@ -69,7 +69,7 @@ Checkboxes are changed only after the corresponding acceptance check has been ob
 - [x] P6.1 Deploy MLflow.
 - [x] P6.2 Create the Feast repository.
 - [x] P6.3 Seed and verify Feast data.
-- [ ] P6.4 Train via Feast and MLflow.
+- [x] P6.4 Train via Feast and MLflow.
 - [ ] P6.4b Prove training-serving feature parity.
 - [ ] P6.5 Implement Feast and MLflow providers.
 - [ ] P6.6 Enrich model metadata.

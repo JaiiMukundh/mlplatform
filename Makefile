@@ -3,7 +3,8 @@ SHELL := /usr/bin/env bash
 
 .PHONY: help bootstrap preflight lint fmt test build up down deploy forward seed-data train \
 	traffic demo-infra demo-model reset-demo tofu-local-apply tofu-local-destroy \
-	build-training publish-feast-data feast-apply feast-materialize feast-verify
+	build-training publish-feast-data feast-apply feast-materialize feast-verify \
+	train-mlflow
 
 help: ## Show the supported project commands.
 	@awk 'BEGIN {FS = ":.*## "; printf "MLPlatform targets:\n\n"} /^[a-zA-Z0-9_-]+:.*## / {printf "  %-22s %s\n", $$1, $$2}' $(MAKEFILE_LIST)
@@ -47,6 +48,9 @@ feast-materialize: feast-apply ## Materialize Feast features into the Redis onli
 
 feast-verify: ## Verify the Feast offline and online stores match (P6.3).
 	@bash scripts/run_job.sh deploy/feast/verify-job.yaml
+
+train-mlflow: build-training ## Train via Feast and register in MLflow (P6.4).
+	@bash scripts/train_mlflow.sh
 
 up: ## Build the complete local platform from scratch.
 	@bash scripts/check_host.sh

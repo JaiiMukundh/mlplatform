@@ -311,4 +311,18 @@ Only observed command output is recorded here.
 - Gates green: `make lint` (All checks passed, 71 files formatted),
   `pytest tests/test_feast_config.py` (3 passed), `make test`
   (38 passed, 88.07% coverage), `pre-commit run --all-files` passed.
-- Next action: implement P6.4 (training via Feast + MLflow).
+- P6.4 PASS — `make train-mlflow` (Job `train-mlflow`, TRIGGER=manual)
+  completed: `mlflow trained run_id=d43d1965... version=1 alias=champion
+  validation_auc=0.8562 test_auc=0.8581` (identical to file mode: same rows,
+  same seed). Registry shows `loan-default` v1 READY with alias `champion`;
+  run tags carry feast service, data window, git SHA, trigger; artifacts
+  `reference.parquet` + `eval_set.parquet` present.
+- P6.4 PASS — in-cluster `mlflow.sklearn.load_model('models:/loan-default/1')`
+  loads in ~4s and predicts (7 artifacts via proxy). Host-networked download
+  hangs on presigned `minio.data.svc` URLs (cluster DNS only) — recorded in
+  DECISIONS.md; model-loading work runs in-cluster from here on.
+- Note: models log with `serialization_format="cloudpickle"` (skops gates
+  HistGradientBoosting at save+load); first attempt failed loudly on exactly
+  that, fixed, re-ran green. Serving gains `redis/mmh3/mlflow-skinny` deps
+  (pinned; `feast` itself stays out for the pandas<3 conflict).
+- Next action: implement P6.4b parity test, then P6.5 providers.
