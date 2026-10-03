@@ -103,6 +103,9 @@ BLK-002's inotify limits were raised by the human (`fs.inotify.max_user_instance
 - Agent-side guard added while blocked: `scripts/check_host.sh` (target
   `make preflight`, also the first step of `make up`) and the persistent drop-in
   `infra/sysctl/99-kind-inotify.conf`, both recorded in `docs/DECISIONS.md`.
-- Status: **open -- waiting on the human; no local workaround exists** (the limit
-  is per-UID for the Docker daemon's root user, so it cannot be raised from an
-  unprivileged shell).
+- Status: **resolved 2026-10-03.** The human applied `fs.inotify.max_user_instances=512`
+  and `fs.inotify.max_user_watches=524288` and installed `infra/sysctl/99-kind-inotify.conf`
+  into `/etc/sysctl.d/` (so it now survives reboots). kube-proxy and CoreDNS were
+  recycled and recovered; `kubectl exec -n data postgres-0 -- getent hosts minio.data.svc`
+  now resolves (`10.96.47.48`), the crash-looped pods were rolled, and MLflow is `1/1`.
+  `make preflight` reports `ok ... 512 (required >= 512)`.

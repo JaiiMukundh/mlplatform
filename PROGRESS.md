@@ -248,10 +248,11 @@ Only observed command output is recorded here.
 - P5.7 PASS — chaos_alert drill: 500ms+10rps → HighP95Latency firing → HPA 2→4 + Grafana annotation; cleanup restored. Evidence docs/demo/alert-drill.md.
 - Note: upstream charts vendored to infra/charts/ (asset host timeouts); metrics-server also vendored. Charts recorded in VERSIONS.md.
 - Next action: start P6 (feature store + model registry).
-- P6.1 PARTIAL — MLflow 3.16.1 server deployed via `platform_services` (NodePort 30500->5000,
-  Postgres backend `mlflow`, MinIO artifacts bucket, `--serve-artifacts`), image
-  `localhost:5001/mlflow:dev`, chart `deploy/charts/mlflow`; committed and observed
-  serving at deploy time. Re-verification is blocked (BLK-004).
+- P6.1 PASS — MLflow 3.16.1 at `localhost:5000`: `/health` -> `OK` (200), `/version` ->
+  `3.16.1`, `experiments/search` returns the Default experiment with
+  `artifact_location: mlflow-artifacts:/0` (Postgres backend store + MinIO artifact
+  proxy working). `minio/health/live` -> 200; `POST /predict` on `:8080` -> 3 bounded
+  probabilities. Re-verified after BLK-004.
 - BLK-004 (2026-10-03) — the host rebooted ~5h earlier and reverted the inotify
   limits that BLK-002 had raised at runtime. `fs.inotify.max_user_instances=128`
   makes kube-proxy die with `fsnotify watcher init: too many open files`; CoreDNS
@@ -259,6 +260,10 @@ Only observed command output is recorded here.
   service crash-loops (mlflow, coredns, metrics-server, kube-state-metrics,
   loki-gateway; model-api `Unknown`; host NodePorts reset). Nodes still report
   Ready. Needs root; the agent has no passwordless sudo. Fix in BLOCKERS.md.
+- BLK-004 RESOLVED 2026-10-03 — human applied the sysctl fix and installed the
+  persistent drop-in; `make preflight` now passes (512/524288). kube-proxy and
+  CoreDNS recovered, `getent hosts minio.data.svc` resolves, the crash-looped
+  pods were rolled, and MLflow is 1/1.
 - Added while blocked (verified locally): `scripts/check_host.sh` + `make preflight`
   fail loudly with the exact `sysctl` remediation, and `make up` now runs the same
   check as its first step; `infra/sysctl/99-kind-inotify.conf` is the persistent
