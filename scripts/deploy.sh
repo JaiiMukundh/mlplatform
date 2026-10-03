@@ -25,6 +25,14 @@ kubectl -n "${NAMESPACE}" create secret generic minio-model \
   --from-literal=root-password="${MINIO_PASS}" \
   --dry-run=client -o yaml | kubectl apply -f -
 
+# Mirror the Postgres app credentials (source of truth: tofu-managed secret in
+# data) as a full SQLAlchemy URL so prediction rows reach prediction_log (P6.7).
+PG_USER="$(kubectl -n data get secret postgres-auth -o jsonpath='{.data.username}' | base64 -d)"
+PG_PASS="$(kubectl -n data get secret postgres-auth -o jsonpath='{.data.postgres-password}' | base64 -d)"
+kubectl -n "${NAMESPACE}" create secret generic postgres-app \
+  --from-literal=database-url="postgresql+psycopg://${PG_USER}:${PG_PASS}@postgres.data.svc:5432/mlp" \
+  --dry-run=client -o yaml | kubectl apply -f -
+
 helm upgrade --install "${RELEASE}" deploy/charts/model-api \
   --namespace "${NAMESPACE}" --create-namespace \
   --set "image.tag=${IMAGE_TAG}" \

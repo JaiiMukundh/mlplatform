@@ -88,11 +88,19 @@ spec:
               containerPort: 8080
           env:
             - {name: MODEL_NAME, value: {{ .Values.env.MODEL_NAME | quote }}}
-            - {name: MODEL_VERSION, value: {{ .Values.env.MODEL_VERSION | quote }}}
+            - {name: MODEL_VERSION, value: {{ .Values.model.version | quote }}}
             - {name: MODEL_SOURCE, value: {{ .Values.env.MODEL_SOURCE | quote }}}
             - {name: FEATURE_SOURCE, value: {{ .Values.env.FEATURE_SOURCE | quote }}}
+            - {name: FEATURE_SERVICE, value: {{ .Values.env.FEATURE_SERVICE | quote }}}
+            - {name: MLFLOW_TRACKING_URI, value: {{ .Values.env.MLFLOW_TRACKING_URI | quote }}}
+            - {name: REDIS_URL, value: {{ .Values.env.REDIS_URL | quote }}}
             - {name: LOG_LEVEL, value: {{ .Values.env.LOG_LEVEL | quote }}}
             - {name: ENABLE_CHAOS, value: {{ .Values.chaos.enabled | quote }}}
+            {{- if .Values.database.enabled }}
+            - name: DATABASE_URL
+              valueFrom:
+                secretKeyRef: {name: {{ .Values.database.secretName }}, key: {{ .Values.database.secretKey }}}
+            {{- end }}
           startupProbe:
             httpGet: {path: {{ .Values.probes.startup.path }}, port: http}
             periodSeconds: {{ .Values.probes.startup.periodSeconds }}

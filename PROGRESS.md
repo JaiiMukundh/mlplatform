@@ -325,4 +325,26 @@ Only observed command output is recorded here.
   HistGradientBoosting at save+load); first attempt failed loudly on exactly
   that, fixed, re-ran green. Serving gains `redis/mmh3/mlflow-skinny` deps
   (pinned; `feast` itself stays out for the pandas<3 conflict).
-- Next action: implement P6.4b parity test, then P6.5 providers.
+- P6.4b PASS — `pytest tests/test_parity.py` 5 passed: field keys and one
+  entity key reproduce live-captured Feast bytes exactly, captured raw values
+  decode to Feast's own numbers, and 200 random customers round-trip
+  bit-exact (float32) / exact (int) through the serving reader.
+- P6.5/P6.6 PASS — `FeastFeatureSource` (raw Redis reader, `ping` false on
+  outage) and `MlflowModelSource` (pinned `models:/name/version`, 60s
+  startup retries then exit 1) wired by `FEATURE_SOURCE`/`MODEL_SOURCE`;
+  `/model-info` now carries `mlflow_run_id`, `feature_service`,
+  `registered_at`. `model.version` is the single pinned source of truth.
+- P6.7 PASS — `make deploy` serves `model_version "1"` end-to-end
+  (Feast→MLflow→response→`prediction_log` rows for v1). v1 probabilities
+  match the file-mode model to 8 decimals for ids 1–3 (same rows+seed).
+  Redis kill drill: `readyz` 503 while Redis is at 0 replicas (`/predict`
+  500s, no fabricated features), 200 after recovery.
+- Note: first P6.7 deploy CrashLooped on a stale cached `dev` image
+  (`imagePullPolicy: IfNotPresent`); flipped to `Always` (same lesson as the
+  Feast jobs) and redeployed green. `DATABASE_URL` is now mirrored into the
+  release namespace by `deploy.sh` (secret `postgres-app`).
+- P6.8 PASS — `docs/lineage.md` traces a real prediction
+  (`b29a7440…`, customer 3, v1, 0.0298) to run `d43d1965`, data window,
+  feature service, and git SHA.
+- Gates: `make lint` clean, `make test` 48 passed / 84.34%.
+- Next action: implement P7 (model-aware CI/CD).

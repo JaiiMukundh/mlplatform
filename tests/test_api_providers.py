@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 from pathlib import Path
+from typing import Any
 
 import joblib
 import numpy as np
@@ -11,6 +12,7 @@ import pytest
 from sklearn.dummy import DummyClassifier
 
 from ml.data.schemas import ENTITY_COLUMN, FEATURE_COLUMNS
+from model_api import deps as deps_module
 from model_api.deps import ModelApiSettings, build_feature_source, build_model_source
 from model_api.providers.stub import JoblibModelSource, ParquetFeatureSource
 
@@ -71,3 +73,126 @@ def test_provider_factories_fail_loudly_for_unknown_modes() -> None:
         build_feature_source(ModelApiSettings(feature_source="unknown"))
     with pytest.raises(ValueError, match="MODEL_SOURCE"):
         build_model_source(ModelApiSettings(model_source="unknown"))
+
+
+class _FailingClient:
+    """Redis surface that always reports the store unreachable."""
+
+    def ping(self) -> bool:
+        """Raise like a refused connection."""
+        from redis.exceptions import RedisError
+
+        raise RedisError("connection refused")
+
+
+def test_feast_source_ping_is_false_when_redis_is_down(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    """Readiness flips false while the online store is unreachable."""
+    from model_api.providers.feast_features import FeastFeatureSource
+
+    source = FeastFeatureSource(_FailingClient())  # type: ignore[arg-type]
+
+    assert source.ping() is False
+
+
+def test_startup_retries_then_fails_loudly(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    """A provider that never becomes ready exhausts its budget and raises."""
+    monkeypatch.setattr(deps_module, "STARTUP_TIMEOUT_SECONDS", 0.0)
+    monkeypatch.setattr(deps_module, "STARTUP_RETRY_SECONDS", 0.0)
+
+    def always_fails() -> Any:
+        raise ConnectionError("store is down")
+
+    with pytest.raises(RuntimeError, match="did not become ready"):
+        deps_module._with_startup_retries("probe", always_fails)
+
+
+def test_startup_retry_succeeds_after_transient_failure(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    """One failure is tolerated when the provider recovers within budget."""
+    monkeypatch.setattr(deps_module, "STARTUP_TIMEOUT_SECONDS", 30.0)
+    monkeypatch.setattr(deps_module, "STARTUP_RETRY_SECONDS", 0.0)
+    attempts = 0
+
+    def flaky() -> str:
+        nonlocal attempts
+        attempts += 1
+        if attempts < 2:
+            raise ConnectionError("warming up")
+        return "ready"
+
+    assert deps_module._with_startup_retries("probe", flaky) == "ready"
+    assert attempts == 2
+
+
+class _FakeModelVersion:
+    """Registry metadata returned for a pinned model version."""
+
+    run_id = "run-123"
+    creation_timestamp = 1_700_000_000_000
+
+
+class _FakeMlflowClient:
+    """MlflowClient surface limited to version metadata lookup."""
+
+    def get_model_version(self, name: str, version: str) -> _FakeModelVersion:
+        """Return canned metadata regardless of the requested version."""
+        assert (name, version) == ("loan-default", "1")
+        return _FakeModelVersion()
+
+
+class _FakeSklearnModule:
+    """Stand-in for ``mlflow.sklearn`` that returns a prebuilt estimator."""
+
+    def __init__(self, estimator: object) -> None:
+        """Bind the estimator to serve."""
+        self._estimator = estimator
+
+    def load_model(self, uri: str) -> object:
+        """Return the prebuilt estimator for the pinned URI."""
+        assert uri == "models:/loan-default/1"
+        return self._estimator
+
+
+class _FakeMlflowModule:
+    """Stand-in for the ``mlflow`` package (no server needed)."""
+
+    def __init__(self, estimator: object) -> None:
+        """Bind the sklearn surface and tracking client."""
+        self.sklearn = _FakeSklearnModule(estimator)
+        self.tracking = type("tracking", (), {"MlflowClient": _FakeMlflowClient})
+
+    def set_tracking_uri(self, uri: str) -> None:
+        """Accept the tracking URI without connecting."""
+        assert uri == "http://mlflow.test:5000"
+
+
+def test_mlflow_source_loads_pinned_version(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    """The MLflow provider pins the version and exposes registry metadata."""
+    import sys
+    import types
+
+    from model_api.providers.mlflow_model import MlflowModelSource
+
+    frame = feature_frame().set_index(ENTITY_COLUMN)
+    estimator = DummyClassifier(strategy="prior").fit(frame, [0, 1])
+    fake = _FakeMlflowModule(estimator)
+    module = types.ModuleType("mlflow")
+    module.sklearn = fake.sklearn  # type: ignore[attr-defined]
+    module.tracking = fake.tracking  # type: ignore[attr-defined]
+    module.set_tracking_uri = fake.set_tracking_uri  # type: ignore[attr-defined]
+    monkeypatch.setitem(sys.modules, "mlflow", module)
+
+    source = MlflowModelSource("loan-default", "1", "http://mlflow.test:5000")
+
+    assert source.version == "1"
+    assert source.feature_names == FEATURE_COLUMNS
+    assert source.run_id == "run-123"
+    assert source.registered_at.startswith("2023-11-14")
+    assert source.predict_proba(frame).shape == (2, 2)

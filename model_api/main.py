@@ -139,6 +139,11 @@ def create_app(
             source=config.model_source,
             loaded_at=runtime.loaded_at,
             features=runtime.model_source.feature_names,
+            mlflow_run_id=getattr(runtime.model_source, "run_id", None),
+            feature_service=(
+                config.feature_service if config.feature_source == "feast" else None
+            ),
+            registered_at=getattr(runtime.model_source, "registered_at", None),
         )
 
     @application.post("/predict", response_model=PredictResponse)

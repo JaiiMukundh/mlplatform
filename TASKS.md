@@ -70,11 +70,11 @@ Checkboxes are changed only after the corresponding acceptance check has been ob
 - [x] P6.2 Create the Feast repository.
 - [x] P6.3 Seed and verify Feast data.
 - [x] P6.4 Train via Feast and MLflow.
-- [ ] P6.4b Prove training-serving feature parity.
-- [ ] P6.5 Implement Feast and MLflow providers.
-- [ ] P6.6 Enrich model metadata.
-- [ ] P6.7 Prove the full serving flow.
-- [ ] P6.8 Document lineage.
+- [x] P6.4b Prove training-serving feature parity.
+- [x] P6.5 Implement Feast and MLflow providers.
+- [x] P6.6 Enrich model metadata.
+- [x] P6.7 Prove the full serving flow.
+- [x] P6.8 Document lineage.
 
 ## P7 — Model-Aware CI/CD
 

@@ -69,3 +69,6 @@ class ModelInfo(StrictSchema):
     source: str
     loaded_at: datetime
     features: list[str]
+    mlflow_run_id: str | None = None
+    feature_service: str | None = None
+    registered_at: str | None = None
