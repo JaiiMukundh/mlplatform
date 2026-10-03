@@ -127,4 +127,3 @@ spec:
         - name: mc-home
           emptyDir: {}
         {{- end }}
-

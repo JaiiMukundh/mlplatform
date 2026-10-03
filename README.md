@@ -10,7 +10,13 @@ interface.
 
 ## Current status
 
-Foundation work is in progress. Run `make help` to see implemented and planned targets.
+Local infrastructure, serving, and observability are implemented. Feature-store integration
+and the later release/retraining phases are in progress; `TASKS.md` records verified status.
+
+Feast setup uses `make feast-apply`, `make feast-materialize`, and `make feast-verify`.
+The jobs render credentials from Kubernetes Secrets and use MinIO for offline Parquet,
+Postgres for the registry, and Redis for online features. `make seed-data` creates
+the synthetic source data; `make publish-feast-data` uploads it.
 
 ## Repository layout
 

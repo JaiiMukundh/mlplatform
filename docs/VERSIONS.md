@@ -53,3 +53,4 @@ Project dependency versions are pinned in `uv.lock`; container, Helm, action, an
 Observed cluster versions (kind v0.33.0): Kubernetes v1.37.0, containerd 2.3.4, and
 Debian GNU/Linux 13 (trixie) node images.
 | mlflow server | `mlflow 3.16.1`, `psycopg[binary] 3.3.6`, `boto3 1.43.107` (image `localhost:5001/mlflow:dev`) | P6.1 |
+| training/feast image | `feast 0.66.0`, `mlflow 3.16.1`, `scikit-learn 1.9.1`, `pyarrow 25.0.1`, `joblib 1.6.0`, `boto3 1.43.106` (compatible with aiobotocore 3.9.2; PyPI checked 2026-10-03), `redis 8.1.0`, `s3fs 2026.9.0`, `psycopg[binary] 3.3.6` (image `localhost:5001/training:dev`; transitive lock `requirements/training.txt`) | P6.2 |

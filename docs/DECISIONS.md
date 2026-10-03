@@ -159,3 +159,5 @@ Architecture and implementation decisions are recorded chronologically.
   setup Job publishes `features.parquet` to MinIO under the spec's name, so
   `definitions.py` can use the exact path P6.2 states without changing the data
   tooling. `labels.parquet` is uploaded unchanged for the P6.4 entity frame.
+
+- 2026-10-03: Training uses s3fs 2026.9.0 and boto3 1.43.106. PyPI aiobotocore 3.9.2 requires botocore <1.43.107; newer boto3 cannot resolve. Preserve the newest compatible exact pin for Feast S3 retrieval.

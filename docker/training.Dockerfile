@@ -5,16 +5,19 @@ ENV PIP_DISABLE_PIP_VERSION_CHECK=1 \
     PYTHONDONTWRITEBYTECODE=1 \
     PYTHONUNBUFFERED=1
 
-# Pinned training stack (P6.4). Pandas resolves to 2.x via the feast
+# Pinned training stack (P6.2/P6.4). Pandas resolves to 2.x via the feast
 # constraint; this image is isolated from the serving image (pandas 3).
+# psycopg is required for the Feast SQL registry (postgresql+psycopg://).
 RUN pip install \
       feast==0.66.0 \
       mlflow==3.16.1 \
       scikit-learn==1.9.1 \
       pyarrow==25.0.1 \
       joblib==1.6.0 \
-      boto3==1.43.107 \
-      redis==8.1.0
+      boto3==1.43.106 \
+      redis==8.1.0 \
+      s3fs==2026.9.0 \
+      "psycopg[binary]==3.3.6"
 
 RUN groupadd --system --gid 10001 mlplatform \
     && useradd --system --uid 10001 --gid mlplatform --home-dir /app mlplatform

@@ -27,4 +27,3 @@ output "redis_host" {
   description = "Cluster-internal Redis hostname."
   value       = module.platform_services.redis_host
 }
-

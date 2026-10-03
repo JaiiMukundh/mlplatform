@@ -103,4 +103,3 @@ resource "aws_budgets_budget" "monthly" {
     subscriber_sns_topic_arns = [aws_sns_topic.budget.arn]
   }
 }
-

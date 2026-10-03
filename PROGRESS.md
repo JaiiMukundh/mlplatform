@@ -283,3 +283,32 @@ Only observed command output is recorded here.
 - Next action: human applies the sysctl fix (BLK-004); then re-verify P6.1 and
   continue P6.2/P6.3 (publish parquet to `feast-offline`, render config, `feast apply`,
   materialize into Redis).
+- P6.1 re-verified after BLK-004: `curl localhost:5000/health` -> `OK` (200),
+  `/version` -> `3.16.1`; `minio/health/live` -> 200; serving `/readyz` 200,
+  `/model-info` `file-v1` with six features.
+- P6.2/P6.3 PASS — `scripts/publish_feast_data.sh` uploaded
+  `customer_features.parquet` (4.07 MiB) + `labels.parquet` to MinIO
+  `feast-offline` (host `localhost:9000`, idempotent `mc mb/cp`).
+- P6.2/P6.3 PASS — `make feast-verify` (via `scripts/run_job.sh`
+  `deploy/feast/verify-job.yaml`) completed: `historical rows=20`
+  (5 customers x 4 point-in-time snapshots, all six features) and
+  `online customer_ids=[1, 2, 3, 4, 5]` with real values
+  (e.g. income `[44954.5, 71620.1, 164542.5, 45144.5, 43899.4]`).
+- Note: `feast apply` prints `Could not validate FileSource path
+  's3://feast-offline/customer_features.parquet': Bucket 'feast-offline' not
+  found` even when the bucket exists — the registry apply still succeeds and
+  offline reads via S3 work (proven by the 20-row historical pull). Warning
+  only, recorded here, not a failure.
+- Fix: `feature_repo/verify.py` now resolves the `FeatureService` object via
+  `store.get_feature_service("loan_default_v1")` — Feast 0.66 rejects a bare
+  name string for both historical and online calls (`AssertionError`).
+- Structure: the single `deploy/feast-setup-job.yaml` became three jobs
+  `deploy/feast/{apply,materialize,verify}-job.yaml` (each deletes any
+  previous Job first, so `make feast-apply/materialize/verify` stay
+  re-runnable); `training.Dockerfile` adds `s3fs` + `psycopg[binary]`
+  (boto3 pinned to 1.43.106 for aiobotocore 3.9.2; transitive lock in
+  `requirements/training.txt`); old `feast-setup-job.yaml` removed.
+- Gates green: `make lint` (All checks passed, 71 files formatted),
+  `pytest tests/test_feast_config.py` (3 passed), `make test`
+  (38 passed, 88.07% coverage), `pre-commit run --all-files` passed.
+- Next action: implement P6.4 (training via Feast + MLflow).

@@ -31,4 +31,3 @@ provider "helm" {
     config_path = module.cluster.kubeconfig_path
   }
 }
-

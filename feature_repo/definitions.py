@@ -8,20 +8,26 @@ and therefore the model's expected input order.
 
 from __future__ import annotations
 
+import os
 from datetime import timedelta
 
-from feast import Entity, FeatureService, FeatureView, Field, FileSource
+from feast import Entity, FeatureService, FeatureView, Field, FileSource, ValueType
 from feast.types import Float32, Int64
 
 customer = Entity(
     name="customer",
     join_keys=["customer_id"],
+    value_type=ValueType.INT64,
     description="Loan applicant.",
 )
 
+# Feast 0.66 takes the endpoint override on the source itself (it does not read
+# FEAST_S3_ENDPOINT_URL for FileSource); the env var carries the MinIO URL into
+# the Feast Jobs. Credentials come from AWS_ACCESS_KEY_ID/SECRET on the pod.
 customer_features_source = FileSource(
     path="s3://feast-offline/customer_features.parquet",
     timestamp_field="event_timestamp",
+    s3_endpoint_override=os.environ.get("FEAST_S3_ENDPOINT_URL", ""),
 )
 
 customer_features = FeatureView(

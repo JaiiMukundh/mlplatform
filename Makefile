@@ -2,7 +2,8 @@ SHELL := /usr/bin/env bash
 .DEFAULT_GOAL := help
 
 .PHONY: help bootstrap preflight lint fmt test build up down deploy forward seed-data train \
-	traffic demo-infra demo-model reset-demo tofu-local-apply tofu-local-destroy
+	traffic demo-infra demo-model reset-demo tofu-local-apply tofu-local-destroy \
+	build-training publish-feast-data feast-apply feast-materialize feast-verify
 
 help: ## Show the supported project commands.
 	@awk 'BEGIN {FS = ":.*## "; printf "MLPlatform targets:\n\n"} /^[a-zA-Z0-9_-]+:.*## / {printf "  %-22s %s\n", $$1, $$2}' $(MAKEFILE_LIST)
@@ -28,6 +29,24 @@ build: ## Build local service images.
 	@hadolint docker/model_api.Dockerfile
 	@docker build --file docker/model_api.Dockerfile \
 		--tag localhost:5001/model-api:dev .
+
+build-training: ## Build and push the training/Feast image.
+	@hadolint docker/training.Dockerfile
+	@docker build --file docker/training.Dockerfile \
+		--tag localhost:5001/training:dev .
+	@docker push localhost:5001/training:dev
+
+publish-feast-data: ## Publish Parquet data to the MinIO feast-offline bucket.
+	@bash scripts/publish_feast_data.sh
+
+feast-apply: build-training publish-feast-data ## Apply the Feast definitions (in-cluster Job).
+	@bash scripts/run_job.sh deploy/feast/apply-job.yaml
+
+feast-materialize: feast-apply ## Materialize Feast features into the Redis online store.
+	@bash scripts/run_job.sh deploy/feast/materialize-job.yaml
+
+feast-verify: ## Verify the Feast offline and online stores match (P6.3).
+	@bash scripts/run_job.sh deploy/feast/verify-job.yaml
 
 up: ## Build the complete local platform from scratch.
 	@bash scripts/check_host.sh
