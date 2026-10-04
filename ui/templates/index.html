@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<html lang="en" class="dark">
+<html lang="en" class="light">
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
@@ -7,119 +7,135 @@
   <script src="https://cdn.tailwindcss.com"></script>
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&family=JetBrains+Mono:wght@400;500;600&display=swap" rel="stylesheet">
+  <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500;600;700&display=swap" rel="stylesheet">
   <script>
     tailwind.config = {
       darkMode: 'class',
       theme: {
         extend: {
           fontFamily: {
-            sans: ['Inter', 'system-ui', 'sans-serif'],
-            mono: ['JetBrains Mono', 'monospace'],
+            sans: ['"Plus Jakarta Sans"', 'Inter', 'system-ui', 'sans-serif'],
+            mono: ['"JetBrains Mono"', 'monospace'],
           },
           colors: {
             brand: {
               50: '#eef2ff',
               100: '#e0e7ff',
-              400: '#818cf8',
+              200: '#c7d2fe',
               500: '#6366f1',
               600: '#4f46e5',
               700: '#4338ca',
-              900: '#1e1b4b',
             },
-            canvas: {
-              bg: '#080c14',
-              surface: '#0f172a',
-              card: '#131d35',
-              cardHover: '#182442',
-              border: '#1e2d4d',
-              borderHover: '#2d416b',
-              muted: '#718096',
+            bento: {
+              canvas: '#f8fafc',
+              card: '#ffffff',
+              border: '#e2e8f0',
+              borderHover: '#cbd5e1',
+              muted: '#64748b',
+              subtle: '#f1f5f9',
             }
+          },
+          boxShadow: {
+            'bento': '0 1px 3px 0 rgba(0, 0, 0, 0.02), 0 10px 25px -5px rgba(0, 0, 0, 0.04)',
+            'bento-hover': '0 4px 6px -1px rgba(0, 0, 0, 0.03), 0 20px 30px -10px rgba(0, 0, 0, 0.08)',
+            'bento-float': '0 20px 40px -15px rgba(99, 102, 241, 0.12)',
           }
         }
       }
     }
   </script>
   <style>
-    body { background-color: #080c14; font-family: 'Inter', system-ui, sans-serif; }
-    .glass-nav {
-      background: rgba(15, 23, 42, 0.88);
+    body {
+      background-color: #f8fafc;
+      background-image: radial-gradient(#e2e8f0 1.2px, transparent 1.2px);
+      background-size: 24px 24px;
+      font-family: 'Plus Jakarta Sans', Inter, system-ui, sans-serif;
+      color: #0f172a;
+    }
+    .glass-header {
+      background: rgba(255, 255, 255, 0.85);
       backdrop-filter: blur(16px);
       -webkit-backdrop-filter: blur(16px);
     }
-    .tab-btn.active {
-      background-color: rgba(99, 102, 241, 0.15);
-      color: #818cf8;
-      border-color: rgba(99, 102, 241, 0.35);
-      font-weight: 600;
+    .tab-pill.active {
+      background-color: #ffffff;
+      color: #4f46e5;
+      box-shadow: 0 2px 8px -1px rgba(0, 0, 0, 0.08), 0 1px 3px 0 rgba(0, 0, 0, 0.03);
+      font-weight: 700;
+      border: 1px solid rgba(226, 232, 240, 0.8);
     }
     ::-webkit-scrollbar { width: 6px; height: 6px; }
-    ::-webkit-scrollbar-track { background: #080c14; }
-    ::-webkit-scrollbar-thumb { background: #1e2d4d; border-radius: 4px; }
-    ::-webkit-scrollbar-thumb:hover { background: #3b82f6; }
-    @keyframes pulse-subtle {
-      0%, 100% { opacity: 1; }
-      50% { opacity: 0.5; }
+    ::-webkit-scrollbar-track { background: #f1f5f9; }
+    ::-webkit-scrollbar-thumb { background: #cbd5e1; border-radius: 4px; }
+    ::-webkit-scrollbar-thumb:hover { background: #94a3b8; }
+    .bento-card {
+      background: #ffffff;
+      border: 1px solid #e2e8f0;
+      box-shadow: 0 1px 3px 0 rgba(0, 0, 0, 0.02), 0 10px 25px -5px rgba(0, 0, 0, 0.04);
+      transition: all 0.3s cubic-bezier(0.16, 1, 0.3, 1);
     }
-    .pulse-subtle { animation: pulse-subtle 2s infinite ease-in-out; }
+    .bento-card:hover {
+      border-color: #cbd5e1;
+      box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.03), 0 20px 30px -10px rgba(0, 0, 0, 0.08);
+      transform: translateY(-2px);
+    }
   </style>
 </head>
-<body class="text-slate-100 min-h-screen selection:bg-brand-500 selection:text-white flex flex-col">
+<body class="min-h-screen selection:bg-brand-500 selection:text-white flex flex-col antialiased">
 
-  <!-- ================= TOP NAVIGATION BAR ================= -->
-  <header class="sticky top-0 z-50 glass-nav border-b border-canvas-border px-6 py-3.5">
+  <!-- ================= TOP FLOATING NAVIGATION ================= -->
+  <header class="sticky top-0 z-50 glass-header border-b border-slate-200/80 px-6 py-3.5 transition-all">
     <div class="max-w-7xl mx-auto flex flex-col md:flex-row items-center justify-between gap-4">
       
       <!-- Brand & Status Badges -->
       <div class="flex items-center gap-4">
         <a href="#overview" onclick="switchTab('overview')" class="flex items-center gap-3 group">
-          <div class="w-10 h-10 rounded-xl bg-gradient-to-tr from-brand-600 via-indigo-500 to-cyan-400 flex items-center justify-center shadow-lg shadow-brand-500/25 group-hover:scale-105 transition-transform">
+          <div class="w-10 h-10 rounded-2xl bg-gradient-to-tr from-brand-600 via-indigo-600 to-indigo-400 flex items-center justify-center shadow-lg shadow-brand-500/20 group-hover:scale-105 transition-transform">
             <svg class="w-5 h-5 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 10V3L4 14h7v7l9-11h-7z"/>
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M13 10V3L4 14h7v7l9-11h-7z"/>
             </svg>
           </div>
           <div>
             <div class="flex items-center gap-2">
-              <span class="text-base font-bold tracking-tight text-white group-hover:text-brand-400 transition-colors">MLPlatform</span>
-              <span id="navModelBadge" class="px-2 py-0.5 text-[11px] font-mono font-semibold rounded-md bg-brand-500/15 text-brand-400 border border-brand-500/30">
-                v4 • UCI Taiwan
+              <span class="text-base font-extrabold tracking-tight text-slate-900 group-hover:text-brand-600 transition-colors">MLPlatform</span>
+              <span id="navModelBadge" class="px-2.5 py-0.5 text-[11px] font-mono font-bold rounded-full bg-indigo-50 text-indigo-600 border border-indigo-200/80">
+                v4 &bull; UCI Taiwan
               </span>
             </div>
-            <p class="text-[11px] text-slate-400">Autonomous Self-Healing Credit Engine</p>
+            <p class="text-[11px] font-medium text-slate-500">Autonomous Self-Healing Credit Engine</p>
           </div>
         </a>
 
         <!-- Cluster Status Pill -->
-        <div id="clusterHealthPill" class="hidden sm:flex items-center gap-2 px-3 py-1 rounded-full bg-emerald-500/10 border border-emerald-500/20 text-emerald-400 text-xs font-medium">
-          <span class="w-2 h-2 rounded-full bg-emerald-400 animate-ping"></span>
+        <div id="clusterHealthPill" class="hidden sm:flex items-center gap-2 px-3 py-1 rounded-full bg-emerald-50 border border-emerald-200/80 text-emerald-700 text-xs font-semibold">
+          <span class="w-2 h-2 rounded-full bg-emerald-500 animate-ping"></span>
           <span>Kind (3/3 Nodes Ready)</span>
         </div>
       </div>
 
-      <!-- Navigation Tabs (Landing Pages) -->
-      <nav class="flex items-center gap-1.5 bg-canvas-surface/80 p-1.5 rounded-xl border border-canvas-border text-xs font-medium text-slate-300">
-        <button id="tab-overview" onclick="switchTab('overview')" class="tab-btn px-3.5 py-1.5 rounded-lg hover:text-white transition flex items-center gap-1.5">
+      <!-- Segmented Bento Navigation Bar -->
+      <nav class="flex items-center gap-1 bg-slate-100/90 p-1.5 rounded-2xl border border-slate-200/80 text-xs font-medium text-slate-600 shadow-inner">
+        <button id="tab-overview" onclick="switchTab('overview')" class="tab-pill px-4 py-2 rounded-xl hover:text-slate-900 transition flex items-center gap-1.5">
           <span>📊</span>
           <span>Overview</span>
         </button>
-        <button id="tab-scoring" onclick="switchTab('scoring')" class="tab-btn px-3.5 py-1.5 rounded-lg hover:text-white transition flex items-center gap-1.5">
+        <button id="tab-scoring" onclick="switchTab('scoring')" class="tab-pill px-4 py-2 rounded-xl hover:text-slate-900 transition flex items-center gap-1.5">
           <span>💳</span>
           <span>Loan Scorer</span>
         </button>
-        <button id="tab-chaos" onclick="switchTab('chaos')" class="tab-btn px-3.5 py-1.5 rounded-lg hover:text-white transition flex items-center gap-1.5">
+        <button id="tab-chaos" onclick="switchTab('chaos')" class="tab-pill px-4 py-2 rounded-xl hover:text-slate-900 transition flex items-center gap-1.5">
           <span>⚡</span>
           <span>Chaos Lab</span>
         </button>
-        <button id="tab-drift" onclick="switchTab('drift')" class="tab-btn px-3.5 py-1.5 rounded-lg hover:text-white transition flex items-center gap-1.5">
+        <button id="tab-drift" onclick="switchTab('drift')" class="tab-pill px-4 py-2 rounded-xl hover:text-slate-900 transition flex items-center gap-1.5">
           <span>📈</span>
           <span>Drift Monitor</span>
         </button>
-        <button id="tab-terminal" onclick="switchTab('terminal')" class="tab-btn px-3.5 py-1.5 rounded-lg hover:text-white transition flex items-center gap-1.5">
+        <button id="tab-terminal" onclick="switchTab('terminal')" class="tab-pill px-4 py-2 rounded-xl hover:text-slate-900 transition flex items-center gap-1.5">
           <span>💻</span>
           <span>Console</span>
         </button>
-        <button id="tab-ecosystem" onclick="switchTab('ecosystem')" class="tab-btn px-3.5 py-1.5 rounded-lg hover:text-white transition flex items-center gap-1.5">
+        <button id="tab-ecosystem" onclick="switchTab('ecosystem')" class="tab-pill px-4 py-2 rounded-xl hover:text-slate-900 transition flex items-center gap-1.5">
           <span>🔗</span>
           <span>Portals</span>
         </button>
@@ -129,211 +145,217 @@
   </header>
 
   <!-- ================= NOTIFICATION TOAST ================= -->
-  <div id="toastNotification" class="hidden fixed bottom-6 right-6 z-50 max-w-md p-4 rounded-xl shadow-2xl transition-all duration-300 transform border flex items-center justify-between gap-3">
+  <div id="toastNotification" class="hidden fixed bottom-6 right-6 z-50 max-w-md p-4 rounded-2xl shadow-2xl transition-all duration-300 transform bg-white border border-slate-200 text-slate-800 flex items-center justify-between gap-3 shadow-bento-hover">
     <div class="flex items-center gap-3">
-      <span id="toastIcon" class="text-xl"></span>
+      <span id="toastIcon" class="text-2xl"></span>
       <div>
-        <p id="toastTitle" class="text-xs font-bold text-white"></p>
-        <p id="toastMessage" class="text-xs text-slate-300"></p>
+        <p id="toastTitle" class="text-xs font-bold text-slate-900"></p>
+        <p id="toastMessage" class="text-xs text-slate-600 mt-0.5"></p>
       </div>
     </div>
-    <button onclick="hideToast()" class="text-slate-400 hover:text-white text-sm font-bold">&times;</button>
+    <button onclick="hideToast()" class="text-slate-400 hover:text-slate-600 text-base font-bold">&times;</button>
   </div>
 
-  <!-- ================= MAIN APPLICATION CONTENT ================= -->
+  <!-- ================= MAIN CONTAINER ================= -->
   <main class="flex-1 max-w-7xl w-full mx-auto px-6 py-8">
 
-    <!-- ================= PAGE 1: OVERVIEW ================= -->
-    <div id="view-overview" class="view-panel space-y-8">
+    <!-- ================= PAGE 1: OVERVIEW (BENTO GRID) ================= -->
+    <div id="view-overview" class="view-panel space-y-6">
       
-      <!-- Page Header -->
-      <div class="flex flex-col md:flex-row md:items-center justify-between gap-4 pb-2 border-b border-canvas-border">
+      <!-- Top Bento Header Strip -->
+      <div class="flex flex-col md:flex-row md:items-center justify-between gap-4 p-6 rounded-3xl bg-gradient-to-r from-indigo-50/80 via-white to-sky-50/80 border border-slate-200/80 shadow-bento">
         <div>
-          <h1 class="text-2xl font-extrabold tracking-tight text-white flex items-center gap-2.5">
-            Platform Executive Overview
+          <span class="px-3 py-1 rounded-full bg-brand-600 text-white text-[11px] font-bold tracking-wider uppercase inline-block mb-2">
+            Autonomous MLOps Dashboard
+          </span>
+          <h1 class="text-2xl md:text-3xl font-extrabold text-slate-900 tracking-tight">
+            Production Intelligence &amp; Resilience
           </h1>
-          <p class="text-xs text-slate-400 mt-1">Real-time health, telemetry, and architecture vitals across the autonomous credit platform</p>
+          <p class="text-xs text-slate-500 mt-1 max-w-2xl">
+            Live observation deck for model serving, point-in-time feature hydration with Feast, drift debouncing, and automated disaster recovery.
+          </p>
         </div>
         <div class="flex items-center gap-3">
-          <span id="overviewDriftPill" class="px-3 py-1 text-xs font-semibold rounded-full bg-emerald-500/10 text-emerald-400 border border-emerald-500/20 flex items-center gap-1.5">
-            <span class="w-1.5 h-1.5 rounded-full bg-emerald-400"></span>
+          <span id="overviewDriftPill" class="px-3.5 py-1.5 text-xs font-bold rounded-xl bg-emerald-50 text-emerald-700 border border-emerald-200/80 flex items-center gap-1.5 shadow-sm">
+            <span class="w-2 h-2 rounded-full bg-emerald-500"></span>
             Drift Status: Normal (0 Drifted)
           </span>
-          <button onclick="refreshData()" class="p-2 rounded-lg bg-canvas-card hover:bg-canvas-cardHover border border-canvas-border text-slate-300 hover:text-white transition" title="Refresh Live State">
-            <svg id="refreshIcon" class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15"/></svg>
+          <button onclick="refreshData()" class="p-2.5 rounded-xl bg-white hover:bg-slate-50 border border-slate-200 text-slate-600 hover:text-slate-900 shadow-sm transition" title="Refresh Live State">
+            <svg id="refreshIcon" class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15"/></svg>
           </button>
         </div>
       </div>
 
-      <!-- Golden Signals (4 Hero Cards) -->
+      <!-- Bento Tier 1: 4 Golden Signals Bento Tiles -->
       <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-5">
         
-        <!-- Throughput -->
-        <div class="bg-canvas-card border border-canvas-border rounded-2xl p-5 shadow-sm hover:border-canvas-borderHover transition">
-          <div class="flex items-center justify-between text-slate-400 text-xs font-semibold uppercase tracking-wider mb-2">
+        <!-- Tile 1: Traffic -->
+        <div class="bento-card rounded-3xl p-6 relative overflow-hidden">
+          <div class="flex items-center justify-between text-slate-500 text-xs font-bold uppercase tracking-wider mb-2">
             <span>Inference Traffic</span>
-            <span class="w-2 h-2 rounded-full bg-emerald-400"></span>
+            <div class="w-7 h-7 rounded-xl bg-indigo-50 text-brand-600 flex items-center justify-center text-xs font-bold">
+              ⚡
+            </div>
           </div>
           <div class="flex items-baseline gap-2">
-            <span id="metricRPS" class="text-3xl font-extrabold text-white">0.0</span>
-            <span class="text-xs text-slate-400 font-medium">req / sec</span>
+            <span id="metricRPS" class="text-4xl font-extrabold text-slate-900 font-mono tracking-tight">0.0</span>
+            <span class="text-xs text-slate-500 font-semibold">req / sec</span>
           </div>
-          <p class="text-xs text-slate-400 mt-2">Active HTTP inference load on <code class="text-slate-300">/predict</code></p>
+          <p class="text-[11px] text-slate-400 mt-3 font-medium">Scraped directly from Prometheus via model-api</p>
         </div>
 
-        <!-- Latency -->
-        <div class="bg-canvas-card border border-canvas-border rounded-2xl p-5 shadow-sm hover:border-canvas-borderHover transition">
-          <div class="flex items-center justify-between text-slate-400 text-xs font-semibold uppercase tracking-wider mb-2">
+        <!-- Tile 2: Latency -->
+        <div class="bento-card rounded-3xl p-6 relative overflow-hidden">
+          <div class="flex items-center justify-between text-slate-500 text-xs font-bold uppercase tracking-wider mb-2">
             <span>P95 Response Latency</span>
-            <span class="text-[11px] text-cyan-400 font-mono">SLA &lt;150ms</span>
+            <span class="px-2 py-0.5 rounded-md bg-cyan-50 text-cyan-700 text-[10px] font-bold border border-cyan-200">SLA &lt;150ms</span>
           </div>
           <div class="flex items-baseline gap-2">
-            <span id="metricP95" class="text-3xl font-extrabold text-white">--</span>
-            <span class="text-xs text-slate-400 font-medium">ms</span>
+            <span id="metricP95" class="text-4xl font-extrabold text-slate-900 font-mono tracking-tight">--</span>
+            <span class="text-xs text-slate-500 font-semibold">ms</span>
           </div>
-          <p class="text-xs text-slate-400 mt-2">Median: <span id="metricP50" class="text-slate-300 font-semibold">-- ms</span> (Feast Redis + Scoring)</p>
+          <p class="text-[11px] text-slate-500 mt-3 font-medium">Median (P50): <strong id="metricP50" class="text-slate-800 font-mono">-- ms</strong></p>
         </div>
 
-        <!-- Error Rate -->
-        <div class="bg-canvas-card border border-canvas-border rounded-2xl p-5 shadow-sm hover:border-canvas-borderHover transition">
-          <div class="flex items-center justify-between text-slate-400 text-xs font-semibold uppercase tracking-wider mb-2">
+        <!-- Tile 3: Error Rate -->
+        <div class="bento-card rounded-3xl p-6 relative overflow-hidden">
+          <div class="flex items-center justify-between text-slate-500 text-xs font-bold uppercase tracking-wider mb-2">
             <span>Error Rate</span>
-            <span class="text-[11px] text-emerald-400 font-mono">SLA 99.9%</span>
+            <span class="px-2 py-0.5 rounded-md bg-emerald-50 text-emerald-700 text-[10px] font-bold border border-emerald-200">99.9% Up</span>
           </div>
           <div class="flex items-baseline gap-2">
-            <span id="metricErrors" class="text-3xl font-extrabold text-white">0.0%</span>
+            <span id="metricErrors" class="text-4xl font-extrabold text-slate-900 font-mono tracking-tight">0.0%</span>
           </div>
-          <p class="text-xs text-slate-400 mt-2">Zero 5xx errors across pod deletions</p>
+          <p class="text-[11px] text-slate-500 mt-3 font-medium">Zero 5xx errors across replica deletions</p>
         </div>
 
-        <!-- Replicas -->
-        <div class="bg-canvas-card border border-canvas-border rounded-2xl p-5 shadow-sm hover:border-canvas-borderHover transition">
-          <div class="flex items-center justify-between text-slate-400 text-xs font-semibold uppercase tracking-wider mb-2">
+        <!-- Tile 4: Replicas -->
+        <div class="bento-card rounded-3xl p-6 relative overflow-hidden">
+          <div class="flex items-center justify-between text-slate-500 text-xs font-bold uppercase tracking-wider mb-2">
             <span>Serving Replicas</span>
-            <span id="metricReplicasBadge" class="text-[11px] font-semibold text-emerald-400">Healthy</span>
+            <span id="metricReplicasBadge" class="px-2 py-0.5 rounded-md bg-emerald-50 text-emerald-700 text-[10px] font-bold border border-emerald-200">Healthy</span>
           </div>
           <div class="flex items-baseline gap-2">
-            <span id="metricReplicas" class="text-3xl font-extrabold text-white">2</span>
-            <span class="text-xs text-slate-400 font-medium">/ 2 desired</span>
+            <span id="metricReplicas" class="text-4xl font-extrabold text-slate-900 font-mono tracking-tight">2</span>
+            <span class="text-xs text-slate-500 font-semibold">/ 2 desired</span>
           </div>
-          <p class="text-xs text-slate-400 mt-2">Horizontal Pod Autoscaler (min: 2, max: 6)</p>
+          <p class="text-[11px] text-slate-500 mt-3 font-medium">HPA autoscaler: min 2 &bull; max 6 pods</p>
         </div>
 
       </div>
 
-      <!-- Architecture Status & Active Model Lineage -->
-      <div class="grid grid-cols-1 lg:grid-cols-2 gap-6">
+      <!-- Bento Tier 2: Champion Spotlight (2 Columns) -->
+      <div class="grid grid-cols-1 lg:grid-cols-12 gap-6">
         
-        <!-- Active Production Model Card -->
-        <div class="bg-canvas-card border border-canvas-border rounded-2xl p-6 shadow-sm flex flex-col justify-between">
+        <!-- Big Bento Card (7 cols): Champion Model Lineage -->
+        <div class="lg:col-span-7 bento-card rounded-3xl p-7 flex flex-col justify-between">
           <div>
-            <div class="flex items-center justify-between mb-4">
-              <div class="flex items-center gap-2.5">
-                <div class="w-8 h-8 rounded-lg bg-brand-500/10 text-brand-400 flex items-center justify-center font-bold text-sm">
+            <div class="flex items-center justify-between mb-5">
+              <div class="flex items-center gap-3">
+                <div class="w-10 h-10 rounded-2xl bg-indigo-50 border border-indigo-200 text-brand-600 flex items-center justify-center font-bold text-base shadow-sm">
                   ML
                 </div>
                 <div>
-                  <h3 class="text-base font-bold text-white">Active Production Model</h3>
-                  <p class="text-xs text-slate-400">MLflow Registered Champion Model</p>
+                  <h3 class="text-lg font-bold text-slate-900">Active Champion Model Lineage</h3>
+                  <p class="text-xs text-slate-500">Registered in MLflow with candidate &rarr; champion alias promotion</p>
                 </div>
               </div>
-              <span class="px-2.5 py-1 text-xs font-mono font-bold rounded-lg bg-emerald-500/15 text-emerald-400 border border-emerald-500/30">
+              <span class="px-3 py-1 text-xs font-mono font-extrabold rounded-full bg-emerald-50 text-emerald-700 border border-emerald-200/80">
                 CHAMPION
               </span>
             </div>
 
-            <div class="space-y-3.5 text-xs">
-              <div class="flex justify-between py-2 border-b border-canvas-border">
-                <span class="text-slate-400 font-medium">Model Name &amp; Version</span>
-                <span class="font-mono font-bold text-white" id="infoModelName">loan-default (Version 4)</span>
+            <div class="grid grid-cols-1 sm:grid-cols-2 gap-4 text-xs">
+              <div class="p-4 rounded-2xl bg-slate-50/80 border border-slate-200/60">
+                <span class="text-slate-400 font-medium block text-[11px]">Model Architecture</span>
+                <span class="font-bold text-slate-900 text-sm mt-0.5 block">HistGradientBoosting</span>
+                <span class="text-[11px] text-slate-500">Scikit-Learn 1.9 &bull; Cloudpickle</span>
               </div>
-              <div class="flex justify-between py-2 border-b border-canvas-border">
-                <span class="text-slate-400 font-medium">Dataset Migration</span>
-                <span class="font-semibold text-brand-400">UCI Taiwan Default (30,000 Borrowers, 23 Features)</span>
+
+              <div class="p-4 rounded-2xl bg-slate-50/80 border border-slate-200/60">
+                <span class="text-slate-400 font-medium block text-[11px]">Dataset Foundation</span>
+                <span class="font-bold text-brand-600 text-sm mt-0.5 block">UCI Taiwan (30,000 Clients)</span>
+                <span class="text-[11px] text-slate-500">23 Raw Features &bull; Float32</span>
               </div>
-              <div class="flex justify-between py-2 border-b border-canvas-border">
-                <span class="text-slate-400 font-medium">Quality Gate Performance</span>
-                <span class="font-mono font-bold text-emerald-400">Validation AUC: 0.881 • Test AUC: 0.897</span>
+
+              <div class="p-4 rounded-2xl bg-slate-50/80 border border-slate-200/60">
+                <span class="text-slate-400 font-medium block text-[11px]">Quality Gate Performance</span>
+                <span class="font-mono font-bold text-emerald-600 text-sm mt-0.5 block">Test AUC: 0.8970</span>
+                <span class="text-[11px] text-slate-500">Validation AUC: 0.8808 (Floor 0.70)</span>
               </div>
-              <div class="flex justify-between py-2 border-b border-canvas-border">
-                <span class="text-slate-400 font-medium">Feature Store Service</span>
-                <span class="font-mono text-cyan-400">loan_default_v1 (Feast + Redis Online)</span>
-              </div>
-              <div class="flex justify-between py-2">
-                <span class="text-slate-400 font-medium">Prediction Logging</span>
-                <span class="font-semibold text-slate-300">Asynchronous buffer &rarr; PostgreSQL (prediction_log)</span>
+
+              <div class="p-4 rounded-2xl bg-slate-50/80 border border-slate-200/60">
+                <span class="text-slate-400 font-medium block text-[11px]">Online Feature Hydration</span>
+                <span class="font-mono font-bold text-cyan-700 text-sm mt-0.5 block">Feast Redis (loan_default_v1)</span>
+                <span class="text-[11px] text-slate-500">30,000 Entities &bull; &lt;10ms query</span>
               </div>
             </div>
           </div>
 
-          <div class="mt-6 pt-4 border-t border-canvas-border flex items-center justify-between">
-            <span class="text-xs text-slate-400">Want to test scoring with this model?</span>
-            <button onclick="switchTab('scoring')" class="px-3.5 py-1.5 rounded-lg bg-brand-600 hover:bg-brand-500 text-white text-xs font-semibold transition flex items-center gap-1.5 shadow-sm">
+          <div class="mt-6 pt-4 border-t border-slate-200/80 flex items-center justify-between">
+            <span class="text-xs text-slate-500 font-medium">Ready to test real-time borrower scoring?</span>
+            <button onclick="switchTab('scoring')" class="px-4 py-2 rounded-xl bg-brand-600 hover:bg-brand-700 text-white text-xs font-bold transition flex items-center gap-2 shadow-sm shadow-brand-500/20">
               <span>Open Loan Scorer</span>
               <span>&rarr;</span>
             </button>
           </div>
         </div>
 
-        <!-- Platform Subsystem Health Card -->
-        <div class="bg-canvas-card border border-canvas-border rounded-2xl p-6 shadow-sm flex flex-col justify-between">
+        <!-- Bento Card (5 cols): Infrastructure Vitals -->
+        <div class="lg:col-span-5 bento-card rounded-3xl p-7 flex flex-col justify-between">
           <div>
             <div class="flex items-center justify-between mb-4">
-              <div class="flex items-center gap-2.5">
-                <div class="w-8 h-8 rounded-lg bg-cyan-500/10 text-cyan-400 flex items-center justify-center font-bold text-sm">
+              <div class="flex items-center gap-3">
+                <div class="w-10 h-10 rounded-2xl bg-sky-50 border border-sky-200 text-sky-600 flex items-center justify-center font-bold text-base shadow-sm">
                   K8s
                 </div>
                 <div>
-                  <h3 class="text-base font-bold text-white">Subsystems &amp; Infrastructure</h3>
-                  <p class="text-xs text-slate-400">Live operational state across platform components</p>
+                  <h3 class="text-lg font-bold text-slate-900">Infrastructure Stack</h3>
+                  <p class="text-xs text-slate-500">Kind 3-Node Cluster &bull; OpenTofu</p>
                 </div>
               </div>
-              <span class="text-xs font-mono text-slate-400">Local Kind Cluster</span>
+              <span class="text-xs font-mono text-slate-400 font-medium">:8080 Active</span>
             </div>
 
-            <div class="space-y-3 text-xs">
-              <div class="flex items-center justify-between p-2.5 rounded-xl bg-canvas-surface border border-canvas-border">
-                <div class="flex items-center gap-2">
-                  <span class="w-2 h-2 rounded-full bg-emerald-400"></span>
-                  <span class="font-semibold text-white">Kubernetes Nodes</span>
+            <div class="space-y-2.5 text-xs">
+              <div class="flex items-center justify-between p-3 rounded-2xl bg-slate-50/80 border border-slate-200/60">
+                <div class="flex items-center gap-2.5">
+                  <span class="w-2 h-2 rounded-full bg-emerald-500"></span>
+                  <span class="font-bold text-slate-800">Kubernetes Nodes</span>
                 </div>
-                <span class="text-slate-300 font-mono">3 / 3 Ready (control-plane + 2 workers)</span>
+                <span class="text-slate-600 font-mono font-medium">3/3 Ready</span>
               </div>
-              <div class="flex items-center justify-between p-2.5 rounded-xl bg-canvas-surface border border-canvas-border">
-                <div class="flex items-center gap-2">
-                  <span class="w-2 h-2 rounded-full bg-emerald-400"></span>
-                  <span class="font-semibold text-white">Feast Redis Online Store</span>
+
+              <div class="flex items-center justify-between p-3 rounded-2xl bg-slate-50/80 border border-slate-200/60">
+                <div class="flex items-center gap-2.5">
+                  <span class="w-2 h-2 rounded-full bg-emerald-500"></span>
+                  <span class="font-bold text-slate-800">Redis Online Store</span>
                 </div>
-                <span class="text-slate-300 font-mono">30,000 Borrowers Materialized (&lt;10ms)</span>
+                <span class="text-slate-600 font-mono font-medium">30,000 Keys Cached</span>
               </div>
-              <div class="flex items-center justify-between p-2.5 rounded-xl bg-canvas-surface border border-canvas-border">
-                <div class="flex items-center gap-2">
-                  <span class="w-2 h-2 rounded-full bg-emerald-400"></span>
-                  <span class="font-semibold text-white">MLflow Tracking &amp; Registry</span>
+
+              <div class="flex items-center justify-between p-3 rounded-2xl bg-slate-50/80 border border-slate-200/60">
+                <div class="flex items-center gap-2.5">
+                  <span class="w-2 h-2 rounded-full bg-emerald-500"></span>
+                  <span class="font-bold text-slate-800">MLflow Tracking &amp; S3</span>
                 </div>
-                <span class="text-slate-300 font-mono">Online (:5000) • S3 MinIO Artifacts</span>
+                <span class="text-slate-600 font-mono font-medium">MinIO Backend</span>
               </div>
-              <div class="flex items-center justify-between p-2.5 rounded-xl bg-canvas-surface border border-canvas-border">
-                <div class="flex items-center gap-2">
-                  <span class="w-2 h-2 rounded-full bg-emerald-400"></span>
-                  <span class="font-semibold text-white">Prometheus &amp; Grafana</span>
+
+              <div class="flex items-center justify-between p-3 rounded-2xl bg-slate-50/80 border border-slate-200/60">
+                <div class="flex items-center gap-2.5">
+                  <span class="w-2 h-2 rounded-full bg-emerald-500"></span>
+                  <span class="font-bold text-slate-800">Alertmanager &amp; Remediator</span>
                 </div>
-                <span class="text-slate-300 font-mono">Scraping Serving Pods • Port 3000 Active</span>
-              </div>
-              <div class="flex items-center justify-between p-2.5 rounded-xl bg-canvas-surface border border-canvas-border">
-                <div class="flex items-center gap-2">
-                  <span class="w-2 h-2 rounded-full bg-emerald-400"></span>
-                  <span class="font-semibold text-white">Automated Remediator</span>
-                </div>
-                <span class="text-slate-300 font-mono">Listening for Alertmanager Webhooks</span>
+                <span class="text-slate-600 font-mono font-medium">Webhooks Armed</span>
               </div>
             </div>
           </div>
 
-          <div class="mt-6 pt-4 border-t border-canvas-border flex items-center justify-between">
-            <span class="text-xs text-slate-400">Need to see pod details or test chaos?</span>
-            <button onclick="switchTab('chaos')" class="px-3.5 py-1.5 rounded-lg bg-canvas-surface hover:bg-canvas-cardHover border border-canvas-border text-slate-200 text-xs font-semibold transition flex items-center gap-1.5">
-              <span>View Chaos Lab</span>
+          <div class="mt-6 pt-4 border-t border-slate-200/80 flex items-center justify-between">
+            <span class="text-xs text-slate-500 font-medium">Test pod crash resilience</span>
+            <button onclick="switchTab('chaos')" class="px-4 py-2 rounded-xl bg-slate-100 hover:bg-slate-200 text-slate-800 text-xs font-bold transition flex items-center gap-2">
+              <span>Chaos Lab</span>
               <span>&rarr;</span>
             </button>
           </div>
@@ -341,206 +363,210 @@
 
       </div>
 
-      <!-- Quick Links to Main Interactive Workspaces -->
-      <div class="grid grid-cols-1 md:grid-cols-3 gap-5">
+      <!-- Bento Tier 3: 3 Visual Landing Page Launchpads -->
+      <div class="grid grid-cols-1 md:grid-cols-3 gap-6">
         
-        <div onclick="switchTab('scoring')" class="cursor-pointer bg-canvas-card hover:bg-canvas-cardHover border border-canvas-border hover:border-brand-500/50 rounded-2xl p-6 transition group">
-          <div class="w-10 h-10 rounded-xl bg-brand-500/10 text-brand-400 flex items-center justify-center text-lg mb-3 group-hover:scale-110 transition-transform">
-            💳
+        <div onclick="switchTab('scoring')" class="cursor-pointer bento-card rounded-3xl p-6 transition flex flex-col justify-between group">
+          <div>
+            <div class="w-12 h-12 rounded-2xl bg-indigo-50 border border-indigo-100 text-brand-600 flex items-center justify-center text-xl mb-4 group-hover:scale-105 transition-transform">
+              💳
+            </div>
+            <h4 class="text-base font-extrabold text-slate-900 group-hover:text-brand-600 transition-colors">1. Borrower Risk Simulator</h4>
+            <p class="text-xs text-slate-500 mt-2 leading-relaxed">Select real borrowers from the UCI dataset, inspect demographics &amp; repayment history, and run real-time inference.</p>
           </div>
-          <h4 class="text-base font-bold text-white group-hover:text-brand-400 transition-colors">1. Borrower Risk Simulator</h4>
-          <p class="text-xs text-slate-400 mt-1">Select real borrowers from the UCI dataset, inspect demographics &amp; repayment codes, and run real-time inference.</p>
+          <span class="text-xs font-bold text-brand-600 mt-5 inline-flex items-center gap-1">Launch Simulator &rarr;</span>
         </div>
 
-        <div onclick="switchTab('chaos')" class="cursor-pointer bg-canvas-card hover:bg-canvas-cardHover border border-canvas-border hover:border-rose-500/50 rounded-2xl p-6 transition group">
-          <div class="w-10 h-10 rounded-xl bg-rose-500/10 text-rose-400 flex items-center justify-center text-lg mb-3 group-hover:scale-110 transition-transform">
-            ⚡
+        <div onclick="switchTab('chaos')" class="cursor-pointer bento-card rounded-3xl p-6 transition flex flex-col justify-between group">
+          <div>
+            <div class="w-12 h-12 rounded-2xl bg-rose-50 border border-rose-100 text-rose-600 flex items-center justify-center text-xl mb-4 group-hover:scale-105 transition-transform">
+              ⚡
+            </div>
+            <h4 class="text-base font-extrabold text-slate-900 group-hover:text-rose-600 transition-colors">2. Live Chaos &amp; Self-Healing</h4>
+            <p class="text-xs text-slate-500 mt-2 leading-relaxed">Kill serving replicas live with one click and watch Kubernetes PDB and ReplicaSet resurrect replacement pods in sub-8 seconds.</p>
           </div>
-          <h4 class="text-base font-bold text-white group-hover:text-rose-400 transition-colors">2. Live Pod Chaos &amp; Self-Healing</h4>
-          <p class="text-xs text-slate-400 mt-1">Kill serving replicas live with one click and watch Kubernetes PDB and ReplicaSet resurrect replacement pods in sub-8 seconds.</p>
+          <span class="text-xs font-bold text-rose-600 mt-5 inline-flex items-center gap-1">Open Chaos Lab &rarr;</span>
         </div>
 
-        <div onclick="switchTab('drift')" class="cursor-pointer bg-canvas-card hover:bg-canvas-cardHover border border-canvas-border hover:border-purple-500/50 rounded-2xl p-6 transition group">
-          <div class="w-10 h-10 rounded-xl bg-purple-500/10 text-purple-400 flex items-center justify-center text-lg mb-3 group-hover:scale-110 transition-transform">
-            📈
+        <div onclick="switchTab('drift')" class="cursor-pointer bento-card rounded-3xl p-6 transition flex flex-col justify-between group">
+          <div>
+            <div class="w-12 h-12 rounded-2xl bg-purple-50 border border-purple-100 text-purple-600 flex items-center justify-center text-xl mb-4 group-hover:scale-105 transition-transform">
+              📈
+            </div>
+            <h4 class="text-base font-extrabold text-slate-900 group-hover:text-purple-600 transition-colors">3. Statistical Drift Monitor</h4>
+            <p class="text-xs text-slate-500 mt-2 leading-relaxed">Inspect live PSI stability scores across all 23 UCI features, trigger synthetic drift, and watch the closed-loop retraining cycle.</p>
           </div>
-          <h4 class="text-base font-bold text-white group-hover:text-purple-400 transition-colors">3. Statistical Drift &amp; Retraining</h4>
-          <p class="text-xs text-slate-400 mt-1">Inspect live PSI scores across all 23 features, trigger covariate drift, and watch the closed-loop autonomous retraining cycle.</p>
+          <span class="text-xs font-bold text-purple-600 mt-5 inline-flex items-center gap-1">Inspect Drift Matrix &rarr;</span>
         </div>
 
       </div>
 
     </div>
 
-    <!-- ================= PAGE 2: LOAN SCORER (INFERENCE) ================= -->
-    <div id="view-scoring" class="view-panel hidden space-y-8">
+    <!-- ================= PAGE 2: LOAN SCORER (INFERENCE BENTO) ================= -->
+    <div id="view-scoring" class="view-panel hidden space-y-6">
       
-      <div class="pb-2 border-b border-canvas-border flex flex-col md:flex-row md:items-center justify-between gap-4">
+      <div class="p-6 rounded-3xl bg-gradient-to-r from-indigo-50/80 via-white to-sky-50/80 border border-slate-200/80 shadow-bento flex flex-col md:flex-row md:items-center justify-between gap-4">
         <div>
-          <h1 class="text-2xl font-extrabold tracking-tight text-white flex items-center gap-2.5">
+          <span class="px-3 py-1 rounded-full bg-brand-600 text-white text-[11px] font-bold tracking-wider uppercase inline-block mb-2">
+            Inference Lab
+          </span>
+          <h1 class="text-2xl md:text-3xl font-extrabold text-slate-900 tracking-tight">
             Borrower Credit Risk Assessment
           </h1>
-          <p class="text-xs text-slate-400 mt-1">Real-time model scoring powered by Feast Redis feature store hydration and MLflow Champion Model Version 4</p>
+          <p class="text-xs text-slate-500 mt-1">Real-time model scoring powered by Feast Redis feature store hydration and Champion Model Version 4</p>
         </div>
-        <div class="flex items-center gap-2">
-          <span class="px-2.5 py-1 rounded-md bg-brand-500/10 border border-brand-500/30 text-brand-400 text-xs font-mono">
-            Endpoint: POST /predict
-          </span>
-        </div>
+        <span class="px-3.5 py-1.5 rounded-xl bg-white border border-slate-200 text-slate-700 text-xs font-mono font-bold shadow-sm">
+          POST /predict
+        </span>
       </div>
 
-      <div class="grid grid-cols-1 lg:grid-cols-12 gap-8">
+      <div class="grid grid-cols-1 lg:grid-cols-12 gap-6">
         
-        <!-- Left: Borrower Selector & Profile (7 cols) -->
+        <!-- Left Column: Borrower Archetypes & Dossier (7 cols) -->
         <div class="lg:col-span-7 space-y-6">
           
-          <!-- Borrower Selector Card -->
-          <div class="bg-canvas-card border border-canvas-border rounded-2xl p-6 shadow-sm">
-            <h3 class="text-sm font-bold text-white uppercase tracking-wider mb-3">1. Select Borrower Archetype</h3>
-            <p class="text-xs text-slate-400 mb-4">Click a representative borrower archetype from the UCI Taiwan dataset or choose a custom ID:</p>
+          <!-- Borrower Archetypes Selector Bento -->
+          <div class="bento-card rounded-3xl p-6">
+            <h3 class="text-xs font-bold uppercase tracking-wider text-slate-400 mb-3">1. Select Borrower Archetype</h3>
+            <p class="text-xs text-slate-600 mb-4">Choose a representative borrower archetype from the UCI Taiwan dataset or enter a custom ID:</p>
             
             <div class="grid grid-cols-1 sm:grid-cols-3 gap-3 mb-5">
-              <button onclick="pickBorrower(1)" class="p-3.5 rounded-xl bg-canvas-surface hover:bg-canvas-cardHover border border-canvas-border hover:border-rose-500/40 text-left transition group">
+              <button onclick="pickBorrower(1)" class="p-4 rounded-2xl bg-slate-50 hover:bg-rose-50/60 border border-slate-200 hover:border-rose-200 text-left transition group">
                 <div class="flex items-center justify-between mb-1">
-                  <span class="font-bold text-sm text-white group-hover:text-rose-400">Borrower #1</span>
-                  <span class="text-[10px] font-bold px-1.5 py-0.5 rounded bg-rose-500/20 text-rose-400">High Risk</span>
+                  <span class="font-extrabold text-sm text-slate-900 group-hover:text-rose-600">Borrower #1</span>
+                  <span class="text-[10px] font-bold px-2 py-0.5 rounded-full bg-rose-100 text-rose-700 border border-rose-200">High Risk</span>
                 </div>
-                <p class="text-[11px] text-slate-400">Age 24 • Pay Delay 6 mo • Low Limit</p>
+                <p class="text-[11px] text-slate-500 mt-1">Age 24 &bull; 6mo delay &bull; Low limit</p>
               </button>
 
-              <button onclick="pickBorrower(3)" class="p-3.5 rounded-xl bg-canvas-surface hover:bg-canvas-cardHover border border-canvas-border hover:border-emerald-500/40 text-left transition group">
+              <button onclick="pickBorrower(3)" class="p-4 rounded-2xl bg-slate-50 hover:bg-emerald-50/60 border border-slate-200 hover:border-emerald-200 text-left transition group">
                 <div class="flex items-center justify-between mb-1">
-                  <span class="font-bold text-sm text-white group-hover:text-emerald-400">Borrower #3</span>
-                  <span class="text-[10px] font-bold px-1.5 py-0.5 rounded bg-emerald-500/20 text-emerald-400">Approved</span>
+                  <span class="font-extrabold text-sm text-slate-900 group-hover:text-emerald-600">Borrower #3</span>
+                  <span class="text-[10px] font-bold px-2 py-0.5 rounded-full bg-emerald-100 text-emerald-700 border border-emerald-200">Approved</span>
                 </div>
-                <p class="text-[11px] text-slate-400">Age 34 • On-Time Pay • High Limit</p>
+                <p class="text-[11px] text-slate-500 mt-1">Age 34 &bull; On-time pay &bull; High limit</p>
               </button>
 
-              <button onclick="pickRandomBorrower()" class="p-3.5 rounded-xl bg-canvas-surface hover:bg-canvas-cardHover border border-canvas-border hover:border-brand-500/40 text-left transition group">
+              <button onclick="pickRandomBorrower()" class="p-4 rounded-2xl bg-slate-50 hover:bg-indigo-50/60 border border-slate-200 hover:border-indigo-200 text-left transition group">
                 <div class="flex items-center justify-between mb-1">
-                  <span class="font-bold text-sm text-white group-hover:text-brand-400">Random Borrower</span>
-                  <span class="text-[10px] font-bold px-1.5 py-0.5 rounded bg-brand-500/20 text-brand-400">1 &ndash; 30,000</span>
+                  <span class="font-extrabold text-sm text-slate-900 group-hover:text-brand-600">Random Client</span>
+                  <span class="text-[10px] font-bold px-2 py-0.5 rounded-full bg-indigo-100 text-indigo-700 border border-indigo-200">1&ndash;30k</span>
                 </div>
-                <p class="text-[11px] text-slate-400">Draw random real borrower</p>
+                <p class="text-[11px] text-slate-500 mt-1">Draw random real borrower</p>
               </button>
             </div>
 
-            <!-- Custom ID Input and Trigger -->
+            <!-- Custom Input Box -->
             <div class="flex gap-3">
-              <div class="relative flex-1">
-                <input id="inputCustomerId" type="number" min="1" max="30000" value="1" 
-                  class="w-full px-4 py-2.5 rounded-xl bg-canvas-surface border border-canvas-border focus:border-brand-500 focus:ring-1 focus:ring-brand-500 text-sm font-mono text-white outline-none transition" 
-                  placeholder="Enter Borrower ID (1 - 30000)">
-              </div>
-              <button id="btnScoreLoan" onclick="scoreCurrentBorrower()" class="px-6 py-2.5 rounded-xl bg-brand-600 hover:bg-brand-500 text-white text-xs font-bold transition shadow-lg shadow-brand-500/25 flex items-center gap-2">
-                <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 10V3L4 14h7v7l9-11h-7z"/></svg>
+              <input id="inputCustomerId" type="number" min="1" max="30000" value="1" 
+                class="w-full px-4 py-3 rounded-2xl bg-slate-50 border border-slate-200 focus:border-brand-500 focus:bg-white text-sm font-mono font-bold text-slate-900 outline-none transition" 
+                placeholder="Enter Borrower ID (1 - 30000)">
+              <button id="btnScoreLoan" onclick="scoreCurrentBorrower()" class="px-6 py-3 rounded-2xl bg-brand-600 hover:bg-brand-700 text-white text-xs font-bold transition shadow-lg shadow-brand-500/20 flex items-center gap-2 whitespace-nowrap">
+                <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M13 10V3L4 14h7v7l9-11h-7z"/></svg>
                 <span>Score Borrower</span>
               </button>
             </div>
           </div>
 
-          <!-- Borrower Profile Details Card -->
-          <div class="bg-canvas-card border border-canvas-border rounded-2xl p-6 shadow-sm">
-            <h3 class="text-sm font-bold text-white uppercase tracking-wider mb-3">2. Hydrated Borrower Profile</h3>
-            <p class="text-xs text-slate-400 mb-4">Values stored in Feast offline Parquet and synchronized to Redis online key-value cache:</p>
+          <!-- Hydrated Borrower Profile Bento -->
+          <div class="bento-card rounded-3xl p-6">
+            <h3 class="text-xs font-bold uppercase tracking-wider text-slate-400 mb-3">2. Hydrated Profile Attributes</h3>
+            <p class="text-xs text-slate-600 mb-4">Values pulled live from the Feast online feature store (Redis):</p>
             
-            <div id="profileLoading" class="hidden text-center py-6 text-xs text-slate-400 font-mono">
-              Fetching borrower features from Feast Redis...
-            </div>
-
             <div id="profileGrid" class="grid grid-cols-2 sm:grid-cols-4 gap-3 text-xs">
-              <div class="p-3 rounded-xl bg-canvas-surface border border-canvas-border">
-                <span class="text-slate-400 block text-[11px]">Credit Limit Balance</span>
-                <span id="profLimit" class="font-mono font-bold text-white text-sm">$11,250</span>
+              <div class="p-3.5 rounded-2xl bg-slate-50 border border-slate-200/80">
+                <span class="text-slate-400 block text-[11px] font-medium">Credit Limit</span>
+                <span id="profLimit" class="font-mono font-extrabold text-slate-900 text-sm mt-0.5 block">$11,250</span>
               </div>
-              <div class="p-3 rounded-xl bg-canvas-surface border border-canvas-border">
-                <span class="text-slate-400 block text-[11px]">Age &amp; Gender</span>
-                <span id="profAgeSex" class="font-bold text-white text-sm">24 yrs • Female</span>
+              <div class="p-3.5 rounded-2xl bg-slate-50 border border-slate-200/80">
+                <span class="text-slate-400 block text-[11px] font-medium">Age &amp; Gender</span>
+                <span id="profAgeSex" class="font-bold text-slate-900 text-sm mt-0.5 block">24 yrs &bull; Female</span>
               </div>
-              <div class="p-3 rounded-xl bg-canvas-surface border border-canvas-border">
-                <span class="text-slate-400 block text-[11px]">Education</span>
-                <span id="profEdu" class="font-bold text-white text-sm">University</span>
+              <div class="p-3.5 rounded-2xl bg-slate-50 border border-slate-200/80">
+                <span class="text-slate-400 block text-[11px] font-medium">Education</span>
+                <span id="profEdu" class="font-bold text-slate-900 text-sm mt-0.5 block">University</span>
               </div>
-              <div class="p-3 rounded-xl bg-canvas-surface border border-canvas-border">
-                <span class="text-slate-400 block text-[11px]">Marital Status</span>
-                <span id="profMarriage" class="font-bold text-white text-sm">Married</span>
+              <div class="p-3.5 rounded-2xl bg-slate-50 border border-slate-200/80">
+                <span class="text-slate-400 block text-[11px] font-medium">Marital Status</span>
+                <span id="profMarriage" class="font-bold text-slate-900 text-sm mt-0.5 block">Married</span>
               </div>
 
-              <div class="p-3 rounded-xl bg-canvas-surface border border-canvas-border">
-                <span class="text-slate-400 block text-[11px]">Latest Delay (pay_0)</span>
-                <span id="profPay0" class="font-mono font-bold text-rose-400 text-sm">6 months delay</span>
+              <div class="p-3.5 rounded-2xl bg-slate-50 border border-slate-200/80">
+                <span class="text-slate-400 block text-[11px] font-medium">Delay (pay_0)</span>
+                <span id="profPay0" class="font-mono font-extrabold text-rose-600 text-sm mt-0.5 block">6 mo delay</span>
               </div>
-              <div class="p-3 rounded-xl bg-canvas-surface border border-canvas-border">
-                <span class="text-slate-400 block text-[11px]">Recent Bill (bill_amt1)</span>
-                <span id="profBill" class="font-mono font-bold text-white text-sm">$6,613</span>
+              <div class="p-3.5 rounded-2xl bg-slate-50 border border-slate-200/80">
+                <span class="text-slate-400 block text-[11px] font-medium">Recent Bill</span>
+                <span id="profBill" class="font-mono font-extrabold text-slate-900 text-sm mt-0.5 block">$6,613</span>
               </div>
-              <div class="p-3 rounded-xl bg-canvas-surface border border-canvas-border">
-                <span class="text-slate-400 block text-[11px]">Recent Paid (pay_amt1)</span>
-                <span id="profPaid" class="font-mono font-bold text-white text-sm">$0</span>
+              <div class="p-3.5 rounded-2xl bg-slate-50 border border-slate-200/80">
+                <span class="text-slate-400 block text-[11px] font-medium">Recent Paid</span>
+                <span id="profPaid" class="font-mono font-extrabold text-slate-900 text-sm mt-0.5 block">$0</span>
               </div>
-              <div class="p-3 rounded-xl bg-canvas-surface border border-canvas-border">
-                <span class="text-slate-400 block text-[11px]">Total Tracked Features</span>
-                <span class="font-mono font-bold text-brand-400 text-sm">23 Features</span>
+              <div class="p-3.5 rounded-2xl bg-slate-50 border border-slate-200/80">
+                <span class="text-slate-400 block text-[11px] font-medium">Input Dimension</span>
+                <span class="font-mono font-bold text-brand-600 text-sm mt-0.5 block">23 Features</span>
               </div>
             </div>
           </div>
 
         </div>
 
-        <!-- Right: Model Decision Output (5 cols) -->
+        <!-- Right Column: Decision Output Bento (5 cols) -->
         <div class="lg:col-span-5 space-y-6">
           
-          <div class="bg-canvas-card border border-canvas-border rounded-2xl p-6 shadow-sm flex flex-col justify-between">
+          <div class="bento-card rounded-3xl p-7 flex flex-col justify-between shadow-bento">
             <div>
               <div class="flex items-center justify-between mb-4">
-                <h3 class="text-sm font-bold text-white uppercase tracking-wider">3. Risk Classification Output</h3>
-                <span id="scoringLatencyBadge" class="text-xs font-mono text-cyan-400">Latency: -- ms</span>
+                <h3 class="text-xs font-bold uppercase tracking-wider text-slate-400">3. Decision Output</h3>
+                <span id="scoringLatencyBadge" class="text-xs font-mono font-bold text-indigo-600 bg-indigo-50 px-2.5 py-1 rounded-full border border-indigo-200">Latency: -- ms</span>
               </div>
 
-              <!-- Main Decision Banner -->
-              <div id="decisionCard" class="p-5 rounded-2xl bg-canvas-surface border border-canvas-border text-center mb-6 transition-all">
-                <span id="decisionBadge" class="inline-block px-4 py-1.5 rounded-full text-xs font-extrabold uppercase tracking-wider bg-slate-800 text-slate-400 mb-2">
+              <!-- Main Decision Card -->
+              <div id="decisionCard" class="p-6 rounded-3xl bg-slate-50 border border-slate-200 text-center mb-6 transition-all">
+                <span id="decisionBadge" class="inline-block px-4 py-1.5 rounded-full text-xs font-extrabold uppercase tracking-wider bg-slate-200 text-slate-700 mb-2">
                   Ready to Score
                 </span>
-                <h2 id="decisionTitle" class="text-xl font-extrabold text-white">Click "Score Borrower"</h2>
-                <p id="decisionDesc" class="text-xs text-slate-400 mt-1">Live point-in-time features will be pulled from Redis</p>
+                <h2 id="decisionTitle" class="text-2xl font-extrabold text-slate-900">Click &ldquo;Score Borrower&rdquo;</h2>
+                <p id="decisionDesc" class="text-xs text-slate-500 mt-1 font-medium">Live features will be hydrated from Redis</p>
               </div>
 
-              <!-- Probability Meter -->
+              <!-- Default Probability Meter -->
               <div class="space-y-2 mb-6">
                 <div class="flex justify-between items-baseline text-xs">
-                  <span class="text-slate-400 font-medium">Model Default Probability</span>
-                  <span id="probValue" class="text-xl font-bold font-mono text-white">0.0%</span>
+                  <span class="text-slate-500 font-semibold">Default Risk Probability</span>
+                  <span id="probValue" class="text-2xl font-extrabold font-mono text-slate-900">0.0%</span>
                 </div>
-                <div class="w-full bg-slate-800 rounded-full h-3 overflow-hidden">
-                  <div id="probProgressBar" class="h-3 rounded-full bg-brand-500 transition-all duration-700" style="width: 0%"></div>
+                <div class="w-full bg-slate-100 rounded-full h-3.5 overflow-hidden p-0.5 border border-slate-200/80">
+                  <div id="probProgressBar" class="h-2.5 rounded-full bg-brand-500 transition-all duration-700" style="width: 0%"></div>
                 </div>
-                <div class="flex justify-between text-[11px] text-slate-500">
+                <div class="flex justify-between text-[11px] text-slate-400 font-medium">
                   <span>0% (Safe)</span>
                   <span>50% (Threshold)</span>
-                  <span>100% (Certain Default)</span>
+                  <span>100% (Default)</span>
                 </div>
               </div>
 
-              <!-- Lineage & Telemetry Spec -->
-              <div class="p-3.5 rounded-xl bg-canvas-surface border border-canvas-border space-y-2 text-xs">
+              <!-- Verification Spec -->
+              <div class="p-4 rounded-2xl bg-slate-50 border border-slate-200/80 space-y-2.5 text-xs">
                 <div class="flex justify-between">
-                  <span class="text-slate-400">Serving Version</span>
-                  <span id="scoringModelVer" class="font-mono font-semibold text-slate-200">loan-default (v4)</span>
+                  <span class="text-slate-500 font-medium">Serving Model</span>
+                  <span id="scoringModelVer" class="font-mono font-bold text-slate-900">loan-default (v4)</span>
                 </div>
                 <div class="flex justify-between">
-                  <span class="text-slate-400">Online Store</span>
-                  <span class="font-mono text-emerald-400">Redis &bull; 0x35 Encoded</span>
+                  <span class="text-slate-500 font-medium">Feature Store Protocol</span>
+                  <span class="font-mono font-bold text-emerald-700">Feast Redis &bull; 0x35 Tag</span>
                 </div>
                 <div class="flex justify-between">
-                  <span class="text-slate-400">Audit Logging</span>
-                  <span class="font-medium text-cyan-400">PostgreSQL buffered</span>
+                  <span class="text-slate-500 font-medium">Prediction Audit Log</span>
+                  <span class="font-bold text-indigo-600">PostgreSQL buffered</span>
                 </div>
               </div>
             </div>
 
-            <div class="mt-6 pt-4 border-t border-canvas-border text-center">
-              <span class="text-xs text-slate-400">Decision SLA: &lt;50ms end-to-end</span>
+            <div class="mt-6 pt-4 border-t border-slate-200 text-center">
+              <span class="text-xs text-slate-400 font-medium">SLA: Sub-50ms inference end-to-end</span>
             </div>
           </div>
 
@@ -551,116 +577,118 @@
     </div>
 
     <!-- ================= PAGE 3: CHAOS & SELF-HEALING LAB ================= -->
-    <div id="view-chaos" class="view-panel hidden space-y-8">
+    <div id="view-chaos" class="view-panel hidden space-y-6">
       
-      <div class="pb-2 border-b border-canvas-border flex flex-col md:flex-row md:items-center justify-between gap-4">
+      <div class="p-6 rounded-3xl bg-gradient-to-r from-rose-50/80 via-white to-amber-50/80 border border-slate-200/80 shadow-bento flex flex-col md:flex-row md:items-center justify-between gap-4">
         <div>
-          <h1 class="text-2xl font-extrabold tracking-tight text-white flex items-center gap-2.5">
+          <span class="px-3 py-1 rounded-full bg-rose-600 text-white text-[11px] font-bold tracking-wider uppercase inline-block mb-2">
+            Disaster Recovery &amp; Fault Tolerance
+          </span>
+          <h1 class="text-2xl md:text-3xl font-extrabold text-slate-900 tracking-tight">
             ⚡ Live Chaos &amp; Self-Healing Lab
           </h1>
-          <p class="text-xs text-slate-400 mt-1">Witness real-time Kubernetes pod crash recovery, PodDisruptionBudget protections, and automated horizontal scaling</p>
+          <p class="text-xs text-slate-500 mt-1">Witness real-time Kubernetes pod crash recovery, PodDisruptionBudget protections, and automated horizontal scaling</p>
         </div>
-        <div class="flex items-center gap-2">
-          <span class="px-2.5 py-1 rounded-md bg-emerald-500/10 border border-emerald-500/30 text-emerald-400 text-xs font-semibold">
-            PDB Active: minAvailable=1
-          </span>
-        </div>
+        <span class="px-3.5 py-1.5 rounded-xl bg-white border border-slate-200 text-emerald-700 text-xs font-bold shadow-sm flex items-center gap-1.5">
+          <span class="w-2 h-2 rounded-full bg-emerald-500"></span>
+          PDB Active: minAvailable=1
+        </span>
       </div>
 
       <!-- Live Chaos Banner (Populates dynamically when a pod is killed) -->
-      <div id="chaosBanner" class="hidden p-4 rounded-2xl bg-rose-500/15 border border-rose-500/40 text-rose-300 text-xs flex flex-col sm:flex-row items-center justify-between gap-3 shadow-lg">
+      <div id="chaosBanner" class="hidden p-4 rounded-3xl bg-rose-50 border border-rose-200 text-rose-800 text-xs flex flex-col sm:flex-row items-center justify-between gap-3 shadow-bento">
         <div class="flex items-center gap-3">
-          <span class="text-2xl animate-spin">💥</span>
+          <span class="text-3xl">💥</span>
           <div>
-            <p class="font-bold text-white text-sm" id="chaosBannerTitle">Replica Terminated!</p>
-            <p class="text-rose-200 mt-0.5" id="chaosBannerDesc">Kubernetes detected replica deficit. Surviving replica is absorbing 100% of traffic. Spawning replacement...</p>
+            <p class="font-extrabold text-rose-900 text-sm" id="chaosBannerTitle">Replica Terminated!</p>
+            <p class="text-rose-700 mt-0.5" id="chaosBannerDesc">Kubernetes detected replica deficit. Surviving replica is absorbing 100% of traffic. Spawning replacement...</p>
           </div>
         </div>
-        <span class="px-3 py-1 rounded-full bg-emerald-500/20 text-emerald-300 border border-emerald-500/40 text-xs font-bold whitespace-nowrap">
+        <span class="px-3 py-1.5 rounded-full bg-emerald-100 text-emerald-800 border border-emerald-300 text-xs font-bold whitespace-nowrap shadow-sm">
           Zero-Downtime Serving Active
         </span>
       </div>
 
       <!-- Section 1: Live Serving Pod Cards (Interactive Pod Killers) -->
-      <div>
-        <div class="flex items-center justify-between mb-4">
+      <div class="space-y-4">
+        <div class="flex items-center justify-between">
           <div>
-            <h2 class="text-base font-bold text-white flex items-center gap-2">
+            <h2 class="text-base font-extrabold text-slate-900 flex items-center gap-2">
               <span>Interactive Serving Replicas</span>
-              <span class="text-xs font-normal text-slate-400">(Namespace: serving)</span>
+              <span class="text-xs font-semibold text-indigo-600 bg-indigo-50 px-2 py-0.5 rounded-md border border-indigo-200">serving namespace</span>
             </h2>
-            <p class="text-xs text-slate-400">Click &ldquo;Kill Replica&rdquo; on any live pod to watch Kubernetes self-heal in under 8 seconds:</p>
+            <p class="text-xs text-slate-500 mt-0.5">Click &ldquo;Kill Replica&rdquo; on any live pod to watch Kubernetes self-heal in under 8 seconds:</p>
           </div>
-          <button onclick="loadPods()" class="px-3 py-1.5 rounded-lg bg-canvas-card hover:bg-canvas-cardHover border border-canvas-border text-xs text-slate-300 transition flex items-center gap-1.5">
-            <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15"/></svg>
-            Refresh Replicas
+          <button onclick="loadPods()" class="px-3.5 py-2 rounded-xl bg-white hover:bg-slate-50 border border-slate-200 text-xs font-bold text-slate-700 shadow-sm transition flex items-center gap-1.5">
+            <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15"/></svg>
+            Refresh Pods
           </button>
         </div>
 
         <!-- Serving Pods Grid (Populated dynamically) -->
         <div id="servingPodsGrid" class="grid grid-cols-1 md:grid-cols-2 gap-5">
-          <div class="p-6 rounded-2xl bg-canvas-card border border-canvas-border text-center text-slate-400 text-xs">
+          <div class="p-8 col-span-2 rounded-3xl bg-white border border-slate-200 text-center text-slate-400 text-xs font-medium">
             Loading serving pods...
           </div>
         </div>
       </div>
 
-      <!-- Section 2: Prove Zero-Downtime During Chaos -->
-      <div class="p-6 rounded-2xl bg-canvas-card border border-canvas-border shadow-sm flex flex-col md:flex-row items-center justify-between gap-4">
+      <!-- Section 2: Prove Zero-Downtime During Chaos Bento -->
+      <div class="bento-card rounded-3xl p-6 flex flex-col md:flex-row items-center justify-between gap-4">
         <div>
-          <h3 class="text-sm font-bold text-white flex items-center gap-2">
+          <h3 class="text-sm font-extrabold text-slate-900 flex items-center gap-2">
             <span>🛡️ Prove Zero Dropped Requests</span>
           </h3>
-          <p class="text-xs text-slate-400 mt-1">While a pod is terminating or booting up, fire a test prediction request to prove the service never answers 500 or drops traffic.</p>
+          <p class="text-xs text-slate-500 mt-1 max-w-xl">While a pod is terminating or booting up, fire a test prediction request to prove the service never answers 500 or drops traffic.</p>
         </div>
-        <button onclick="quickTestInference()" class="px-5 py-2.5 rounded-xl bg-emerald-600 hover:bg-emerald-500 text-white text-xs font-bold transition shadow-lg shadow-emerald-600/25 flex items-center gap-2 whitespace-nowrap">
+        <button onclick="quickTestInference()" class="px-5 py-3 rounded-2xl bg-emerald-600 hover:bg-emerald-700 text-white text-xs font-bold transition shadow-lg shadow-emerald-600/20 flex items-center gap-2 whitespace-nowrap">
           <span>⚡ Send Live Prediction</span>
         </button>
       </div>
 
       <!-- Section 3: Automated Scenarios & Auto-Scaling Drills -->
       <div>
-        <h2 class="text-base font-bold text-white mb-3">Automated Self-Healing Chaos Drills</h2>
+        <h2 class="text-base font-extrabold text-slate-900 mb-3">Automated Self-Healing Chaos Drills</h2>
         <div class="grid grid-cols-1 md:grid-cols-2 gap-5">
           
           <!-- Scenario 1: Pod Kill Drill -->
-          <div class="p-5 rounded-2xl bg-canvas-card border border-canvas-border flex flex-col justify-between">
+          <div class="bento-card rounded-3xl p-6 flex flex-col justify-between">
             <div>
               <div class="flex items-center justify-between mb-2">
-                <h4 class="text-sm font-bold text-white flex items-center gap-2">
-                  <span class="w-2 h-2 rounded-full bg-rose-400"></span>
+                <h4 class="text-sm font-extrabold text-slate-900 flex items-center gap-2">
+                  <span class="w-2.5 h-2.5 rounded-full bg-rose-500"></span>
                   Pod Chaos Drill (chaos_pod.sh)
                 </h4>
-                <span class="text-[10px] font-mono px-2 py-0.5 rounded bg-canvas-surface text-slate-400">CLI Drill</span>
+                <span class="text-[10px] font-mono font-bold px-2 py-0.5 rounded bg-slate-100 text-slate-600">CLI Drill</span>
               </div>
-              <p class="text-xs text-slate-400 leading-relaxed">
+              <p class="text-xs text-slate-500 leading-relaxed mt-1">
                 Sends sustained queries while deleting a pod mid-stream. Verifies that recovery takes under 10 seconds and 0 requests fail.
               </p>
             </div>
-            <button onclick="executeAction('chaos_pod_kill')" class="mt-4 w-full py-2.5 px-4 rounded-xl bg-rose-600/20 hover:bg-rose-600 text-rose-300 hover:text-white border border-rose-500/30 text-xs font-semibold transition flex items-center justify-center gap-2">
+            <button onclick="executeAction('chaos_pod_kill')" class="mt-5 w-full py-3 px-4 rounded-2xl bg-rose-50 hover:bg-rose-600 text-rose-700 hover:text-white border border-rose-200 text-xs font-bold transition flex items-center justify-center gap-2">
               <span>Run Automated Pod Kill Drill</span>
             </button>
           </div>
 
           <!-- Scenario 2: Latency Chaos & Auto-Scaler -->
-          <div class="p-5 rounded-2xl bg-canvas-card border border-canvas-border flex flex-col justify-between">
+          <div class="bento-card rounded-3xl p-6 flex flex-col justify-between">
             <div>
               <div class="flex items-center justify-between mb-2">
-                <h4 class="text-sm font-bold text-white flex items-center gap-2">
-                  <span class="w-2 h-2 rounded-full bg-indigo-400"></span>
+                <h4 class="text-sm font-extrabold text-slate-900 flex items-center gap-2">
+                  <span class="w-2.5 h-2.5 rounded-full bg-indigo-500"></span>
                   Latency Alert &amp; HPA Scaling (make demo-infra)
                 </h4>
-                <span class="text-[10px] font-mono px-2 py-0.5 rounded bg-canvas-surface text-slate-400">Flow B Drill</span>
+                <span class="text-[10px] font-mono font-bold px-2 py-0.5 rounded bg-slate-100 text-slate-600">Flow B Drill</span>
               </div>
-              <p class="text-xs text-slate-400 leading-relaxed">
+              <p class="text-xs text-slate-500 leading-relaxed mt-1">
                 Injects 500ms delay &rarr; Prometheus detects HighP95Latency &rarr; Alertmanager triggers the in-cluster remediator &rarr; scales HPA floor from 2 to 4 pods!
               </p>
             </div>
-            <div class="grid grid-cols-2 gap-2 mt-4">
-              <button onclick="executeAction('demo_infra')" class="py-2.5 px-3 rounded-xl bg-indigo-600/20 hover:bg-indigo-600 text-indigo-300 hover:text-white border border-indigo-500/30 text-xs font-semibold transition flex items-center justify-center">
+            <div class="grid grid-cols-2 gap-2 mt-5">
+              <button onclick="executeAction('demo_infra')" class="py-3 px-3 rounded-2xl bg-indigo-50 hover:bg-indigo-600 text-indigo-700 hover:text-white border border-indigo-200 text-xs font-bold transition flex items-center justify-center">
                 <span>Run Infra Drill</span>
               </button>
-              <button onclick="executeAction('chaos_latency_clear')" class="py-2.5 px-3 rounded-xl bg-canvas-surface hover:bg-slate-800 text-slate-300 border border-canvas-border text-xs font-semibold transition flex items-center justify-center">
+              <button onclick="executeAction('chaos_latency_clear')" class="py-3 px-3 rounded-2xl bg-slate-50 hover:bg-slate-200 text-slate-700 border border-slate-200 text-xs font-bold transition flex items-center justify-center">
                 <span>Clear Latency</span>
               </button>
             </div>
@@ -671,108 +699,109 @@
 
     </div>
 
-    <!-- ================= PAGE 4: DRIFT & RETRAINING ================= -->
-    <div id="view-drift" class="view-panel hidden space-y-8">
+    <!-- ================= PAGE 4: DRIFT & RETRAINING (BENTO MATRIX) ================= -->
+    <div id="view-drift" class="view-panel hidden space-y-6">
       
-      <div class="pb-2 border-b border-canvas-border flex flex-col md:flex-row md:items-center justify-between gap-4">
+      <div class="p-6 rounded-3xl bg-gradient-to-r from-purple-50/80 via-white to-indigo-50/80 border border-slate-200/80 shadow-bento flex flex-col md:flex-row md:items-center justify-between gap-4">
         <div>
-          <h1 class="text-2xl font-extrabold tracking-tight text-white flex items-center gap-2.5">
-            Statistical Drift Monitor &amp; Autonomous Retraining
-          </h1>
-          <p class="text-xs text-slate-400 mt-1">Population Stability Index (PSI) and Kolmogorov-Smirnov (KS) monitoring across the 23 UCI features</p>
-        </div>
-        <div class="flex items-center gap-2">
-          <span class="px-2.5 py-1 rounded-md bg-purple-500/10 border border-purple-500/30 text-purple-400 text-xs font-mono font-semibold">
-            Drift Threshold: PSI &gt; 0.25 (Min 2 Features)
+          <span class="px-3 py-1 rounded-full bg-purple-600 text-white text-[11px] font-bold tracking-wider uppercase inline-block mb-2">
+            Continuous Learning &amp; Drift Guardrails
           </span>
+          <h1 class="text-2xl md:text-3xl font-extrabold text-slate-900 tracking-tight">
+            Statistical Drift Monitor &amp; Retraining
+          </h1>
+          <p class="text-xs text-slate-500 mt-1">Population Stability Index (PSI) and Kolmogorov-Smirnov (KS) monitoring across the 23 UCI features</p>
         </div>
+        <span class="px-3.5 py-1.5 rounded-xl bg-white border border-slate-200 text-purple-700 text-xs font-mono font-bold shadow-sm">
+          Retrain Trigger: PSI &gt; 0.25 (Min 2 Features)
+        </span>
       </div>
 
-      <!-- Drift Status Hero -->
+      <!-- Drift Status Hero Bento -->
       <div class="grid grid-cols-1 md:grid-cols-3 gap-5">
-        <div class="p-5 rounded-2xl bg-canvas-card border border-canvas-border">
-          <span class="text-xs text-slate-400 font-semibold uppercase tracking-wider block mb-1">System Drift State</span>
-          <span id="driftCardState" class="text-xl font-extrabold text-emerald-400 flex items-center gap-2">
-            <span class="w-2.5 h-2.5 rounded-full bg-emerald-400"></span>
+        <div class="bento-card rounded-3xl p-6">
+          <span class="text-xs text-slate-400 font-bold uppercase tracking-wider block mb-1">System Drift State</span>
+          <span id="driftCardState" class="text-2xl font-extrabold text-emerald-600 flex items-center gap-2">
+            <span class="w-3 h-3 rounded-full bg-emerald-500"></span>
             NORMAL (0 DRIFTED)
           </span>
-          <p class="text-xs text-slate-400 mt-2">Continuous evaluation across 1,000 window samples</p>
+          <p class="text-xs text-slate-500 mt-2 font-medium">Continuous evaluation across 1,000 window samples</p>
         </div>
 
-        <div class="p-5 rounded-2xl bg-canvas-card border border-canvas-border">
-          <span class="text-xs text-slate-400 font-semibold uppercase tracking-wider block mb-1">Champion Model AUC</span>
-          <span class="text-xl font-extrabold text-white font-mono">0.897</span>
-          <p class="text-xs text-slate-400 mt-2">Candidate Quality Floor: 0.700</p>
+        <div class="bento-card rounded-3xl p-6">
+          <span class="text-xs text-slate-400 font-bold uppercase tracking-wider block mb-1">Champion Model AUC</span>
+          <span class="text-2xl font-extrabold text-slate-900 font-mono">0.8970</span>
+          <p class="text-xs text-slate-500 mt-2 font-medium">Candidate Quality Floor: 0.700</p>
         </div>
 
-        <div class="p-5 rounded-2xl bg-canvas-card border border-canvas-border">
-          <span class="text-xs text-slate-400 font-semibold uppercase tracking-wider block mb-1">Discrete Feature Safeguard</span>
-          <span class="text-xl font-extrabold text-brand-400 font-mono">ACTIVE</span>
-          <p class="text-xs text-slate-400 mt-2">Sorted midpoint binning prevents false positive drift</p>
+        <div class="bento-card rounded-3xl p-6">
+          <span class="text-xs text-slate-400 font-bold uppercase tracking-wider block mb-1">Discrete Feature Safeguard</span>
+          <span class="text-2xl font-extrabold text-indigo-600 font-mono">ACTIVE</span>
+          <p class="text-xs text-slate-500 mt-2 font-medium">Sorted midpoint binning prevents false positive drift</p>
         </div>
       </div>
 
-      <!-- 23-Feature PSI Grid Organized in Logical Groups -->
-      <div class="space-y-6">
+      <!-- 23-Feature PSI Grid in Clean Bento Groups -->
+      <div class="space-y-5">
         <div class="flex items-center justify-between">
-          <h2 class="text-base font-bold text-white">23-Feature Population Stability Matrix</h2>
-          <span class="text-xs text-slate-400 font-mono">Green: &lt;0.10 &bull; Amber: 0.10&ndash;0.20 &bull; Red: &gt;0.20</span>
+          <h2 class="text-base font-extrabold text-slate-900">23-Feature Population Stability Matrix</h2>
+          <span class="text-xs text-slate-500 font-mono">Green: &lt;0.10 &bull; Amber: 0.10&ndash;0.20 &bull; Red: &gt;0.20</span>
         </div>
 
         <!-- Group A: Demographics & Limits -->
-        <div class="bg-canvas-card border border-canvas-border rounded-2xl p-5 shadow-sm space-y-3">
-          <h3 class="text-xs font-bold uppercase tracking-wider text-slate-300">Group 1: Limits &amp; Demographics</h3>
+        <div class="bento-card rounded-3xl p-6 space-y-3">
+          <h3 class="text-xs font-extrabold uppercase tracking-wider text-slate-700">Group 1: Limits &amp; Demographics</h3>
           <div id="psi_group_demographics" class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-3"></div>
         </div>
 
         <!-- Group B: Repayment Delinquencies -->
-        <div class="bg-canvas-card border border-canvas-border rounded-2xl p-5 shadow-sm space-y-3">
-          <h3 class="text-xs font-bold uppercase tracking-wider text-slate-300">Group 2: Repayment History (pay_0 to pay_6)</h3>
+        <div class="bento-card rounded-3xl p-6 space-y-3">
+          <h3 class="text-xs font-extrabold uppercase tracking-wider text-slate-700">Group 2: Repayment History (pay_0 to pay_6)</h3>
           <div id="psi_group_repayment" class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-6 gap-3"></div>
         </div>
 
         <!-- Group C: Billing Amounts -->
-        <div class="bg-canvas-card border border-canvas-border rounded-2xl p-5 shadow-sm space-y-3">
-          <h3 class="text-xs font-bold uppercase tracking-wider text-slate-300">Group 3: Monthly Billing Amounts (bill_amt1 to bill_amt6)</h3>
+        <div class="bento-card rounded-3xl p-6 space-y-3">
+          <h3 class="text-xs font-extrabold uppercase tracking-wider text-slate-700">Group 3: Monthly Billing Amounts (bill_amt1 to bill_amt6)</h3>
           <div id="psi_group_bills" class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-6 gap-3"></div>
         </div>
 
         <!-- Group D: Payment Amounts -->
-        <div class="bg-canvas-card border border-canvas-border rounded-2xl p-5 shadow-sm space-y-3">
-          <h3 class="text-xs font-bold uppercase tracking-wider text-slate-300">Group 4: Monthly Payment Amounts (pay_amt1 to pay_amt6)</h3>
+        <div class="bento-card rounded-3xl p-6 space-y-3">
+          <h3 class="text-xs font-extrabold uppercase tracking-wider text-slate-700">Group 4: Monthly Payment Amounts (pay_amt1 to pay_amt6)</h3>
           <div id="psi_group_payments" class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-6 gap-3"></div>
         </div>
       </div>
 
-      <!-- Retraining Trigger Actions -->
-      <div class="grid grid-cols-1 md:grid-cols-2 gap-5 pt-4">
+      <!-- Retraining Trigger Bento -->
+      <div class="grid grid-cols-1 md:grid-cols-2 gap-5 pt-2">
         
-        <div class="p-5 rounded-2xl bg-canvas-card border border-canvas-border flex flex-col justify-between">
+        <div class="bento-card rounded-3xl p-6 flex flex-col justify-between">
           <div>
-            <h4 class="text-sm font-bold text-white mb-1.5 flex items-center gap-2">
-              <span class="w-2 h-2 rounded-full bg-rose-400"></span>
+            <h4 class="text-sm font-extrabold text-slate-900 mb-1.5 flex items-center gap-2">
+              <span class="w-2.5 h-2.5 rounded-full bg-rose-500"></span>
               Step 1: Inject Covariate Drift (simulate_drift.py)
             </h4>
-            <p class="text-xs text-slate-400 leading-relaxed">
-              Shifts repayment codes (pay_0 +2), inflates bills (+30%), and depresses limits (-25%). Rewrites Feast online store to trigger drift detection.
+            <p class="text-xs text-slate-500 leading-relaxed">
+              Shifts repayment delays (pay_0 +2), inflates bills (+30%), and depresses limits (-25%). Rewrites Feast online store to trigger drift detection.
             </p>
           </div>
-          <button onclick="executeAction('simulate_drift')" class="mt-4 w-full py-2.5 px-4 rounded-xl bg-rose-600/20 hover:bg-rose-600 text-rose-300 hover:text-white border border-rose-500/30 text-xs font-semibold transition">
+          <button onclick="executeAction('simulate_drift')" class="mt-5 w-full py-3 px-4 rounded-2xl bg-rose-50 hover:bg-rose-600 text-rose-700 hover:text-white border border-rose-200 text-xs font-bold transition">
             Trigger Synthetic Drift Shock
           </button>
         </div>
 
-        <div class="p-5 rounded-2xl bg-canvas-card border border-canvas-border flex flex-col justify-between">
+        <div class="bento-card rounded-3xl p-6 flex flex-col justify-between">
           <div>
-            <h4 class="text-sm font-bold text-white mb-1.5 flex items-center gap-2">
-              <span class="w-2 h-2 rounded-full bg-purple-400 animate-ping"></span>
+            <h4 class="text-sm font-extrabold text-slate-900 mb-1.5 flex items-center gap-2">
+              <span class="w-2.5 h-2.5 rounded-full bg-purple-500 animate-ping"></span>
               Step 2: Run Full Autonomous Closed-Loop (demo_model.sh)
             </h4>
-            <p class="text-xs text-slate-400 leading-relaxed">
+            <p class="text-xs text-slate-500 leading-relaxed">
               Watches drift fire &rarr; triggers K8s retrain Job &rarr; Feast point-in-time join &rarr; Quality Gate &rarr; Staging loadcheck &rarr; zero-downtime canary rollout!
             </p>
           </div>
-          <button onclick="executeAction('demo_model')" class="mt-4 w-full py-2.5 px-4 rounded-xl bg-brand-600 hover:bg-brand-500 text-white text-xs font-bold transition shadow-lg shadow-brand-500/25">
+          <button onclick="executeAction('demo_model')" class="mt-5 w-full py-3 px-4 rounded-2xl bg-brand-600 hover:bg-brand-700 text-white text-xs font-bold transition shadow-lg shadow-brand-500/20">
             Launch Closed-Loop Retrain Loop
           </button>
         </div>
@@ -781,159 +810,165 @@
 
     </div>
 
-    <!-- ================= PAGE 5: DRILLS & TERMINAL ================= -->
+    <!-- ================= PAGE 5: DRILLS & TERMINAL BENTO ================= -->
     <div id="view-terminal" class="view-panel hidden space-y-6">
       
-      <div class="pb-2 border-b border-canvas-border flex flex-col md:flex-row md:items-center justify-between gap-4">
+      <div class="p-6 rounded-3xl bg-gradient-to-r from-slate-100 via-white to-indigo-50/80 border border-slate-200/80 shadow-bento flex flex-col md:flex-row md:items-center justify-between gap-4">
         <div>
-          <h1 class="text-2xl font-extrabold tracking-tight text-white flex items-center gap-2.5">
+          <span class="px-3 py-1 rounded-full bg-slate-900 text-white text-[11px] font-bold tracking-wider uppercase inline-block mb-2">
+            Developer CLI
+          </span>
+          <h1 class="text-2xl md:text-3xl font-extrabold text-slate-900 tracking-tight">
             Live Execution Terminal &amp; Platform Drills
           </h1>
-          <p class="text-xs text-slate-400 mt-1">Execute repeatable platform targets with real-time streaming output</p>
+          <p class="text-xs text-slate-500 mt-1">Execute repeatable platform targets with real-time streaming output</p>
         </div>
         <div class="flex items-center gap-2">
-          <button onclick="clearTerminal()" class="px-3 py-1.5 rounded-lg bg-canvas-card hover:bg-canvas-cardHover border border-canvas-border text-xs text-slate-300 transition">
-            Clear Terminal
+          <button onclick="clearTerminal()" class="px-3.5 py-2 rounded-xl bg-white hover:bg-slate-50 border border-slate-200 text-xs font-bold text-slate-700 shadow-sm transition">
+            Clear
           </button>
-          <button onclick="copyTerminal()" class="px-3 py-1.5 rounded-lg bg-canvas-card hover:bg-canvas-cardHover border border-canvas-border text-xs text-slate-300 transition">
+          <button onclick="copyTerminal()" class="px-3.5 py-2 rounded-xl bg-white hover:bg-slate-50 border border-slate-200 text-xs font-bold text-slate-700 shadow-sm transition">
             Copy Logs
           </button>
         </div>
       </div>
 
-      <!-- Quick Action Toolbar -->
-      <div class="flex flex-wrap gap-2.5 p-3 rounded-xl bg-canvas-surface border border-canvas-border text-xs">
-        <span class="text-slate-400 font-semibold self-center mr-1 text-[11px] uppercase">Quick Drills:</span>
-        <button onclick="executeAction('reset_demo')" class="px-3 py-1.5 rounded-lg bg-emerald-600/15 hover:bg-emerald-600/30 text-emerald-400 border border-emerald-500/30 font-medium transition">
+      <!-- Quick Action Toolbar Bento -->
+      <div class="bento-card rounded-3xl p-4 flex flex-wrap gap-2.5 text-xs items-center">
+        <span class="text-slate-400 font-bold self-center mr-1 text-[11px] uppercase tracking-wider">Quick Drills:</span>
+        <button onclick="executeAction('reset_demo')" class="px-3.5 py-2 rounded-xl bg-emerald-50 hover:bg-emerald-100 text-emerald-800 border border-emerald-200 font-bold transition">
           Restore Pristine Baseline
         </button>
-        <button onclick="executeAction('traffic_burst')" class="px-3 py-1.5 rounded-lg bg-cyan-600/15 hover:bg-cyan-600/30 text-cyan-400 border border-cyan-500/30 font-medium transition">
+        <button onclick="executeAction('traffic_burst')" class="px-3.5 py-2 rounded-xl bg-cyan-50 hover:bg-cyan-100 text-cyan-800 border border-cyan-200 font-bold transition">
           Fire 15 RPS Traffic Burst
         </button>
-        <button onclick="executeAction('run_gate')" class="px-3 py-1.5 rounded-lg bg-brand-600/15 hover:bg-brand-600/30 text-brand-400 border border-brand-500/30 font-medium transition">
+        <button onclick="executeAction('run_gate')" class="px-3.5 py-2 rounded-xl bg-indigo-50 hover:bg-indigo-100 text-brand-700 border border-indigo-200 font-bold transition">
           Run Release Quality Gate
         </button>
-        <button onclick="executeAction('feast_rematerialize')" class="px-3 py-1.5 rounded-lg bg-indigo-600/15 hover:bg-indigo-600/30 text-indigo-400 border border-indigo-500/30 font-medium transition">
+        <button onclick="executeAction('feast_rematerialize')" class="px-3.5 py-2 rounded-xl bg-sky-50 hover:bg-sky-100 text-sky-800 border border-sky-200 font-bold transition">
           Rematerialize Feast Redis
         </button>
-        <button onclick="executeAction('e2e_tests')" class="px-3 py-1.5 rounded-lg bg-purple-600/15 hover:bg-purple-600/30 text-purple-400 border border-purple-500/30 font-medium transition">
+        <button onclick="executeAction('e2e_tests')" class="px-3.5 py-2 rounded-xl bg-purple-50 hover:bg-purple-100 text-purple-800 border border-purple-200 font-bold transition">
           Run End-to-End Suite
         </button>
       </div>
 
-      <!-- Terminal Output Container -->
-      <div class="rounded-2xl border border-canvas-border bg-[#070a12] shadow-2xl overflow-hidden">
-        <div class="bg-canvas-surface/90 px-4 py-2.5 border-b border-canvas-border flex items-center justify-between">
+      <!-- Terminal Output Container with macOS styling -->
+      <div class="rounded-3xl border border-slate-800 bg-[#0b0f19] shadow-2xl overflow-hidden">
+        <div class="bg-[#111625] px-5 py-3 border-b border-slate-800 flex items-center justify-between">
           <div class="flex items-center gap-2">
-            <span class="w-3 h-3 rounded-full bg-rose-500/80 inline-block"></span>
-            <span class="w-3 h-3 rounded-full bg-amber-500/80 inline-block"></span>
-            <span class="w-3 h-3 rounded-full bg-emerald-500/80 inline-block"></span>
+            <span class="w-3 h-3 rounded-full bg-rose-500 inline-block"></span>
+            <span class="w-3 h-3 rounded-full bg-amber-500 inline-block"></span>
+            <span class="w-3 h-3 rounded-full bg-emerald-500 inline-block"></span>
             <span id="activeCmdPill" class="ml-2 font-mono text-xs text-slate-400 hidden"></span>
           </div>
-          <span id="execStatusPill" class="text-xs font-mono text-slate-400">Idle &bull; Ready</span>
+          <span id="execStatusPill" class="text-xs font-mono text-slate-400 font-semibold">Idle &bull; Ready</span>
         </div>
         <pre id="terminalOutput" class="p-6 font-mono text-xs text-slate-200 overflow-y-auto max-h-[550px] leading-relaxed whitespace-pre-wrap"><span class="text-slate-500"># MLPlatform Execution Console Ready. Select an action or drill to stream real-time logs.</span></pre>
       </div>
 
     </div>
 
-    <!-- ================= PAGE 6: ECOSYSTEM PORTALS ================= -->
-    <div id="view-ecosystem" class="view-panel hidden space-y-8">
+    <!-- ================= PAGE 6: ECOSYSTEM PORTALS BENTO ================= -->
+    <div id="view-ecosystem" class="view-panel hidden space-y-6">
       
-      <div class="pb-2 border-b border-canvas-border">
-        <h1 class="text-2xl font-extrabold tracking-tight text-white flex items-center gap-2.5">
-          Ecosystem &amp; Observability Portals
+      <div class="p-6 rounded-3xl bg-gradient-to-r from-indigo-50/80 via-white to-sky-50/80 border border-slate-200/80 shadow-bento">
+        <span class="px-3 py-1 rounded-full bg-indigo-600 text-white text-[11px] font-bold tracking-wider uppercase inline-block mb-2">
+          Platform Ecosystem
+        </span>
+        <h1 class="text-2xl md:text-3xl font-extrabold text-slate-900 tracking-tight">
+          External Observability &amp; Registry Portals
         </h1>
-        <p class="text-xs text-slate-400 mt-1">Direct launchpad into pre-provisioned in-cluster dashboards and telemetry services</p>
+        <p class="text-xs text-slate-500 mt-1">Direct launchpad into pre-provisioned in-cluster dashboards and telemetry services</p>
       </div>
 
       <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
         
         <!-- Grafana -->
-        <a href="http://localhost:3000" target="_blank" class="bg-canvas-card hover:bg-canvas-cardHover border border-canvas-border hover:border-amber-500/50 rounded-2xl p-6 transition flex flex-col justify-between group shadow-sm">
+        <a href="http://localhost:3000" target="_blank" class="bento-card rounded-3xl p-7 transition flex flex-col justify-between group">
           <div>
-            <div class="flex items-center justify-between mb-3">
-              <span class="text-2xl">📊</span>
-              <span class="text-xs font-mono px-2 py-0.5 rounded bg-amber-500/10 text-amber-400 border border-amber-500/20 font-bold">:3000</span>
+            <div class="flex items-center justify-between mb-4">
+              <span class="text-3xl">📊</span>
+              <span class="text-xs font-mono px-2.5 py-1 rounded-full bg-amber-50 text-amber-700 border border-amber-200 font-bold">:3000</span>
             </div>
-            <h3 class="text-base font-bold text-white group-hover:text-amber-400 transition-colors">Grafana Dashboards</h3>
-            <p class="text-xs text-slate-400 mt-2 leading-relaxed">
+            <h3 class="text-lg font-extrabold text-slate-900 group-hover:text-amber-600 transition-colors">Grafana Dashboards</h3>
+            <p class="text-xs text-slate-500 mt-2 leading-relaxed">
               Pre-provisioned dashboards for ML Platform Health, Serving Performance (P95/error rates), and Statistical Drift Monitoring.
             </p>
           </div>
-          <div class="mt-6 pt-3 border-t border-canvas-border flex items-center justify-between text-xs text-amber-400 font-semibold">
+          <div class="mt-6 pt-4 border-t border-slate-100 flex items-center justify-between text-xs text-amber-600 font-bold">
             <span>Open Grafana</span>
             <span>&rarr;</span>
           </div>
         </a>
 
         <!-- MLflow -->
-        <a href="http://localhost:5000" target="_blank" class="bg-canvas-card hover:bg-canvas-cardHover border border-canvas-border hover:border-cyan-500/50 rounded-2xl p-6 transition flex flex-col justify-between group shadow-sm">
+        <a href="http://localhost:5000" target="_blank" class="bento-card rounded-3xl p-7 transition flex flex-col justify-between group">
           <div>
-            <div class="flex items-center justify-between mb-3">
-              <span class="text-2xl">🧪</span>
-              <span class="text-xs font-mono px-2 py-0.5 rounded bg-cyan-500/10 text-cyan-400 border border-cyan-500/20 font-bold">:5000</span>
+            <div class="flex items-center justify-between mb-4">
+              <span class="text-3xl">🧪</span>
+              <span class="text-xs font-mono px-2.5 py-1 rounded-full bg-cyan-50 text-cyan-700 border border-cyan-200 font-bold">:5000</span>
             </div>
-            <h3 class="text-base font-bold text-white group-hover:text-cyan-400 transition-colors">MLflow Model Registry</h3>
-            <p class="text-xs text-slate-400 mt-2 leading-relaxed">
+            <h3 class="text-lg font-extrabold text-slate-900 group-hover:text-cyan-600 transition-colors">MLflow Model Registry</h3>
+            <p class="text-xs text-slate-500 mt-2 leading-relaxed">
               Track experiments, model runs, candidate vs champion version tags, ROC/AUC metrics, and S3 artifact lineage.
             </p>
           </div>
-          <div class="mt-6 pt-3 border-t border-canvas-border flex items-center justify-between text-xs text-cyan-400 font-semibold">
+          <div class="mt-6 pt-4 border-t border-slate-100 flex items-center justify-between text-xs text-cyan-600 font-bold">
             <span>Open MLflow</span>
             <span>&rarr;</span>
           </div>
         </a>
 
         <!-- Swagger -->
-        <a href="http://localhost:8080/docs" target="_blank" class="bg-canvas-card hover:bg-canvas-cardHover border border-canvas-border hover:border-emerald-500/50 rounded-2xl p-6 transition flex flex-col justify-between group shadow-sm">
+        <a href="http://localhost:8080/docs" target="_blank" class="bento-card rounded-3xl p-7 transition flex flex-col justify-between group">
           <div>
-            <div class="flex items-center justify-between mb-3">
-              <span class="text-2xl">⚡</span>
-              <span class="text-xs font-mono px-2 py-0.5 rounded bg-emerald-500/10 text-emerald-400 border border-emerald-500/20 font-bold">:8080/docs</span>
+            <div class="flex items-center justify-between mb-4">
+              <span class="text-3xl">⚡</span>
+              <span class="text-xs font-mono px-2.5 py-1 rounded-full bg-emerald-50 text-emerald-700 border border-emerald-200 font-bold">:8080/docs</span>
             </div>
-            <h3 class="text-base font-bold text-white group-hover:text-emerald-400 transition-colors">FastAPI Swagger UI</h3>
-            <p class="text-xs text-slate-400 mt-2 leading-relaxed">
-              Interactive OpenAPI documentation. Test <code class="text-slate-300">/predict</code>, <code class="text-slate-300">/model-info</code>, and readiness probes directly in browser.
+            <h3 class="text-lg font-extrabold text-slate-900 group-hover:text-emerald-600 transition-colors">FastAPI Swagger UI</h3>
+            <p class="text-xs text-slate-500 mt-2 leading-relaxed">
+              Interactive OpenAPI documentation. Test <code class="text-slate-800">/predict</code>, <code class="text-slate-800">/model-info</code>, and readiness probes directly in browser.
             </p>
           </div>
-          <div class="mt-6 pt-3 border-t border-canvas-border flex items-center justify-between text-xs text-emerald-400 font-semibold">
+          <div class="mt-6 pt-4 border-t border-slate-100 flex items-center justify-between text-xs text-emerald-600 font-bold">
             <span>Open Swagger API</span>
             <span>&rarr;</span>
           </div>
         </a>
 
         <!-- MinIO -->
-        <a href="http://localhost:9001" target="_blank" class="bg-canvas-card hover:bg-canvas-cardHover border border-canvas-border hover:border-rose-500/50 rounded-2xl p-6 transition flex flex-col justify-between group shadow-sm">
+        <a href="http://localhost:9001" target="_blank" class="bento-card rounded-3xl p-7 transition flex flex-col justify-between group">
           <div>
-            <div class="flex items-center justify-between mb-3">
-              <span class="text-2xl">📦</span>
-              <span class="text-xs font-mono px-2 py-0.5 rounded bg-rose-500/10 text-rose-400 border border-rose-500/20 font-bold">:9001</span>
+            <div class="flex items-center justify-between mb-4">
+              <span class="text-3xl">📦</span>
+              <span class="text-xs font-mono px-2.5 py-1 rounded-full bg-rose-50 text-rose-700 border border-rose-200 font-bold">:9001</span>
             </div>
-            <h3 class="text-base font-bold text-white group-hover:text-rose-400 transition-colors">MinIO S3 Object Storage</h3>
-            <p class="text-xs text-slate-400 mt-2 leading-relaxed">
-              S3 bucket browser containing offline Feast parquet files (<code class="text-slate-300">feast-offline</code>) and MLflow model binaries.
+            <h3 class="text-lg font-extrabold text-slate-900 group-hover:text-rose-600 transition-colors">MinIO S3 Object Storage</h3>
+            <p class="text-xs text-slate-500 mt-2 leading-relaxed">
+              S3 bucket browser containing offline Feast parquet files (<code class="text-slate-800">feast-offline</code>) and MLflow model binaries.
             </p>
           </div>
-          <div class="mt-6 pt-3 border-t border-canvas-border flex items-center justify-between text-xs text-rose-400 font-semibold">
+          <div class="mt-6 pt-4 border-t border-slate-100 flex items-center justify-between text-xs text-rose-600 font-bold">
             <span>Open MinIO Console</span>
             <span>&rarr;</span>
           </div>
         </a>
 
         <!-- Alertmanager -->
-        <a href="http://localhost:9093" target="_blank" class="bg-canvas-card hover:bg-canvas-cardHover border border-canvas-border hover:border-purple-500/50 rounded-2xl p-6 transition flex flex-col justify-between group shadow-sm">
+        <a href="http://localhost:9093" target="_blank" class="bento-card rounded-3xl p-7 transition flex flex-col justify-between group">
           <div>
-            <div class="flex items-center justify-between mb-3">
-              <span class="text-2xl">🚨</span>
-              <span class="text-xs font-mono px-2 py-0.5 rounded bg-purple-500/10 text-purple-400 border border-purple-500/20 font-bold">:9093</span>
+            <div class="flex items-center justify-between mb-4">
+              <span class="text-3xl">🚨</span>
+              <span class="text-xs font-mono px-2.5 py-1 rounded-full bg-purple-50 text-purple-700 border border-purple-200 font-bold">:9093</span>
             </div>
-            <h3 class="text-base font-bold text-white group-hover:text-purple-400 transition-colors">Prometheus Alertmanager</h3>
-            <p class="text-xs text-slate-400 mt-2 leading-relaxed">
+            <h3 class="text-lg font-extrabold text-slate-900 group-hover:text-purple-600 transition-colors">Prometheus Alertmanager</h3>
+            <p class="text-xs text-slate-500 mt-2 leading-relaxed">
               Inspect firing alerts, alert routing rules, and the webhook dispatching to the in-cluster auto-remediator.
             </p>
           </div>
-          <div class="mt-6 pt-3 border-t border-canvas-border flex items-center justify-between text-xs text-purple-400 font-semibold">
+          <div class="mt-6 pt-4 border-t border-slate-100 flex items-center justify-between text-xs text-purple-600 font-bold">
             <span>Open Alertmanager</span>
             <span>&rarr;</span>
           </div>
@@ -946,16 +981,16 @@
   </main>
 
   <!-- ================= LOG VIEWER MODAL ================= -->
-  <div id="logModal" class="hidden fixed inset-0 z-50 bg-black/80 backdrop-blur-md flex items-center justify-center p-6">
-    <div class="bg-canvas-surface border border-canvas-border rounded-2xl w-full max-w-4xl max-h-[85vh] flex flex-col shadow-2xl">
-      <div class="px-6 py-4 border-b border-canvas-border flex items-center justify-between">
+  <div id="logModal" class="hidden fixed inset-0 z-50 bg-black/60 backdrop-blur-md flex items-center justify-center p-6">
+    <div class="bg-white border border-slate-200 rounded-3xl w-full max-w-4xl max-h-[85vh] flex flex-col shadow-2xl overflow-hidden">
+      <div class="px-6 py-4 border-b border-slate-200 flex items-center justify-between bg-slate-50">
         <div>
-          <h3 id="modalPodTitle" class="text-sm font-bold text-white font-mono">pod-name</h3>
-          <p class="text-xs text-slate-400">Tail logs (most recent 150 lines)</p>
+          <h3 id="modalPodTitle" class="text-sm font-extrabold text-slate-900 font-mono">pod-name</h3>
+          <p class="text-xs text-slate-500">Tail logs (most recent 150 lines)</p>
         </div>
-        <button onclick="closeLogModal()" class="text-slate-400 hover:text-white text-lg font-bold">&times;</button>
+        <button onclick="closeLogModal()" class="text-slate-400 hover:text-slate-800 text-xl font-bold">&times;</button>
       </div>
-      <div class="p-6 overflow-y-auto flex-1 bg-[#05080e]">
+      <div class="p-6 overflow-y-auto flex-1 bg-[#090d16]">
         <pre id="modalLogContent" class="font-mono text-xs text-slate-200 whitespace-pre-wrap leading-relaxed">Loading...</pre>
       </div>
     </div>
@@ -980,7 +1015,7 @@
       window.location.hash = tabId;
 
       document.querySelectorAll('.view-panel').forEach(el => el.classList.add('hidden'));
-      document.querySelectorAll('.tab-btn').forEach(el => el.classList.remove('active'));
+      document.querySelectorAll('.tab-pill').forEach(el => el.classList.remove('active'));
 
       const activeView = document.getElementById(`view-${tabId}`);
       const activeBtn = document.getElementById(`tab-${tabId}`);
@@ -1023,7 +1058,6 @@
       document.getElementById('toastTitle').innerText = title;
       document.getElementById('toastMessage').innerText = message;
       document.getElementById('toastIcon').innerText = icon;
-      toast.className = 'fixed bottom-6 right-6 z-50 max-w-md p-4 rounded-xl shadow-2xl transition-all duration-300 transform border flex items-center justify-between gap-3 bg-canvas-card border-brand-500/50';
       toast.classList.remove('hidden');
       setTimeout(hideToast, 6000);
     }
@@ -1042,7 +1076,6 @@
         // Model version pill
         if (data.serving_model) {
           document.getElementById('navModelBadge').innerText = `v${data.serving_model.version} • UCI Taiwan`;
-          document.getElementById('infoModelName').innerText = `loan-default (Version ${data.serving_model.version})`;
           document.getElementById('scoringModelVer').innerText = `loan-default (v${data.serving_model.version})`;
         }
 
@@ -1050,18 +1083,18 @@
         const pill = document.getElementById('overviewDriftPill');
         const driftCard = document.getElementById('driftCardState');
         if (data.drift_detected) {
-          pill.className = 'px-3 py-1 text-xs font-bold rounded-full bg-rose-500/20 text-rose-400 border border-rose-500/40 animate-pulse';
-          pill.innerHTML = `<span class="w-1.5 h-1.5 rounded-full bg-rose-400"></span> DRIFT DETECTED`;
+          pill.className = 'px-3.5 py-1.5 text-xs font-bold rounded-xl bg-rose-50 text-rose-700 border border-rose-200 flex items-center gap-1.5 shadow-sm animate-pulse';
+          pill.innerHTML = `<span class="w-2 h-2 rounded-full bg-rose-500 animate-ping"></span> Drift Status: Alert Active`;
           if (driftCard) {
-            driftCard.className = 'text-xl font-extrabold text-rose-400 flex items-center gap-2 animate-pulse';
-            driftCard.innerHTML = `<span class="w-2.5 h-2.5 rounded-full bg-rose-400"></span> DRIFT ALERT ACTIVE`;
+            driftCard.className = 'text-2xl font-extrabold text-rose-600 flex items-center gap-2 animate-pulse';
+            driftCard.innerHTML = `<span class="w-3 h-3 rounded-full bg-rose-500"></span> DRIFT ALERT ACTIVE`;
           }
         } else {
-          pill.className = 'px-3 py-1 text-xs font-semibold rounded-full bg-emerald-500/10 text-emerald-400 border border-emerald-500/20 flex items-center gap-1.5';
-          pill.innerHTML = `<span class="w-1.5 h-1.5 rounded-full bg-emerald-400"></span> Drift Status: Normal (0)`;
+          pill.className = 'px-3.5 py-1.5 text-xs font-bold rounded-xl bg-emerald-50 text-emerald-700 border border-emerald-200/80 flex items-center gap-1.5 shadow-sm';
+          pill.innerHTML = `<span class="w-2 h-2 rounded-full bg-emerald-500"></span> Drift Status: Normal (0)`;
           if (driftCard) {
-            driftCard.className = 'text-xl font-extrabold text-emerald-400 flex items-center gap-2';
-            driftCard.innerHTML = `<span class="w-2.5 h-2.5 rounded-full bg-emerald-400"></span> NORMAL (0 DRIFTED)`;
+            driftCard.className = 'text-2xl font-extrabold text-emerald-600 flex items-center gap-2';
+            driftCard.innerHTML = `<span class="w-3 h-3 rounded-full bg-emerald-500"></span> NORMAL (0 DRIFTED)`;
           }
         }
       } catch (err) {
@@ -1086,12 +1119,12 @@
         const badge = document.getElementById('metricReplicasBadge');
         if (data.replicas_available < data.replicas_desired) {
           badge.innerText = 'Self-Healing';
-          badge.className = 'text-[11px] font-bold text-amber-400 animate-pulse';
-          document.getElementById('metricReplicas').className = 'text-3xl font-extrabold text-amber-400';
+          badge.className = 'px-2 py-0.5 rounded-md bg-amber-50 text-amber-700 text-[10px] font-bold border border-amber-200 animate-pulse';
+          document.getElementById('metricReplicas').className = 'text-4xl font-extrabold text-amber-600 font-mono tracking-tight';
         } else {
           badge.innerText = 'Healthy';
-          badge.className = 'text-[11px] font-semibold text-emerald-400';
-          document.getElementById('metricReplicas').className = 'text-3xl font-extrabold text-white';
+          badge.className = 'px-2 py-0.5 rounded-md bg-emerald-50 text-emerald-700 text-[10px] font-bold border border-emerald-200';
+          document.getElementById('metricReplicas').className = 'text-4xl font-extrabold text-slate-900 font-mono tracking-tight';
         }
         document.getElementById('metricReplicas').innerText = data.replicas_available;
 
@@ -1114,32 +1147,32 @@
         for (const feat of features) {
           const psi = psiData[feat] !== undefined ? psiData[feat] : 0.0;
           let barColor = 'bg-emerald-500';
-          let textColor = 'text-emerald-400';
+          let textColor = 'text-emerald-700';
           let statusText = 'Stable';
 
           if (psi > 0.20) {
             barColor = 'bg-rose-500';
-            textColor = 'text-rose-400 font-bold';
+            textColor = 'text-rose-600 font-bold';
             statusText = 'Breach';
           } else if (psi > 0.10) {
             barColor = 'bg-amber-500';
-            textColor = 'text-amber-400 font-bold';
+            textColor = 'text-amber-600 font-bold';
             statusText = 'Elevated';
           }
 
-          const pct = Math.min(Math.max((psi / 0.35) * 100, 2), 100);
+          const pct = Math.min(Math.max((psi / 0.35) * 100, 3), 100);
 
           html += `
-            <div class="p-3 rounded-xl bg-canvas-surface border border-canvas-border space-y-1.5">
+            <div class="p-3.5 rounded-2xl bg-slate-50 border border-slate-200/80 space-y-1.5">
               <div class="flex justify-between items-center text-xs">
-                <span class="font-medium text-slate-300 font-mono">${feat}</span>
-                <span class="${textColor} font-mono">${psi.toFixed(3)}</span>
+                <span class="font-bold text-slate-800 font-mono">${feat}</span>
+                <span class="${textColor} font-mono font-bold">${psi.toFixed(3)}</span>
               </div>
-              <div class="w-full bg-slate-800 rounded-full h-1.5 overflow-hidden">
-                <div class="h-1.5 rounded-full ${barColor} transition-all duration-500" style="width: ${pct}%"></div>
+              <div class="w-full bg-slate-200 rounded-full h-2 overflow-hidden">
+                <div class="h-2 rounded-full ${barColor} transition-all duration-500" style="width: ${pct}%"></div>
               </div>
-              <div class="flex justify-between text-[10px] text-slate-500">
-                <span>Limit 0.25</span>
+              <div class="flex justify-between text-[10px] text-slate-400 font-semibold">
+                <span>Threshold 0.25</span>
                 <span>${statusText}</span>
               </div>
             </div>
@@ -1161,51 +1194,51 @@
 
         const servingPods = pods.filter(p => p.namespace === 'serving');
         if (servingPods.length === 0) {
-          container.innerHTML = `<div class="p-6 col-span-2 rounded-2xl bg-canvas-card border border-canvas-border text-center text-slate-400 text-xs">No serving pods detected.</div>`;
+          container.innerHTML = `<div class="p-8 col-span-2 rounded-3xl bg-white border border-slate-200 text-center text-slate-500 text-xs">No serving pods detected.</div>`;
           return;
         }
 
         container.innerHTML = servingPods.map((p, idx) => {
-          let statusColor = 'bg-emerald-500/15 text-emerald-400 border-emerald-500/30';
+          let statusBadge = 'bg-emerald-50 text-emerald-700 border-emerald-200';
           let statusText = p.status;
           let isHealthy = p.status === 'Running' && p.ready === '1/1';
 
           if (p.status === 'Terminating') {
-            statusColor = 'bg-rose-500/25 text-rose-400 border-rose-500/50 animate-pulse font-bold';
+            statusBadge = 'bg-rose-50 text-rose-700 border-rose-300 animate-pulse font-bold';
             statusText = '💥 Terminating';
           } else if (p.status === 'ContainerCreating' || p.status === 'Pending') {
-            statusColor = 'bg-amber-500/25 text-amber-400 border-amber-500/50 animate-pulse font-bold';
+            statusBadge = 'bg-amber-50 text-amber-700 border-amber-300 animate-pulse font-bold';
             statusText = '⚡ Self-Healing (Booting)';
           }
 
           return `
-            <div class="p-5 rounded-2xl bg-canvas-card border border-canvas-border flex flex-col justify-between shadow-sm relative overflow-hidden group hover:border-canvas-borderHover transition">
+            <div class="bento-card rounded-3xl p-6 flex flex-col justify-between shadow-bento">
               <div>
-                <div class="flex items-center justify-between mb-3">
-                  <div class="flex items-center gap-2">
-                    <span class="text-sm font-bold text-white font-mono">Replica #${idx + 1}</span>
-                    <span class="px-2 py-0.5 rounded text-[10px] font-mono border ${statusColor}">${statusText}</span>
+                <div class="flex items-center justify-between mb-4">
+                  <div class="flex items-center gap-2.5">
+                    <span class="text-base font-extrabold text-slate-900 font-mono">Serving Replica #${idx + 1}</span>
+                    <span class="px-2.5 py-0.5 rounded-full text-[11px] font-mono font-bold border ${statusBadge}">${statusText}</span>
                   </div>
-                  <span class="text-xs font-mono text-slate-400">${p.age}</span>
+                  <span class="text-xs font-mono text-slate-400 font-semibold">${p.age}</span>
                 </div>
 
-                <div class="space-y-1.5 text-xs text-slate-300 font-mono">
-                  <p class="truncate text-slate-400">Pod: <span class="text-white">${p.name}</span></p>
-                  <p class="text-slate-400">Ready Status: <span class="${isHealthy ? 'text-emerald-400' : 'text-amber-400'} font-bold">${p.ready}</span></p>
-                  <p class="text-slate-400">Restarts: <span class="${p.restarts > 0 ? 'text-amber-400 font-bold' : 'text-slate-300'}">${p.restarts}</span></p>
+                <div class="space-y-2 text-xs text-slate-600 font-mono">
+                  <p class="truncate"><span class="text-slate-400">Pod:</span> <strong class="text-slate-900">${p.name}</strong></p>
+                  <p><span class="text-slate-400">Ready Status:</span> <strong class="${isHealthy ? 'text-emerald-700' : 'text-amber-700'}">${p.ready}</strong></p>
+                  <p><span class="text-slate-400">Restarts:</span> <strong class="${p.restarts > 0 ? 'text-amber-600' : 'text-slate-700'}">${p.restarts}</strong></p>
                 </div>
               </div>
 
-              <div class="mt-5 pt-4 border-t border-canvas-border flex items-center justify-between gap-2">
-                <button onclick="viewPodLogs('${p.namespace}', '${p.name}')" class="px-3 py-1.5 rounded-lg bg-canvas-surface hover:bg-slate-800 border border-canvas-border text-xs text-slate-300 transition">
-                  Inspect Logs
+              <div class="mt-6 pt-4 border-t border-slate-100 flex items-center justify-between gap-2">
+                <button onclick="viewPodLogs('${p.namespace}', '${p.name}')" class="px-3.5 py-2 rounded-xl bg-slate-50 hover:bg-slate-100 border border-slate-200 text-xs font-bold text-slate-700 transition">
+                  Logs
                 </button>
                 ${isHealthy ? `
-                  <button onclick="killPod('${p.namespace}', '${p.name}')" class="px-3.5 py-1.5 rounded-lg bg-rose-600/20 hover:bg-rose-600 text-rose-300 hover:text-white border border-rose-500/30 text-xs font-bold transition flex items-center gap-1.5 shadow-sm">
+                  <button onclick="killPod('${p.namespace}', '${p.name}')" class="px-4 py-2 rounded-xl bg-rose-50 hover:bg-rose-600 text-rose-700 hover:text-white border border-rose-200 text-xs font-bold transition flex items-center gap-1.5 shadow-sm">
                     <span>💥</span> Kill Replica
                   </button>
                 ` : `
-                  <span class="text-[11px] font-mono text-slate-500">Reconciling...</span>
+                  <span class="text-xs font-mono font-bold text-slate-400">Reconciling...</span>
                 `}
               </div>
             </div>
@@ -1218,7 +1251,7 @@
 
     // Kill specific pod & watch self-healing
     async function killPod(ns, name) {
-      if (!confirm(`Trigger Pod Chaos:\n\nTerminate pod "${name}"?\n\nWatch Kubernetes immediately detect replica loss and self-heal in real time while inference remains uninterrupted.`)) return;
+      if (!confirm(`Trigger Chaos Drill:\n\nDelete pod "${name}" in ${ns}?\n\nWatch Kubernetes immediately detect replica deficit and self-heal in real time while inference remains uninterrupted.`)) return;
 
       const banner = document.getElementById('chaosBanner');
       if (banner) {
@@ -1228,7 +1261,7 @@
         setTimeout(() => banner.classList.add('hidden'), 9000);
       }
 
-      showToast('Pod Terminated', `Deleted ${name}. Watch replacement pod boot up!`, '💥');
+      showToast('Replica Terminated', `Deleted ${name}. Watch replacement pod boot up!`, '💥');
 
       try {
         await fetch(`/api/kill-pod/${ns}/${name}`, { method: 'POST' });
@@ -1250,7 +1283,7 @@
         });
         const data = await res.json();
         if (data.status === 'success') {
-          showToast('Success (HTTP 200)', `Model answered in ${data.latency_ms} ms (${data.risk_level})! Zero downtime proven.`, '🛡️');
+          showToast('Success (HTTP 200)', `Answered in ${data.latency_ms} ms (${data.risk_level})! Zero downtime proven.`, '🛡️');
         } else {
           showToast('Error', data.message || 'Request failed', '❌');
         }
@@ -1288,13 +1321,13 @@
           const pay0Elem = document.getElementById('profPay0');
           if (data.pay_0 > 0) {
             pay0Elem.innerText = `${data.pay_0} months delay`;
-            pay0Elem.className = 'font-mono font-bold text-rose-400 text-sm';
+            pay0Elem.className = 'font-mono font-extrabold text-rose-600 text-sm mt-0.5 block';
           } else if (data.pay_0 === 0) {
             pay0Elem.innerText = 'On time (revolving)';
-            pay0Elem.className = 'font-mono font-bold text-emerald-400 text-sm';
+            pay0Elem.className = 'font-mono font-extrabold text-emerald-700 text-sm mt-0.5 block';
           } else {
             pay0Elem.innerText = `Paid in full (${data.pay_0})`;
-            pay0Elem.className = 'font-mono font-bold text-emerald-400 text-sm';
+            pay0Elem.className = 'font-mono font-extrabold text-emerald-700 text-sm mt-0.5 block';
           }
 
           document.getElementById('profBill').innerText = '$' + data.bill_amt1.toLocaleString();
@@ -1310,7 +1343,7 @@
       const custId = document.getElementById('inputCustomerId').value.trim() || '1';
       const btn = document.getElementById('btnScoreLoan');
       btn.disabled = true;
-      btn.innerHTML = `<svg class="w-4 h-4 animate-spin" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15"/></svg> Scoring...`;
+      btn.innerHTML = `<svg class="w-4 h-4 animate-spin text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15"/></svg> <span class="text-white">Scoring...</span>`;
 
       try {
         const res = await fetch('/api/predict', {
@@ -1320,7 +1353,7 @@
         });
         const data = await res.json();
         btn.disabled = false;
-        btn.innerHTML = `<svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 10V3L4 14h7v7l9-11h-7z"/></svg> <span>Score Borrower</span>`;
+        btn.innerHTML = `<svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M13 10V3L4 14h7v7l9-11h-7z"/></svg> <span>Score Borrower</span>`;
 
         if (data.status === 'success') {
           const prob = (data.default_probability * 100).toFixed(1);
@@ -1334,21 +1367,21 @@
           const desc = document.getElementById('decisionDesc');
 
           if (data.prediction === 1) {
-            card.className = 'p-5 rounded-2xl bg-rose-500/10 border border-rose-500/30 text-center mb-6 transition-all';
-            badge.className = 'inline-block px-4 py-1.5 rounded-full text-xs font-extrabold uppercase tracking-wider bg-rose-500/20 text-rose-400 border border-rose-500/40 mb-2';
+            card.className = 'p-6 rounded-3xl bg-rose-50 border border-rose-200 text-center mb-6 transition-all shadow-sm';
+            badge.className = 'inline-block px-4 py-1.5 rounded-full text-xs font-extrabold uppercase tracking-wider bg-rose-100 text-rose-700 border border-rose-200 mb-2';
             badge.innerText = 'HIGH RISK';
             title.innerText = '⚠️ Loan Default Predicted';
-            title.className = 'text-xl font-extrabold text-rose-400';
+            title.className = 'text-2xl font-extrabold text-rose-900';
             desc.innerText = `Borrower probability of default (${prob}%) exceeds safety threshold.`;
-            document.getElementById('probProgressBar').className = 'h-3 rounded-full bg-rose-500 transition-all duration-700';
+            document.getElementById('probProgressBar').className = 'h-2.5 rounded-full bg-rose-500 transition-all duration-700';
           } else {
-            card.className = 'p-5 rounded-2xl bg-emerald-500/10 border border-emerald-500/30 text-center mb-6 transition-all';
-            badge.className = 'inline-block px-4 py-1.5 rounded-full text-xs font-extrabold uppercase tracking-wider bg-emerald-500/20 text-emerald-400 border border-emerald-500/40 mb-2';
+            card.className = 'p-6 rounded-3xl bg-emerald-50 border border-emerald-200 text-center mb-6 transition-all shadow-sm';
+            badge.className = 'inline-block px-4 py-1.5 rounded-full text-xs font-extrabold uppercase tracking-wider bg-emerald-100 text-emerald-700 border border-emerald-200 mb-2';
             badge.innerText = 'LOW RISK';
             title.innerText = '🛡️ Loan Approved';
-            title.className = 'text-xl font-extrabold text-emerald-400';
+            title.className = 'text-2xl font-extrabold text-emerald-900';
             desc.innerText = `Borrower profile demonstrates high creditworthiness (${prob}% default risk).`;
-            document.getElementById('probProgressBar').className = 'h-3 rounded-full bg-emerald-500 transition-all duration-700';
+            document.getElementById('probProgressBar').className = 'h-2.5 rounded-full bg-emerald-500 transition-all duration-700';
           }
         } else {
           alert('Scoring failed: ' + (data.message || 'Unknown error'));
@@ -1374,9 +1407,9 @@
       const cmdPill = document.getElementById('activeCmdPill');
 
       pill.innerText = `Running: ${actionName}...`;
-      pill.className = 'text-xs font-mono text-brand-400 animate-pulse font-bold';
+      pill.className = 'text-xs font-mono text-brand-600 font-bold';
 
-      term.innerHTML += `\n<span class="text-brand-400 font-bold">&gt;&gt;&gt; [${new Date().toLocaleTimeString()}] Triggering platform drill: ${actionName}</span>\n`;
+      term.innerHTML += `\n<span class="text-indigo-400 font-bold">&gt;&gt;&gt; [${new Date().toLocaleTimeString()}] Triggering platform drill: ${actionName}</span>\n`;
       term.scrollTop = term.scrollHeight;
 
       try {
@@ -1404,7 +1437,7 @@
               term.innerHTML += `\n<span class="${code === 0 ? 'text-emerald-400' : 'text-rose-400'} font-bold">✔ Task finished with exit code ${code}</span>\n`;
               term.scrollTop = term.scrollHeight;
               pill.innerText = code === 0 ? 'Status: Success' : 'Status: Failed';
-              pill.className = code === 0 ? 'text-xs font-mono text-emerald-400 font-bold' : 'text-xs font-mono text-rose-400 font-bold';
+              pill.className = code === 0 ? 'text-xs font-mono text-emerald-600 font-bold' : 'text-xs font-mono text-rose-600 font-bold';
               activeEventSource.close();
               activeEventSource = null;
               pollMetrics();
@@ -1422,7 +1455,7 @@
         };
 
       } catch (err) {
-        term.innerHTML += `<span class="text-rose-400 font-bold">Error: ${err.message}</span>\n`;
+        term.innerHTML += `<span class="text-rose-500 font-bold">Error: ${err.message}</span>\n`;
         pill.innerText = 'Status: Error';
       }
     }

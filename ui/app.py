@@ -39,6 +39,10 @@ app.add_middleware(
 
 BASE_DIR = Path(__file__).resolve().parent.parent
 TEMPLATES_DIR = Path(__file__).resolve().parent / "templates"
+ACTIVE_DRIFT_QUERY = (
+    "max(model_drift_detected and on(instance) up == 1) "
+    "or max(model_drift_detected) or vector(0)"
+)
 
 # Track running jobs
 RUNNING_JOBS: dict[str, dict[str, Any]] = {}
@@ -166,7 +170,7 @@ async def get_system_status() -> dict[str, Any]:
         try:
             resp = await client.get(
                 "http://localhost:9090/api/v1/query",
-                params={"query": "max(model_drift_detected)"},
+                params={"query": ACTIVE_DRIFT_QUERY},
             )
             if resp.status_code == 200:
                 data = resp.json().get("data", {}).get("result", [])
@@ -251,7 +255,7 @@ async def get_metrics() -> dict[str, Any]:
             prom_scalar(err_q, 0.0),
             prom_scalar(rep_avail_q, 2.0),
             prom_scalar(rep_des_q, 2.0),
-            prom_scalar("max(model_drift_detected)", 0.0),
+            prom_scalar(ACTIVE_DRIFT_QUERY, 0.0),
             prom_scalar("model_champion_auc", 0.835),
             prom_scalar("model_candidate_auc", 0.0),
         ]
