@@ -447,4 +447,13 @@ Only observed command output is recorded here.
   serving namespace; RBAC least-privilege verified via `kubectl auth can-i` (remediator and
   drift-monitor strictly scoped); and Gitleaks scan scanned 48 commits with 0 leaks found.
   Documented in `docs/hardening.md`.
-- Next action: implement P9.4 failure modes matrix and experiment verification.
+- P9.4 PASS (2026-10-04) — Failure-mode matrix compiled for all 9 platform components in
+  `docs/failure-modes.md`. Verified 4 failure modes experimentally on the live cluster
+  via `scripts/verify_failure_modes.sh`: (1) Postgres down proved in-memory prediction
+  log buffering with zero dropped customer requests (HTTP 200) and successful queue drain
+  on reconnection; (2) Redis down correctly isolated to feature hydration, with
+  `make feast-rematerialize` restoring full feature cache within 14s; (3) MLflow down at
+  startup kept unready pods from entering Service endpoints, preserving traffic for
+  surviving replicas; (4) MinIO down proved runtime serving isolation with live predictions
+  continuing at 200 OK.
+- Next action: implement P9.5 AWS port preparation.
