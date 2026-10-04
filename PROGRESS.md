@@ -370,3 +370,10 @@ Only observed command output is recorded here.
   `make feast-rematerialize` (incremental cannot refill a wiped Redis).
 - Gates: `make lint` clean, `make test` 56 passed / 84.53%.
 - Next action: implement P8 (drift detection + automated retraining).
+- P8.1 PASS (2026-10-04) — `uv run pytest tests/test_drift.py -q` -> 8 passed;
+  tests cover identical samples, shifted means, a hand-computed PSI value,
+  ties/constant features, empty input failure, KS significance, and the
+  multi-feature threshold rule. `make test` -> 82 passed, 85.86% coverage;
+  `make lint` -> All checks passed.
+- Next action: deploy and verify the P8.2 drift monitor plus P8.3 retrain Job
+  template/RBAC on the live local cluster.
