@@ -500,4 +500,11 @@ Only observed command output is recorded here.
   quickstart (`make up && make deploy-all && make e2e`), full Web Dashboard Directory (Swagger, Grafana, MLflow,
   MinIO, Prometheus, Alertmanager), interactive demo execution instructions (`make reset-demo`, `make demo-infra`,
   `make demo-model`), full mono-repo layout map, operational troubleshooting commands, and AWS cloud port overview.
-- Next action: implement P10.7 add and update the human-provided viva guide.
+- P10.7 PASS (2026-10-04) — Viva prep guide integrated and updated in `docs/viva/MLPlatform_VIVA_PREP.md`:
+  copied human-provided comprehensive viva guide into repository; populated Section 11 ("Actual numbers")
+  with empirical metrics measured across PROGRESS.md (18m46s disaster recovery clean rebuild, 260MB compressed
+  image size with zero models/data, 7.2s pod recovery, 0 failed requests during pod kill, 2->4 HPA scaling
+  in 38s, p50 8.4ms / p95 17.5ms latency, baseline AUC 0.8562 decaying to 0.6714 under drift and restoring
+  to 0.8349 upon candidate retraining, PSI per feature, 60s detection time, 118s retrain-to-serve time,
+  good/bad gate drill outcomes, and 88.07% test coverage).
+- All autonomous tasks complete. Current status: Ready for human AWS credentials and execution (`P9.6 [HUMAN]`).
