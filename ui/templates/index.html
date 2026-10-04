@@ -1,641 +1,567 @@
 <!DOCTYPE html>
-<html lang="en" class="light">
+<html lang="en">
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>MLPlatform — Autonomous MLOps & Self-Healing Control Plane</title>
+  <title>MLPLATFORM // CONTROL CONSOLE</title>
   <script src="https://cdn.tailwindcss.com"></script>
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-  <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500;600;700&display=swap" rel="stylesheet">
-  <script>
-    tailwind.config = {
-      darkMode: 'class',
-      theme: {
-        extend: {
-          fontFamily: {
-            sans: ['"Plus Jakarta Sans"', 'Inter', 'system-ui', 'sans-serif'],
-            mono: ['"JetBrains Mono"', 'monospace'],
-          },
-          colors: {
-            brand: {
-              50: '#eef2ff',
-              100: '#e0e7ff',
-              200: '#c7d2fe',
-              500: '#6366f1',
-              600: '#4f46e5',
-              700: '#4338ca',
-            },
-            bento: {
-              canvas: '#f8fafc',
-              card: '#ffffff',
-              border: '#e2e8f0',
-              borderHover: '#cbd5e1',
-              muted: '#64748b',
-              subtle: '#f1f5f9',
-            }
-          },
-          boxShadow: {
-            'bento': '0 1px 3px 0 rgba(0, 0, 0, 0.02), 0 10px 25px -5px rgba(0, 0, 0, 0.04)',
-            'bento-hover': '0 4px 6px -1px rgba(0, 0, 0, 0.03), 0 20px 30px -10px rgba(0, 0, 0, 0.08)',
-            'bento-float': '0 20px 40px -15px rgba(99, 102, 241, 0.12)',
-          }
-        }
-      }
-    }
-  </script>
+  <link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@500;600;700&family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@500;700&display=swap" rel="stylesheet">
   <style>
-    body {
-      background-color: #f8fafc;
-      background-image: radial-gradient(#e2e8f0 1.2px, transparent 1.2px);
-      background-size: 24px 24px;
-      font-family: 'Plus Jakarta Sans', Inter, system-ui, sans-serif;
-      color: #0f172a;
-    }
-    .glass-header {
-      background: rgba(255, 255, 255, 0.85);
-      backdrop-filter: blur(16px);
-      -webkit-backdrop-filter: blur(16px);
-    }
-    .tab-pill.active {
-      background-color: #ffffff;
-      color: #4f46e5;
-      box-shadow: 0 2px 8px -1px rgba(0, 0, 0, 0.08), 0 1px 3px 0 rgba(0, 0, 0, 0.03);
-      font-weight: 700;
-      border: 1px solid rgba(226, 232, 240, 0.8);
-    }
-    ::-webkit-scrollbar { width: 6px; height: 6px; }
-    ::-webkit-scrollbar-track { background: #f1f5f9; }
-    ::-webkit-scrollbar-thumb { background: #cbd5e1; border-radius: 4px; }
-    ::-webkit-scrollbar-thumb:hover { background: #94a3b8; }
-    .bento-card {
-      background: #ffffff;
-      border: 1px solid #e2e8f0;
-      box-shadow: 0 1px 3px 0 rgba(0, 0, 0, 0.02), 0 10px 25px -5px rgba(0, 0, 0, 0.04);
-      transition: all 0.3s cubic-bezier(0.16, 1, 0.3, 1);
-    }
-    .bento-card:hover {
-      border-color: #cbd5e1;
-      box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.03), 0 20px 30px -10px rgba(0, 0, 0, 0.08);
-      transform: translateY(-2px);
+    :root {
+      --lime: #C8FF5A;
+      --ink: #171717;
+      --paper: #F1EEE5;
+      --paper-raised: #E7E3D8;
+      --paper-bright: #F8F6F0;
+      --border: #171717;
+      --muted: #66645D;
+      --success: #1D7A4D;
+      --warning: #B77900;
+      --danger: #B52A24;
     }
 
-    /* ================= OBLIVION PROTOCOL EFFECTS ================= */
+    * {
+      box-sizing: border-box;
+      border-radius: 0px !important;
+    }
+
+    body {
+      background-color: var(--paper);
+      color: var(--ink);
+      font-family: 'Space Grotesk', 'Inter', -apple-system, sans-serif;
+      letter-spacing: -0.01em;
+      margin: 0;
+      padding: 0;
+      -webkit-font-smoothing: antialiased;
+    }
+
+    .font-mono {
+      font-family: 'JetBrains Mono', monospace;
+    }
+
+    /* Hard Border & Flat Shadow System */
+    .cypher-panel {
+      background: var(--paper-raised);
+      border: 2px solid var(--border);
+      box-shadow: 4px 4px 0 var(--border);
+    }
+
+    .cypher-panel-bright {
+      background: var(--paper-bright);
+      border: 2px solid var(--border);
+      box-shadow: 4px 4px 0 var(--border);
+    }
+
+    .cypher-panel-lime {
+      background: var(--lime);
+      border: 2px solid var(--border);
+      box-shadow: 4px 4px 0 var(--border);
+    }
+
+    .cypher-panel-flat {
+      background: var(--paper-raised);
+      border: 2px solid var(--border);
+    }
+
+    /* Buttons */
+    .cypher-btn {
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      gap: 8px;
+      background: var(--ink);
+      color: var(--paper-bright);
+      border: 2px solid var(--border);
+      padding: 10px 18px;
+      font-weight: 700;
+      font-size: 11px;
+      letter-spacing: 0.08em;
+      text-transform: uppercase;
+      box-shadow: 3px 3px 0 var(--border);
+      transition: transform 120ms ease, box-shadow 120ms ease;
+      cursor: pointer;
+    }
+
+    .cypher-btn:hover {
+      transform: translate(-2px, -2px);
+      box-shadow: 5px 5px 0 var(--border);
+    }
+
+    .cypher-btn:active {
+      transform: translate(0, 0);
+      box-shadow: none;
+    }
+
+    .cypher-btn-secondary {
+      background: var(--paper-bright);
+      color: var(--ink);
+    }
+
+    .cypher-btn-lime {
+      background: var(--lime);
+      color: var(--ink);
+    }
+
+    .cypher-btn-danger {
+      background: var(--danger);
+      color: #ffffff;
+      border-color: var(--ink);
+    }
+
+    /* Navigation Segments */
+    .cypher-tab {
+      padding: 10px 16px;
+      font-weight: 700;
+      font-size: 11px;
+      letter-spacing: 0.08em;
+      text-transform: uppercase;
+      border: 2px solid transparent;
+      color: var(--muted);
+      background: transparent;
+      transition: all 120ms ease;
+      cursor: pointer;
+    }
+
+    .cypher-tab:hover {
+      color: var(--ink);
+    }
+
+    .cypher-tab.active {
+      background: var(--paper-bright);
+      color: var(--ink);
+      border: 2px solid var(--border);
+      box-shadow: 3px 3px 0 var(--border);
+    }
+
+    /* Micro Labels */
+    .micro-label {
+      font-size: 10px;
+      font-weight: 700;
+      letter-spacing: 0.12em;
+      text-transform: uppercase;
+      color: var(--muted);
+    }
+
+    /* Scrollbars */
+    ::-webkit-scrollbar { width: 6px; height: 6px; }
+    ::-webkit-scrollbar-track { background: var(--paper); border-left: 2px solid var(--border); }
+    ::-webkit-scrollbar-thumb { background: var(--ink); }
+
+    /* Pod Crash Oblivion Shake & Physical Seismic Rumble */
     @keyframes screenOblivionShake {
-      0% { transform: translate(0, 0) rotate(0deg); }
-      10% { transform: translate(-10px, -8px) rotate(-1.5deg); }
-      20% { transform: translate(9px, 8px) rotate(2deg); }
-      30% { transform: translate(-8px, 10px) rotate(-1deg); }
-      40% { transform: translate(10px, -7px) rotate(1.5deg); }
-      50% { transform: translate(-9px, 8px) rotate(-1.2deg); }
-      60% { transform: translate(7px, -9px) rotate(0.8deg); }
-      70% { transform: translate(-6px, 6px) rotate(-0.5deg); }
-      80% { transform: translate(4px, -4px) rotate(0.5deg); }
-      90% { transform: translate(-2px, 2px) rotate(0deg); }
-      100% { transform: translate(0, 0) rotate(0deg); }
+      0% { transform: translate(0, 0); }
+      10% { transform: translate(-8px, -6px); }
+      20% { transform: translate(8px, 6px); }
+      30% { transform: translate(-6px, 8px); }
+      40% { transform: translate(6px, -6px); }
+      50% { transform: translate(-5px, 5px); }
+      60% { transform: translate(4px, -4px); }
+      70% { transform: translate(-3px, 3px); }
+      80% { transform: translate(2px, -2px); }
+      100% { transform: translate(0, 0); }
     }
     .oblivion-shake {
-      animation: screenOblivionShake 0.9s cubic-bezier(0.36, 0.07, 0.19, 0.97) both;
+      animation: screenOblivionShake 0.75s cubic-bezier(0.36, 0.07, 0.19, 0.97) both;
     }
-    @keyframes redAlarmVignette {
-      0%, 100% {
-        box-shadow: inset 0 0 40px rgba(239, 68, 68, 0.4), 0 0 30px rgba(239, 68, 68, 0.3);
-      }
-      50% {
-        box-shadow: inset 0 0 160px rgba(220, 38, 38, 0.9), 0 0 80px rgba(220, 38, 38, 0.6);
-      }
-    }
-    .oblivion-vignette {
-      animation: redAlarmVignette 1.2s ease-in-out infinite;
-    }
-    .oblivion-scanlines {
-      background: linear-gradient(
-        rgba(18, 16, 16, 0) 50%, 
-        rgba(0, 0, 0, 0.35) 50%
-      ), linear-gradient(
-        90deg,
-        rgba(255, 0, 0, 0.08),
-        rgba(0, 255, 0, 0.02),
-        rgba(0, 0, 255, 0.08)
-      );
-      background-size: 100% 4px, 6px 100%;
-    }
-    @keyframes glitchAnim {
-      0% { text-shadow: 0.05em 0 0 #ef4444, -0.05em -0.025em 0 #3b82f6; }
-      14% { text-shadow: 0.05em 0 0 #ef4444, -0.05em -0.025em 0 #3b82f6; }
-      15% { text-shadow: -0.05em -0.025em 0 #ef4444, 0.025em 0.025em 0 #3b82f6; }
-      49% { text-shadow: -0.05em -0.025em 0 #ef4444, 0.025em 0.025em 0 #3b82f6; }
-      50% { text-shadow: 0.025em 0.05em 0 #ef4444, 0.05em 0 0 #3b82f6; }
-      99% { text-shadow: 0.025em 0.05em 0 #ef4444, 0.05em 0 0 #3b82f6; }
-      100% { text-shadow: -0.025em 0 0 #ef4444, -0.025em -0.025em 0 #3b82f6; }
-    }
-    .glitch-text {
-      animation: glitchAnim 400ms infinite;
-    }
-    @keyframes disintegrateCard {
-      0% { transform: scale(1); filter: brightness(1); }
-      30% { transform: scale(1.03) rotate(1deg); filter: brightness(1.8) contrast(150%) hue-rotate(90deg); border-color: #ef4444; }
-      70% { transform: scale(0.97) rotate(-1.5deg); filter: brightness(2.2) contrast(180%) blur(1px); opacity: 0.85; }
-      100% { transform: scale(0.98); opacity: 0.7; filter: grayscale(70%) contrast(110%); border-color: #f43f5e; }
-    }
+
     .pod-vaporizing {
-      animation: disintegrateCard 0.8s ease forwards;
+      background: #fed7aa !important;
+      border-color: var(--danger) !important;
+      transform: translate(2px, 2px);
+      box-shadow: none !important;
     }
-    @keyframes pulseSpawnHalo {
-      0%, 100% { box-shadow: 0 0 0 0 rgba(16, 185, 129, 0.7), 0 10px 25px -5px rgba(16, 185, 129, 0.3); border-color: #10b981; }
-      50% { box-shadow: 0 0 0 10px rgba(16, 185, 129, 0), 0 20px 30px -10px rgba(16, 185, 129, 0.5); border-color: #059669; }
-    }
+
     .pod-spawned-halo {
-      animation: pulseSpawnHalo 2s ease infinite;
+      background: #ecfdf5 !important;
+      border-color: var(--success) !important;
+      box-shadow: 4px 4px 0 var(--success) !important;
     }
   </style>
 </head>
-<body class="min-h-screen selection:bg-brand-500 selection:text-white flex flex-col antialiased">
+<body class="min-h-screen flex flex-col antialiased">
 
-  <!-- ================= TOP FLOATING NAVIGATION ================= -->
-  <header class="sticky top-0 z-50 glass-header border-b border-slate-200/80 px-6 py-3.5 transition-all">
-    <div class="max-w-7xl mx-auto flex flex-col md:flex-row items-center justify-between gap-4">
+  <!-- ================= TOP HEADER (ENVIRONMENTAL LIME ACCENT) ================= -->
+  <header class="border-b-2 border-black bg-[#E7E3D8] px-6 py-4">
+    <div class="max-w-[1400px] mx-auto flex flex-col lg:flex-row items-start lg:items-center justify-between gap-4">
       
-      <!-- Brand & Status Badges -->
+      <!-- Brand & Sector Tag -->
       <div class="flex items-center gap-4">
         <a href="#overview" onclick="switchTab('overview')" class="flex items-center gap-3 group">
-          <div class="w-10 h-10 rounded-2xl bg-gradient-to-tr from-brand-600 via-indigo-600 to-indigo-400 flex items-center justify-center shadow-lg shadow-brand-500/20 group-hover:scale-105 transition-transform">
-            <svg class="w-5 h-5 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M13 10V3L4 14h7v7l9-11h-7z"/>
-            </svg>
+          <div class="w-11 h-11 bg-black text-[#C8FF5A] font-mono font-bold text-lg flex items-center justify-center border-2 border-black">
+            ML
           </div>
           <div>
             <div class="flex items-center gap-2">
-              <span class="text-base font-extrabold tracking-tight text-slate-900 group-hover:text-brand-600 transition-colors">MLPlatform</span>
-              <span id="navModelBadge" class="px-2.5 py-0.5 text-[11px] font-mono font-bold rounded-full bg-indigo-50 text-indigo-600 border border-indigo-200/80">
-                v4 &bull; UCI Taiwan
+              <span class="text-xl font-bold tracking-tight text-black uppercase">MLPLATFORM</span>
+              <span class="px-2 py-0.5 text-[10px] font-mono font-bold bg-[#C8FF5A] text-black border border-black">
+                SPEC 6.4 // PROD
               </span>
             </div>
-            <p class="text-[11px] font-medium text-slate-500">Autonomous Self-Healing Credit Engine</p>
+            <p class="micro-label mt-0.5">AUTONOMOUS CREDIT RISK &amp; RECONCILIATION ENGINE</p>
           </div>
         </a>
 
-        <!-- Cluster Status Pill -->
-        <div id="clusterHealthPill" class="hidden sm:flex items-center gap-2 px-3 py-1 rounded-full bg-emerald-50 border border-emerald-200/80 text-emerald-700 text-xs font-semibold">
-          <span class="w-2 h-2 rounded-full bg-emerald-500 animate-ping"></span>
-          <span>Kind (3/3 Nodes Ready)</span>
+        <!-- Cluster Status Badge -->
+        <div id="clusterHealthBadge" class="hidden sm:flex items-center gap-2 px-3 py-1 bg-[#F8F6F0] border-2 border-black font-mono text-xs font-bold text-black">
+          <span class="w-2 h-2 bg-[#1D7A4D]"></span>
+          <span>KIND // 3 NODES READY</span>
         </div>
       </div>
 
-      <!-- Segmented Bento Navigation Bar -->
-      <nav class="flex items-center gap-1 bg-slate-100/90 p-1.5 rounded-2xl border border-slate-200/80 text-xs font-medium text-slate-600 shadow-inner">
-        <button id="tab-overview" onclick="switchTab('overview')" class="tab-pill px-4 py-2 rounded-xl hover:text-slate-900 transition flex items-center gap-1.5">
-          <span>📊</span>
-          <span>Overview</span>
+      <!-- Segmented Physical Navigation Bar -->
+      <nav class="flex items-center gap-1 bg-[#E7E3D8] p-1 border-2 border-black overflow-x-auto max-w-full">
+        <button id="tab-overview" onclick="switchTab('overview')" class="cypher-tab active">
+          01 // OVERVIEW
         </button>
-        <button id="tab-scoring" onclick="switchTab('scoring')" class="tab-pill px-4 py-2 rounded-xl hover:text-slate-900 transition flex items-center gap-1.5">
-          <span>💳</span>
-          <span>Loan Scorer</span>
+        <button id="tab-scoring" onclick="switchTab('scoring')" class="cypher-tab">
+          02 // LOAN SCORER
         </button>
-        <button id="tab-chaos" onclick="switchTab('chaos')" class="tab-pill px-4 py-2 rounded-xl hover:text-slate-900 transition flex items-center gap-1.5">
-          <span>⚡</span>
-          <span>Chaos Lab</span>
+        <button id="tab-chaos" onclick="switchTab('chaos')" class="cypher-tab">
+          03 // CHAOS LAB
         </button>
-        <button id="tab-drift" onclick="switchTab('drift')" class="tab-pill px-4 py-2 rounded-xl hover:text-slate-900 transition flex items-center gap-1.5">
-          <span>📈</span>
-          <span>Drift Monitor</span>
+        <button id="tab-drift" onclick="switchTab('drift')" class="cypher-tab">
+          04 // DRIFT MONITOR
         </button>
-        <button id="tab-terminal" onclick="switchTab('terminal')" class="tab-pill px-4 py-2 rounded-xl hover:text-slate-900 transition flex items-center gap-1.5">
-          <span>💻</span>
-          <span>Console</span>
+        <button id="tab-terminal" onclick="switchTab('terminal')" class="cypher-tab">
+          05 // CONSOLE
         </button>
-        <button id="tab-ecosystem" onclick="switchTab('ecosystem')" class="tab-pill px-4 py-2 rounded-xl hover:text-slate-900 transition flex items-center gap-1.5">
-          <span>🔗</span>
-          <span>Portals</span>
+        <button id="tab-ecosystem" onclick="switchTab('ecosystem')" class="cypher-tab">
+          06 // PORTALS
         </button>
       </nav>
 
     </div>
   </header>
 
-  <!-- ================= NOTIFICATION TOAST ================= -->
-  <div id="toastNotification" class="hidden fixed bottom-6 right-6 z-50 max-w-md p-4 rounded-2xl shadow-2xl transition-all duration-300 transform bg-white border border-slate-200 text-slate-800 flex items-center justify-between gap-3 shadow-bento-hover">
-    <div class="flex items-center gap-3">
-      <span id="toastIcon" class="text-2xl"></span>
-      <div>
-        <p id="toastTitle" class="text-xs font-bold text-slate-900"></p>
-        <p id="toastMessage" class="text-xs text-slate-600 mt-0.5"></p>
+  <!-- ================= SUB-HEADER STATUS BAR ================= -->
+  <div class="border-b-2 border-black bg-[#C8FF5A] px-6 py-2">
+    <div class="max-w-[1400px] mx-auto flex flex-wrap items-center justify-between text-xs font-mono text-black font-semibold gap-3">
+      <div class="flex items-center gap-4">
+        <span>MODEL: <strong id="subHeaderModelVer" class="underline decoration-2">loan-default:v4</strong></span>
+        <span>REGISTRY: <strong>MLflow 5000</strong></span>
+        <span>STORE: <strong>Feast / Redis 6379</strong></span>
+      </div>
+      <div class="flex items-center gap-4">
+        <span>DATASET: <strong>UCI Taiwan (30,000 Borrowers)</strong></span>
+        <span id="driftStatePill" class="px-2 py-0.5 bg-black text-[#C8FF5A] border border-black font-bold uppercase text-[10px]">
+          DRIFT: STABLE
+        </span>
       </div>
     </div>
-    <button onclick="hideToast()" class="text-slate-400 hover:text-slate-600 text-base font-bold">&times;</button>
   </div>
 
   <!-- ================= MAIN CONTAINER ================= -->
-  <main class="flex-1 max-w-7xl w-full mx-auto px-6 py-8">
+  <main class="flex-1 max-w-[1400px] w-full mx-auto p-6 space-y-8">
 
-    <!-- ================= PAGE 1: OVERVIEW (BENTO GRID) ================= -->
-    <div id="view-overview" class="view-panel space-y-6">
+    <!-- ================= PAGE 1: OVERVIEW ================= -->
+    <div id="view-overview" class="view-panel space-y-8">
       
-      <!-- Top Bento Header Strip -->
-      <div class="flex flex-col md:flex-row md:items-center justify-between gap-4 p-6 rounded-3xl bg-gradient-to-r from-indigo-50/80 via-white to-sky-50/80 border border-slate-200/80 shadow-bento">
-        <div>
-          <span class="px-3 py-1 rounded-full bg-brand-600 text-white text-[11px] font-bold tracking-wider uppercase inline-block mb-2">
-            Autonomous MLOps Dashboard
-          </span>
-          <h1 class="text-2xl md:text-3xl font-extrabold text-slate-900 tracking-tight">
-            Production Intelligence &amp; Resilience
-          </h1>
-          <p class="text-xs text-slate-500 mt-1 max-w-2xl">
-            Live observation deck for model serving, point-in-time feature hydration with Feast, drift debouncing, and automated disaster recovery.
-          </p>
-        </div>
-        <div class="flex items-center gap-3">
-          <span id="overviewDriftPill" class="px-3.5 py-1.5 text-xs font-bold rounded-xl bg-emerald-50 text-emerald-700 border border-emerald-200/80 flex items-center gap-1.5 shadow-sm">
-            <span class="w-2 h-2 rounded-full bg-emerald-500"></span>
-            Drift Status: Normal (0 Drifted)
-          </span>
-          <button onclick="refreshData()" class="p-2.5 rounded-xl bg-white hover:bg-slate-50 border border-slate-200 text-slate-600 hover:text-slate-900 shadow-sm transition" title="Refresh Live State">
-            <svg id="refreshIcon" class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15"/></svg>
-          </button>
-        </div>
-      </div>
-
-      <!-- Bento Tier 1: 4 Golden Signals Bento Tiles -->
-      <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-5">
-        
-        <!-- Tile 1: Traffic -->
-        <div class="bento-card rounded-3xl p-6 relative overflow-hidden">
-          <div class="flex items-center justify-between text-slate-500 text-xs font-bold uppercase tracking-wider mb-2">
-            <span>Inference Traffic</span>
-            <div class="w-7 h-7 rounded-xl bg-indigo-50 text-brand-600 flex items-center justify-center text-xs font-bold">
-              ⚡
+      <!-- Asymmetric Editorial Hero -->
+      <div class="cypher-panel-lime p-8">
+        <div class="grid grid-cols-1 lg:grid-cols-12 gap-6 items-start">
+          <div class="lg:col-span-8 space-y-3">
+            <span class="micro-label text-black bg-white px-2 py-0.5 border border-black inline-block">
+              SYSTEM REPORT // REVISION 4.0
+            </span>
+            <h1 class="text-4xl sm:text-6xl font-black text-black leading-none tracking-tighter uppercase">
+              AUTONOMOUS MLOPS &amp;<br>SELF-HEALING ENGINE
+            </h1>
+            <p class="text-base text-black max-w-2xl font-medium pt-2">
+              Continuous credit risk scoring on 30,000 real Taiwan borrowers with Feast online store feature retrieval, automated statistical drift surveillance, and zero-downtime Kubernetes self-healing.
+            </p>
+          </div>
+          <div class="lg:col-span-4 flex flex-col gap-3 justify-end h-full">
+            <div class="bg-[#F8F6F0] p-4 border-2 border-black shadow-[3px_3px_0_#171717] space-y-1">
+              <span class="micro-label">TARGET MACHINE CONTRACT</span>
+              <p class="font-mono text-xs font-bold text-black">8 CPU / 16 GB RAM • PDB minAvailable=1</p>
+              <p class="font-mono text-[11px] text-[#66645D]">Zero billable AWS spend • Spec is Law</p>
+            </div>
+            <div class="flex items-center gap-2">
+              <button onclick="switchTab('scoring')" class="cypher-btn w-full">
+                TEST SCORING &rarr;
+              </button>
+              <button onclick="switchTab('chaos')" class="cypher-btn cypher-btn-secondary w-full">
+                CHAOS DRILL
+              </button>
             </div>
           </div>
-          <div class="flex items-baseline gap-2">
-            <span id="metricRPS" class="text-4xl font-extrabold text-slate-900 font-mono tracking-tight">0.0</span>
-            <span class="text-xs text-slate-500 font-semibold">req / sec</span>
-          </div>
-          <p class="text-[11px] text-slate-400 mt-3 font-medium">Scraped directly from Prometheus via model-api</p>
         </div>
-
-        <!-- Tile 2: Latency -->
-        <div class="bento-card rounded-3xl p-6 relative overflow-hidden">
-          <div class="flex items-center justify-between text-slate-500 text-xs font-bold uppercase tracking-wider mb-2">
-            <span>P95 Response Latency</span>
-            <span class="px-2 py-0.5 rounded-md bg-cyan-50 text-cyan-700 text-[10px] font-bold border border-cyan-200">SLA &lt;150ms</span>
-          </div>
-          <div class="flex items-baseline gap-2">
-            <span id="metricP95" class="text-4xl font-extrabold text-slate-900 font-mono tracking-tight">--</span>
-            <span class="text-xs text-slate-500 font-semibold">ms</span>
-          </div>
-          <p class="text-[11px] text-slate-500 mt-3 font-medium">Median (P50): <strong id="metricP50" class="text-slate-800 font-mono">-- ms</strong></p>
-        </div>
-
-        <!-- Tile 3: Error Rate -->
-        <div class="bento-card rounded-3xl p-6 relative overflow-hidden">
-          <div class="flex items-center justify-between text-slate-500 text-xs font-bold uppercase tracking-wider mb-2">
-            <span>Error Rate</span>
-            <span class="px-2 py-0.5 rounded-md bg-emerald-50 text-emerald-700 text-[10px] font-bold border border-emerald-200">99.9% Up</span>
-          </div>
-          <div class="flex items-baseline gap-2">
-            <span id="metricErrors" class="text-4xl font-extrabold text-slate-900 font-mono tracking-tight">0.0%</span>
-          </div>
-          <p class="text-[11px] text-slate-500 mt-3 font-medium">Zero 5xx errors across replica deletions</p>
-        </div>
-
-        <!-- Tile 4: Replicas -->
-        <div class="bento-card rounded-3xl p-6 relative overflow-hidden">
-          <div class="flex items-center justify-between text-slate-500 text-xs font-bold uppercase tracking-wider mb-2">
-            <span>Serving Replicas</span>
-            <span id="metricReplicasBadge" class="px-2 py-0.5 rounded-md bg-emerald-50 text-emerald-700 text-[10px] font-bold border border-emerald-200">Healthy</span>
-          </div>
-          <div class="flex items-baseline gap-2">
-            <span id="metricReplicas" class="text-4xl font-extrabold text-slate-900 font-mono tracking-tight">2</span>
-            <span class="text-xs text-slate-500 font-semibold">/ 2 desired</span>
-          </div>
-          <p class="text-[11px] text-slate-500 mt-3 font-medium">HPA autoscaler: min 2 &bull; max 6 pods</p>
-        </div>
-
       </div>
 
-      <!-- Bento Tier 2: Champion Spotlight (2 Columns) -->
+      <!-- Section 1: Four Golden Signals (Physical Instrument Cards) -->
+      <div>
+        <div class="flex items-center justify-between mb-3 border-b-2 border-black pb-2">
+          <h2 class="text-sm font-bold uppercase tracking-wider text-black">
+            01 // FOUR GOLDEN SIGNALS (PROMETHEUS TELEMETRY)
+          </h2>
+          <span class="micro-label">SCRAPE INTERVAL: 15S</span>
+        </div>
+
+        <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-5">
+          
+          <!-- Signal 1: RPS -->
+          <div class="cypher-panel-bright p-6 flex flex-col justify-between">
+            <div>
+              <span class="micro-label">01.01 // THROUGHPUT</span>
+              <p id="metricRPS" class="text-5xl font-black text-black font-mono tracking-tighter mt-3">0.0</p>
+            </div>
+            <div class="mt-4 pt-3 border-t-2 border-black flex items-center justify-between text-xs font-mono text-[#66645D]">
+              <span>UNIT: REQ/SEC</span>
+              <span class="text-black font-bold">RATE(1M)</span>
+            </div>
+          </div>
+
+          <!-- Signal 2: P95 Latency -->
+          <div class="cypher-panel-bright p-6 flex flex-col justify-between">
+            <div>
+              <span class="micro-label">01.02 // P95 LATENCY</span>
+              <p id="metricP95" class="text-5xl font-black text-black font-mono tracking-tighter mt-3">--</p>
+            </div>
+            <div class="mt-4 pt-3 border-t-2 border-black flex items-center justify-between text-xs font-mono text-[#66645D]">
+              <span>SLA THRESHOLD: &lt; 50MS</span>
+              <span class="text-black font-bold">P50: <span id="metricP50">-- ms</span></span>
+            </div>
+          </div>
+
+          <!-- Signal 3: Error Rate -->
+          <div class="cypher-panel-bright p-6 flex flex-col justify-between">
+            <div>
+              <span class="micro-label">01.03 // ERROR RATE</span>
+              <p id="metricErrors" class="text-5xl font-black text-black font-mono tracking-tighter mt-3">0.0%</p>
+            </div>
+            <div class="mt-4 pt-3 border-t-2 border-black flex items-center justify-between text-xs font-mono text-[#66645D]">
+              <span>STATUS 5XX RATIO</span>
+              <span class="text-[#1D7A4D] font-bold">HEALTHY</span>
+            </div>
+          </div>
+
+          <!-- Signal 4: Replicas -->
+          <div class="cypher-panel-bright p-6 flex flex-col justify-between">
+            <div>
+              <span class="micro-label">01.04 // SERVING PODS</span>
+              <div class="flex items-baseline gap-2 mt-3">
+                <span id="metricReplicas" class="text-5xl font-black text-black font-mono tracking-tighter">4</span>
+                <span class="text-sm font-mono font-bold text-[#66645D]">/ 4 DESIRED</span>
+              </div>
+            </div>
+            <div class="mt-4 pt-3 border-t-2 border-black flex items-center justify-between text-xs font-mono">
+              <span id="metricReplicasBadge" class="font-bold text-[#1D7A4D]">ALL ONLINE</span>
+              <span class="text-[#66645D]">MIN: 2 // MAX: 6</span>
+            </div>
+          </div>
+
+        </div>
+      </div>
+
+      <!-- Section 2: Champion Lineage & Cluster Status (Structured Panels) -->
       <div class="grid grid-cols-1 lg:grid-cols-12 gap-6">
         
-        <!-- Big Bento Card (7 cols): Champion Model Lineage -->
-        <div class="lg:col-span-7 bento-card rounded-3xl p-7 flex flex-col justify-between">
-          <div>
-            <div class="flex items-center justify-between mb-5">
-              <div class="flex items-center gap-3">
-                <div class="w-10 h-10 rounded-2xl bg-indigo-50 border border-indigo-200 text-brand-600 flex items-center justify-center font-bold text-base shadow-sm">
-                  ML
-                </div>
-                <div>
-                  <h3 class="text-lg font-bold text-slate-900">Active Champion Model Lineage</h3>
-                  <p class="text-xs text-slate-500">Registered in MLflow with candidate &rarr; champion alias promotion</p>
-                </div>
-              </div>
-              <span class="px-3 py-1 text-xs font-mono font-extrabold rounded-full bg-emerald-50 text-emerald-700 border border-emerald-200/80">
-                CHAMPION
-              </span>
+        <!-- Champion Model Dossier (8 cols) -->
+        <div class="lg:col-span-8 cypher-panel p-6 space-y-4">
+          <div class="flex items-center justify-between border-b-2 border-black pb-3">
+            <div>
+              <span class="micro-label">02 // ARTIFACT LINEAGE</span>
+              <h3 id="championModelTitle" class="text-lg font-black uppercase text-black">Champion Model Version 4</h3>
             </div>
+            <span class="px-2.5 py-1 bg-black text-[#C8FF5A] font-mono text-xs font-bold">
+              ALIAS: @champion
+            </span>
+          </div>
 
-            <div class="grid grid-cols-1 sm:grid-cols-2 gap-4 text-xs">
-              <div class="p-4 rounded-2xl bg-slate-50/80 border border-slate-200/60">
-                <span class="text-slate-400 font-medium block text-[11px]">Model Architecture</span>
-                <span class="font-bold text-slate-900 text-sm mt-0.5 block">HistGradientBoosting</span>
-                <span class="text-[11px] text-slate-500">Scikit-Learn 1.9 &bull; Cloudpickle</span>
-              </div>
-
-              <div class="p-4 rounded-2xl bg-slate-50/80 border border-slate-200/60">
-                <span class="text-slate-400 font-medium block text-[11px]">Dataset Foundation</span>
-                <span class="font-bold text-brand-600 text-sm mt-0.5 block">UCI Taiwan (30,000 Clients)</span>
-                <span class="text-[11px] text-slate-500">23 Raw Features &bull; Float32</span>
-              </div>
-
-              <div class="p-4 rounded-2xl bg-slate-50/80 border border-slate-200/60">
-                <span class="text-slate-400 font-medium block text-[11px]">Quality Gate Performance</span>
-                <span class="font-mono font-bold text-emerald-600 text-sm mt-0.5 block">Test AUC: 0.8970</span>
-                <span class="text-[11px] text-slate-500">Validation AUC: 0.8808 (Floor 0.70)</span>
-              </div>
-
-              <div class="p-4 rounded-2xl bg-slate-50/80 border border-slate-200/60">
-                <span class="text-slate-400 font-medium block text-[11px]">Online Feature Hydration</span>
-                <span class="font-mono font-bold text-cyan-700 text-sm mt-0.5 block">Feast Redis (loan_default_v1)</span>
-                <span class="text-[11px] text-slate-500">30,000 Entities &bull; &lt;10ms query</span>
-              </div>
+          <div class="grid grid-cols-1 sm:grid-cols-3 gap-4 pt-2">
+            <div class="p-3 bg-[#F8F6F0] border-2 border-black">
+              <span class="micro-label">ALGORITHM</span>
+              <p class="font-mono text-sm font-bold text-black mt-1">HistGradientBoosting</p>
+              <p class="text-[11px] text-[#66645D] mt-0.5">Scikit-Learn 1.4+ • max_iter=180</p>
+            </div>
+            <div class="p-3 bg-[#F8F6F0] border-2 border-black">
+              <span class="micro-label">TEST ROC-AUC</span>
+              <p id="championAucMetric" class="font-mono text-sm font-bold text-[#1D7A4D] mt-1">0.8970 (Pass Gate)</p>
+              <p class="text-[11px] text-[#66645D] mt-0.5">SPEC Quality Gate Threshold: &ge; 0.83</p>
+            </div>
+            <div class="p-3 bg-[#F8F6F0] border-2 border-black">
+              <span class="micro-label">FEAST FEATURE SERVICE</span>
+              <p class="font-mono text-sm font-bold text-black mt-1">loan_default_v1</p>
+              <p class="text-[11px] text-[#66645D] mt-0.5">Point-in-time Redis online store</p>
             </div>
           </div>
 
-          <div class="mt-6 pt-4 border-t border-slate-200/80 flex items-center justify-between">
-            <span class="text-xs text-slate-500 font-medium">Ready to test real-time borrower scoring?</span>
-            <button onclick="switchTab('scoring')" class="px-4 py-2 rounded-xl bg-brand-600 hover:bg-brand-700 text-white text-xs font-bold transition flex items-center gap-2 shadow-sm shadow-brand-500/20">
-              <span>Open Loan Scorer</span>
-              <span>&rarr;</span>
-            </button>
+          <div class="p-3.5 bg-[#F8F6F0] border-2 border-black flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3 text-xs font-mono">
+            <div>
+              <span class="text-[#66645D]">MLflow Run ID:</span>
+              <span id="metaRunId" class="text-black font-bold ml-1">07ca3e968db44c5eb288fe70f6d75cd3</span>
+            </div>
+            <a href="http://localhost:5000" target="_blank" class="text-black underline font-bold hover:text-[#1D7A4D]">
+              INSPECT IN MLFLOW &rarr;
+            </a>
           </div>
         </div>
 
-        <!-- Bento Card (5 cols): Infrastructure Vitals -->
-        <div class="lg:col-span-5 bento-card rounded-3xl p-7 flex flex-col justify-between">
-          <div>
-            <div class="flex items-center justify-between mb-4">
-              <div class="flex items-center gap-3">
-                <div class="w-10 h-10 rounded-2xl bg-sky-50 border border-sky-200 text-sky-600 flex items-center justify-center font-bold text-base shadow-sm">
-                  K8s
-                </div>
-                <div>
-                  <h3 class="text-lg font-bold text-slate-900">Infrastructure Stack</h3>
-                  <p class="text-xs text-slate-500">Kind 3-Node Cluster &bull; OpenTofu</p>
-                </div>
-              </div>
-              <span class="text-xs font-mono text-slate-400 font-medium">:8080 Active</span>
+        <!-- Infrastructure Vitals Checklist (4 cols) -->
+        <div class="lg:col-span-4 cypher-panel p-6 flex flex-col justify-between space-y-4">
+          <div class="border-b-2 border-black pb-3">
+            <span class="micro-label">03 // KUBERNETES TOPOLOGY</span>
+            <h3 class="text-lg font-black uppercase text-black">Cluster Health</h3>
+          </div>
+
+          <div class="space-y-2 text-xs font-mono">
+            <div class="flex items-center justify-between p-2 bg-[#F8F6F0] border border-black">
+              <span>Kind Nodes (Control/Workers)</span>
+              <strong class="text-[#1D7A4D]">3 / 3 READY</strong>
             </div>
-
-            <div class="space-y-2.5 text-xs">
-              <div class="flex items-center justify-between p-3 rounded-2xl bg-slate-50/80 border border-slate-200/60">
-                <div class="flex items-center gap-2.5">
-                  <span class="w-2 h-2 rounded-full bg-emerald-500"></span>
-                  <span class="font-bold text-slate-800">Kubernetes Nodes</span>
-                </div>
-                <span class="text-slate-600 font-mono font-medium">3/3 Ready</span>
-              </div>
-
-              <div class="flex items-center justify-between p-3 rounded-2xl bg-slate-50/80 border border-slate-200/60">
-                <div class="flex items-center gap-2.5">
-                  <span class="w-2 h-2 rounded-full bg-emerald-500"></span>
-                  <span class="font-bold text-slate-800">Redis Online Store</span>
-                </div>
-                <span class="text-slate-600 font-mono font-medium">30,000 Keys Cached</span>
-              </div>
-
-              <div class="flex items-center justify-between p-3 rounded-2xl bg-slate-50/80 border border-slate-200/60">
-                <div class="flex items-center gap-2.5">
-                  <span class="w-2 h-2 rounded-full bg-emerald-500"></span>
-                  <span class="font-bold text-slate-800">MLflow Tracking &amp; S3</span>
-                </div>
-                <span class="text-slate-600 font-mono font-medium">MinIO Backend</span>
-              </div>
-
-              <div class="flex items-center justify-between p-3 rounded-2xl bg-slate-50/80 border border-slate-200/60">
-                <div class="flex items-center gap-2.5">
-                  <span class="w-2 h-2 rounded-full bg-emerald-500"></span>
-                  <span class="font-bold text-slate-800">Alertmanager &amp; Remediator</span>
-                </div>
-                <span class="text-slate-600 font-mono font-medium">Webhooks Armed</span>
-              </div>
+            <div class="flex items-center justify-between p-2 bg-[#F8F6F0] border border-black">
+              <span>Prometheus + Alertmanager</span>
+              <strong class="text-[#1D7A4D]">ONLINE (9090)</strong>
+            </div>
+            <div class="flex items-center justify-between p-2 bg-[#F8F6F0] border border-black">
+              <span>MLflow Model Registry</span>
+              <strong class="text-[#1D7A4D]">ONLINE (5000)</strong>
+            </div>
+            <div class="flex items-center justify-between p-2 bg-[#F8F6F0] border border-black">
+              <span>MinIO S3 Artifact Store</span>
+              <strong class="text-[#1D7A4D]">ONLINE (9000)</strong>
             </div>
           </div>
 
-          <div class="mt-6 pt-4 border-t border-slate-200/80 flex items-center justify-between">
-            <span class="text-xs text-slate-500 font-medium">Test pod crash resilience</span>
-            <button onclick="switchTab('chaos')" class="px-4 py-2 rounded-xl bg-slate-100 hover:bg-slate-200 text-slate-800 text-xs font-bold transition flex items-center gap-2">
-              <span>Chaos Lab</span>
-              <span>&rarr;</span>
-            </button>
-          </div>
-        </div>
-
-      </div>
-
-      <!-- Bento Tier 3: 3 Visual Landing Page Launchpads -->
-      <div class="grid grid-cols-1 md:grid-cols-3 gap-6">
-        
-        <div onclick="switchTab('scoring')" class="cursor-pointer bento-card rounded-3xl p-6 transition flex flex-col justify-between group">
-          <div>
-            <div class="w-12 h-12 rounded-2xl bg-indigo-50 border border-indigo-100 text-brand-600 flex items-center justify-center text-xl mb-4 group-hover:scale-105 transition-transform">
-              💳
-            </div>
-            <h4 class="text-base font-extrabold text-slate-900 group-hover:text-brand-600 transition-colors">1. Borrower Risk Simulator</h4>
-            <p class="text-xs text-slate-500 mt-2 leading-relaxed">Select real borrowers from the UCI dataset, inspect demographics &amp; repayment history, and run real-time inference.</p>
-          </div>
-          <span class="text-xs font-bold text-brand-600 mt-5 inline-flex items-center gap-1">Launch Simulator &rarr;</span>
-        </div>
-
-        <div onclick="switchTab('chaos')" class="cursor-pointer bento-card rounded-3xl p-6 transition flex flex-col justify-between group">
-          <div>
-            <div class="w-12 h-12 rounded-2xl bg-rose-50 border border-rose-100 text-rose-600 flex items-center justify-center text-xl mb-4 group-hover:scale-105 transition-transform">
-              ⚡
-            </div>
-            <h4 class="text-base font-extrabold text-slate-900 group-hover:text-rose-600 transition-colors">2. Live Chaos &amp; Self-Healing</h4>
-            <p class="text-xs text-slate-500 mt-2 leading-relaxed">Kill serving replicas live with one click and watch Kubernetes PDB and ReplicaSet resurrect replacement pods in sub-8 seconds.</p>
-          </div>
-          <span class="text-xs font-bold text-rose-600 mt-5 inline-flex items-center gap-1">Open Chaos Lab &rarr;</span>
-        </div>
-
-        <div onclick="switchTab('drift')" class="cursor-pointer bento-card rounded-3xl p-6 transition flex flex-col justify-between group">
-          <div>
-            <div class="w-12 h-12 rounded-2xl bg-purple-50 border border-purple-100 text-purple-600 flex items-center justify-center text-xl mb-4 group-hover:scale-105 transition-transform">
-              📈
-            </div>
-            <h4 class="text-base font-extrabold text-slate-900 group-hover:text-purple-600 transition-colors">3. Statistical Drift Monitor</h4>
-            <p class="text-xs text-slate-500 mt-2 leading-relaxed">Inspect live PSI stability scores across all 23 UCI features, trigger synthetic drift, and watch the closed-loop retraining cycle.</p>
-          </div>
-          <span class="text-xs font-bold text-purple-600 mt-5 inline-flex items-center gap-1">Inspect Drift Matrix &rarr;</span>
+          <button onclick="executeAction('reset_demo')" class="cypher-btn cypher-btn-secondary w-full text-xs">
+            RESTORE PRISTINE BASELINE
+          </button>
         </div>
 
       </div>
 
     </div>
 
-    <!-- ================= PAGE 2: LOAN SCORER (INFERENCE BENTO) ================= -->
-    <div id="view-scoring" class="view-panel hidden space-y-6">
+    <!-- ================= PAGE 2: LOAN SCORER ================= -->
+    <div id="view-scoring" class="view-panel hidden space-y-8">
       
-      <div class="p-6 rounded-3xl bg-gradient-to-r from-indigo-50/80 via-white to-sky-50/80 border border-slate-200/80 shadow-bento flex flex-col md:flex-row md:items-center justify-between gap-4">
+      <div class="border-b-2 border-black pb-3 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
         <div>
-          <span class="px-3 py-1 rounded-full bg-brand-600 text-white text-[11px] font-bold tracking-wider uppercase inline-block mb-2">
-            Inference Lab
+          <span class="micro-label text-black bg-[#C8FF5A] px-2 py-0.5 border border-black inline-block mb-1">
+            02 // INFERENCE ENGINE
           </span>
-          <h1 class="text-2xl md:text-3xl font-extrabold text-slate-900 tracking-tight">
-            Borrower Credit Risk Assessment
-          </h1>
-          <p class="text-xs text-slate-500 mt-1">Real-time model scoring powered by Feast Redis feature store hydration and Champion Model Version 4</p>
+          <h1 class="text-3xl font-black uppercase text-black">Real-Time Borrower Risk Scorer</h1>
+          <p class="text-xs text-[#66645D]">Point-in-time Feast feature retrieval across 30,000 UCI Taiwan credit records</p>
         </div>
-        <span class="px-3.5 py-1.5 rounded-xl bg-white border border-slate-200 text-slate-700 text-xs font-mono font-bold shadow-sm">
-          POST /predict
-        </span>
+        <div class="flex items-center gap-2">
+          <span class="px-3 py-1 bg-[#F8F6F0] border-2 border-black font-mono text-xs font-bold text-black">
+            ENDPOINT: /predict
+          </span>
+        </div>
       </div>
 
       <div class="grid grid-cols-1 lg:grid-cols-12 gap-6">
         
-        <!-- Left Column: Borrower Archetypes & Dossier (7 cols) -->
+        <!-- Controls & Borrower Selector (5 cols) -->
+        <div class="lg:col-span-5 cypher-panel p-6 space-y-5">
+          <div class="border-b-2 border-black pb-3">
+            <span class="micro-label">SELECT BORROWER ARCHETYPE</span>
+            <h3 class="text-base font-black uppercase text-black mt-1">Profile Selection</h3>
+          </div>
+
+          <!-- Quick Selector Buttons -->
+          <div class="grid grid-cols-1 gap-2">
+            <button onclick="pickBorrower('1')" class="p-3 bg-[#F8F6F0] hover:bg-[#C8FF5A] border-2 border-black text-left transition flex items-center justify-between">
+              <div>
+                <strong class="block text-xs font-mono text-black uppercase">Borrower #1 // High Default Risk</strong>
+                <span class="text-[11px] text-[#66645D]">6-month delinquency history (pay_0 = 6.0)</span>
+              </div>
+              <span class="px-2 py-0.5 bg-[#B52A24] text-white text-[10px] font-mono font-bold">RISKY</span>
+            </button>
+
+            <button onclick="pickBorrower('3')" class="p-3 bg-[#F8F6F0] hover:bg-[#C8FF5A] border-2 border-black text-left transition flex items-center justify-between">
+              <div>
+                <strong class="block text-xs font-mono text-black uppercase">Borrower #3 // Low Risk / Clean Record</strong>
+                <span class="text-[11px] text-[#66645D]">Pristine on-time revolving payments</span>
+              </div>
+              <span class="px-2 py-0.5 bg-[#1D7A4D] text-white text-[10px] font-mono font-bold">APPROVED</span>
+            </button>
+
+            <button onclick="pickRandomBorrower()" class="p-3 bg-[#F8F6F0] hover:bg-[#C8FF5A] border-2 border-black text-left transition flex items-center justify-between">
+              <div>
+                <strong class="block text-xs font-mono text-black uppercase">Random Sample (1 to 30,000)</strong>
+                <span class="text-[11px] text-[#66645D]">Selects an arbitrary client from dataset</span>
+              </div>
+              <span class="text-xs font-mono font-bold text-black">&rarr;</span>
+            </button>
+          </div>
+
+          <!-- Manual ID Input -->
+          <div class="pt-2 border-t-2 border-black space-y-2">
+            <label class="micro-label">CUSTOMER IDENTIFIER (1 - 30,000)</label>
+            <div class="flex gap-2">
+              <input id="inputCustomerId" type="number" min="1" max="30000" value="1" class="flex-1 px-3 py-2 bg-[#F8F6F0] border-2 border-black font-mono text-sm font-bold text-black focus:outline-none focus:bg-[#C8FF5A]">
+              <button onclick="loadCustomerProfile(document.getElementById('inputCustomerId').value)" class="cypher-btn cypher-btn-secondary">
+                HYDRATE
+              </button>
+            </div>
+          </div>
+
+          <button onclick="scoreCurrentBorrower()" class="cypher-btn cypher-btn-lime w-full py-4 text-xs font-black">
+            EXECUTE INFERENCE ON MODEL-API &rarr;
+          </button>
+        </div>
+
+        <!-- Dossier & Live Scoring Output (7 cols) -->
         <div class="lg:col-span-7 space-y-6">
           
-          <!-- Borrower Archetypes Selector Bento -->
-          <div class="bento-card rounded-3xl p-6">
-            <h3 class="text-xs font-bold uppercase tracking-wider text-slate-400 mb-3">1. Select Borrower Archetype</h3>
-            <p class="text-xs text-slate-600 mb-4">Choose a representative borrower archetype from the UCI Taiwan dataset or enter a custom ID:</p>
-            
-            <div class="grid grid-cols-1 sm:grid-cols-3 gap-3 mb-5">
-              <button onclick="pickBorrower(1)" class="p-4 rounded-2xl bg-slate-50 hover:bg-rose-50/60 border border-slate-200 hover:border-rose-200 text-left transition group">
-                <div class="flex items-center justify-between mb-1">
-                  <span class="font-extrabold text-sm text-slate-900 group-hover:text-rose-600">Borrower #1</span>
-                  <span class="text-[10px] font-bold px-2 py-0.5 rounded-full bg-rose-100 text-rose-700 border border-rose-200">High Risk</span>
-                </div>
-                <p class="text-[11px] text-slate-500 mt-1">Age 24 &bull; 6mo delay &bull; Low limit</p>
-              </button>
-
-              <button onclick="pickBorrower(3)" class="p-4 rounded-2xl bg-slate-50 hover:bg-emerald-50/60 border border-slate-200 hover:border-emerald-200 text-left transition group">
-                <div class="flex items-center justify-between mb-1">
-                  <span class="font-extrabold text-sm text-slate-900 group-hover:text-emerald-600">Borrower #3</span>
-                  <span class="text-[10px] font-bold px-2 py-0.5 rounded-full bg-emerald-100 text-emerald-700 border border-emerald-200">Approved</span>
-                </div>
-                <p class="text-[11px] text-slate-500 mt-1">Age 34 &bull; On-time pay &bull; High limit</p>
-              </button>
-
-              <button onclick="pickRandomBorrower()" class="p-4 rounded-2xl bg-slate-50 hover:bg-indigo-50/60 border border-slate-200 hover:border-indigo-200 text-left transition group">
-                <div class="flex items-center justify-between mb-1">
-                  <span class="font-extrabold text-sm text-slate-900 group-hover:text-brand-600">Random Client</span>
-                  <span class="text-[10px] font-bold px-2 py-0.5 rounded-full bg-indigo-100 text-indigo-700 border border-indigo-200">1&ndash;30k</span>
-                </div>
-                <p class="text-[11px] text-slate-500 mt-1">Draw random real borrower</p>
-              </button>
+          <!-- Live Result Gauge -->
+          <div id="scoreResultCard" class="cypher-panel-bright p-6 space-y-4">
+            <div class="flex items-center justify-between border-b-2 border-black pb-3">
+              <span class="micro-label">PREDICTION VERDICT</span>
+              <span id="scoreLatencyBadge" class="font-mono text-xs font-bold text-[#66645D]">LATENCY: -- MS</span>
             </div>
 
-            <!-- Custom Input Box -->
-            <div class="flex gap-3">
-              <input id="inputCustomerId" type="number" min="1" max="30000" value="1" 
-                class="w-full px-4 py-3 rounded-2xl bg-slate-50 border border-slate-200 focus:border-brand-500 focus:bg-white text-sm font-mono font-bold text-slate-900 outline-none transition" 
-                placeholder="Enter Borrower ID (1 - 30000)">
-              <button id="btnScoreLoan" onclick="scoreCurrentBorrower()" class="px-6 py-3 rounded-2xl bg-brand-600 hover:bg-brand-700 text-white text-xs font-bold transition shadow-lg shadow-brand-500/20 flex items-center gap-2 whitespace-nowrap">
-                <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M13 10V3L4 14h7v7l9-11h-7z"/></svg>
-                <span>Score Borrower</span>
-              </button>
-            </div>
-          </div>
-
-          <!-- Hydrated Borrower Profile Bento -->
-          <div class="bento-card rounded-3xl p-6">
-            <h3 class="text-xs font-bold uppercase tracking-wider text-slate-400 mb-3">2. Hydrated Profile Attributes</h3>
-            <p class="text-xs text-slate-600 mb-4">Values pulled live from the Feast online feature store (Redis):</p>
-            
-            <div id="profileGrid" class="grid grid-cols-2 sm:grid-cols-4 gap-3 text-xs">
-              <div class="p-3.5 rounded-2xl bg-slate-50 border border-slate-200/80">
-                <span class="text-slate-400 block text-[11px] font-medium">Credit Limit</span>
-                <span id="profLimit" class="font-mono font-extrabold text-slate-900 text-sm mt-0.5 block">$11,250</span>
+            <div class="grid grid-cols-1 sm:grid-cols-2 gap-4 items-center">
+              <div>
+                <span class="micro-label">DEFAULT PROBABILITY</span>
+                <p id="scoreProbability" class="text-5xl font-black font-mono tracking-tighter text-black mt-1">--%</p>
+                <div class="w-full bg-[#E7E3D8] border-2 border-black h-4 mt-3">
+                  <div id="scoreProbBar" class="bg-black h-full transition-all duration-300" style="width: 0%"></div>
+                </div>
               </div>
-              <div class="p-3.5 rounded-2xl bg-slate-50 border border-slate-200/80">
-                <span class="text-slate-400 block text-[11px] font-medium">Age &amp; Gender</span>
-                <span id="profAgeSex" class="font-bold text-slate-900 text-sm mt-0.5 block">24 yrs &bull; Female</span>
-              </div>
-              <div class="p-3.5 rounded-2xl bg-slate-50 border border-slate-200/80">
-                <span class="text-slate-400 block text-[11px] font-medium">Education</span>
-                <span id="profEdu" class="font-bold text-slate-900 text-sm mt-0.5 block">University</span>
-              </div>
-              <div class="p-3.5 rounded-2xl bg-slate-50 border border-slate-200/80">
-                <span class="text-slate-400 block text-[11px] font-medium">Marital Status</span>
-                <span id="profMarriage" class="font-bold text-slate-900 text-sm mt-0.5 block">Married</span>
-              </div>
-
-              <div class="p-3.5 rounded-2xl bg-slate-50 border border-slate-200/80">
-                <span class="text-slate-400 block text-[11px] font-medium">Delay (pay_0)</span>
-                <span id="profPay0" class="font-mono font-extrabold text-rose-600 text-sm mt-0.5 block">6 mo delay</span>
-              </div>
-              <div class="p-3.5 rounded-2xl bg-slate-50 border border-slate-200/80">
-                <span class="text-slate-400 block text-[11px] font-medium">Recent Bill</span>
-                <span id="profBill" class="font-mono font-extrabold text-slate-900 text-sm mt-0.5 block">$6,613</span>
-              </div>
-              <div class="p-3.5 rounded-2xl bg-slate-50 border border-slate-200/80">
-                <span class="text-slate-400 block text-[11px] font-medium">Recent Paid</span>
-                <span id="profPaid" class="font-mono font-extrabold text-slate-900 text-sm mt-0.5 block">$0</span>
-              </div>
-              <div class="p-3.5 rounded-2xl bg-slate-50 border border-slate-200/80">
-                <span class="text-slate-400 block text-[11px] font-medium">Input Dimension</span>
-                <span class="font-mono font-bold text-brand-600 text-sm mt-0.5 block">23 Features</span>
+              <div id="verdictBox" class="p-5 border-2 border-black bg-[#E7E3D8] text-center space-y-1">
+                <span class="micro-label">CLASSIFICATION DECISION</span>
+                <p id="scoreRiskLevel" class="text-lg font-black text-black uppercase tracking-tight">READY TO SCORE</p>
+                <p id="scoreModelVer" class="font-mono text-xs text-[#66645D]">Champion v4</p>
               </div>
             </div>
           </div>
 
-        </div>
-
-        <!-- Right Column: Decision Output Bento (5 cols) -->
-        <div class="lg:col-span-5 space-y-6">
-          
-          <div class="bento-card rounded-3xl p-7 flex flex-col justify-between shadow-bento">
-            <div>
-              <div class="flex items-center justify-between mb-4">
-                <h3 class="text-xs font-bold uppercase tracking-wider text-slate-400">3. Decision Output</h3>
-                <span id="scoringLatencyBadge" class="text-xs font-mono font-bold text-indigo-600 bg-indigo-50 px-2.5 py-1 rounded-full border border-indigo-200">Latency: -- ms</span>
-              </div>
-
-              <!-- Main Decision Card -->
-              <div id="decisionCard" class="p-6 rounded-3xl bg-slate-50 border border-slate-200 text-center mb-6 transition-all">
-                <span id="decisionBadge" class="inline-block px-4 py-1.5 rounded-full text-xs font-extrabold uppercase tracking-wider bg-slate-200 text-slate-700 mb-2">
-                  Ready to Score
-                </span>
-                <h2 id="decisionTitle" class="text-2xl font-extrabold text-slate-900">Click &ldquo;Score Borrower&rdquo;</h2>
-                <p id="decisionDesc" class="text-xs text-slate-500 mt-1 font-medium">Live features will be hydrated from Redis</p>
-              </div>
-
-              <!-- Default Probability Meter -->
-              <div class="space-y-2 mb-6">
-                <div class="flex justify-between items-baseline text-xs">
-                  <span class="text-slate-500 font-semibold">Default Risk Probability</span>
-                  <span id="probValue" class="text-2xl font-extrabold font-mono text-slate-900">0.0%</span>
-                </div>
-                <div class="w-full bg-slate-100 rounded-full h-3.5 overflow-hidden p-0.5 border border-slate-200/80">
-                  <div id="probProgressBar" class="h-2.5 rounded-full bg-brand-500 transition-all duration-700" style="width: 0%"></div>
-                </div>
-                <div class="flex justify-between text-[11px] text-slate-400 font-medium">
-                  <span>0% (Safe)</span>
-                  <span>50% (Threshold)</span>
-                  <span>100% (Default)</span>
-                </div>
-              </div>
-
-              <!-- Verification Spec -->
-              <div class="p-4 rounded-2xl bg-slate-50 border border-slate-200/80 space-y-2.5 text-xs">
-                <div class="flex justify-between">
-                  <span class="text-slate-500 font-medium">Serving Model</span>
-                  <span id="scoringModelVer" class="font-mono font-bold text-slate-900">loan-default (v4)</span>
-                </div>
-                <div class="flex justify-between">
-                  <span class="text-slate-500 font-medium">Feature Store Protocol</span>
-                  <span class="font-mono font-bold text-emerald-700">Feast Redis &bull; 0x35 Tag</span>
-                </div>
-                <div class="flex justify-between">
-                  <span class="text-slate-500 font-medium">Prediction Audit Log</span>
-                  <span class="font-bold text-indigo-600">PostgreSQL buffered</span>
-                </div>
-              </div>
+          <!-- Hydrated Feature Dossier -->
+          <div class="cypher-panel p-6 space-y-3">
+            <div class="border-b-2 border-black pb-2 flex items-center justify-between">
+              <span class="micro-label">HYDRATED BORROWER DOSSIER (FEAST STORE)</span>
+              <span class="text-xs font-mono text-[#66645D]">23 RAW ATTRIBUTES</span>
             </div>
 
-            <div class="mt-6 pt-4 border-t border-slate-200 text-center">
-              <span class="text-xs text-slate-400 font-medium">SLA: Sub-50ms inference end-to-end</span>
+            <div class="grid grid-cols-2 sm:grid-cols-3 gap-3 text-xs font-mono">
+              <div class="p-2.5 bg-[#F8F6F0] border border-black">
+                <span class="micro-label">LIMIT BAL</span>
+                <p id="profLimit" class="font-bold text-black text-sm mt-0.5">$11,250</p>
+              </div>
+              <div class="p-2.5 bg-[#F8F6F0] border border-black">
+                <span class="micro-label">AGE &amp; SEX</span>
+                <p id="profAgeSex" class="font-bold text-black text-sm mt-0.5">24 yrs • Female</p>
+              </div>
+              <div class="p-2.5 bg-[#F8F6F0] border border-black">
+                <span class="micro-label">EDUCATION</span>
+                <p id="profEdu" class="font-bold text-black text-sm mt-0.5">University</p>
+              </div>
+              <div class="p-2.5 bg-[#F8F6F0] border border-black">
+                <span class="micro-label">MARRIAGE</span>
+                <p id="profMarriage" class="font-bold text-black text-sm mt-0.5">Married</p>
+              </div>
+              <div class="p-2.5 bg-[#F8F6F0] border border-black">
+                <span class="micro-label">STATUS PAY_0</span>
+                <p id="profPay0" class="font-bold text-[#B52A24] text-sm mt-0.5">6 months delay</p>
+              </div>
+              <div class="p-2.5 bg-[#F8F6F0] border border-black">
+                <span class="micro-label">BILL_AMT1</span>
+                <p id="profBill" class="font-bold text-black text-sm mt-0.5">$6,613</p>
+              </div>
             </div>
           </div>
 
@@ -645,410 +571,312 @@
 
     </div>
 
-    <!-- ================= PAGE 3: CHAOS & SELF-HEALING LAB ================= -->
-    <div id="view-chaos" class="view-panel hidden space-y-6">
+    <!-- ================= PAGE 3: CHAOS LAB ================= -->
+    <div id="view-chaos" class="view-panel hidden space-y-8">
       
-      <div class="p-6 rounded-3xl bg-gradient-to-r from-rose-50/80 via-white to-amber-50/80 border border-slate-200/80 shadow-bento flex flex-col md:flex-row md:items-center justify-between gap-4">
+      <div class="border-b-2 border-black pb-3 flex flex-col md:flex-row items-start md:items-center justify-between gap-4">
         <div>
-          <span class="px-3 py-1 rounded-full bg-rose-600 text-white text-[11px] font-bold tracking-wider uppercase inline-block mb-2">
-            Disaster Recovery &amp; Fault Tolerance
+          <span class="micro-label text-black bg-[#C8FF5A] px-2 py-0.5 border border-black inline-block mb-1">
+            03 // FAULT TOLERANCE &amp; DISASTER RECOVERY
           </span>
-          <h1 class="text-2xl md:text-3xl font-extrabold text-slate-900 tracking-tight">
-            ⚡ Live Chaos &amp; Self-Healing Lab
-          </h1>
-          <p class="text-xs text-slate-500 mt-1">Witness real-time Kubernetes pod crash recovery, PodDisruptionBudget protections, and automated horizontal scaling</p>
+          <h1 class="text-3xl font-black uppercase text-black">Chaos &amp; Self-Healing Lab</h1>
+          <p class="text-xs text-[#66645D]">Test Kubernetes PodDisruptionBudget protections, immediate pod termination, and autonomous replica resurrection</p>
         </div>
         <div class="flex items-center gap-2 flex-wrap">
-          <label class="flex items-center gap-2 cursor-pointer text-xs font-bold text-slate-700 bg-white px-3.5 py-2 rounded-xl border border-slate-200 shadow-sm hover:border-rose-300 transition">
-            <input type="checkbox" id="oblivionToggle" checked class="rounded text-rose-600 focus:ring-rose-500">
-            <span>💥 Oblivion Mode FX</span>
+          <label class="flex items-center gap-2 cursor-pointer bg-[#F8F6F0] px-3 py-1.5 border-2 border-black text-xs font-bold text-black">
+            <input type="checkbox" id="oblivionToggle" checked class="border-2 border-black text-black focus:ring-0">
+            <span>💥 OBLIVION FX (AUDIO + HUD)</span>
           </label>
-          <button id="sfxToggleBtn" onclick="toggleAudio()" class="px-3.5 py-2 rounded-xl bg-white hover:bg-slate-50 border border-slate-200 text-xs font-bold text-slate-700 shadow-sm transition flex items-center gap-1.5">
-            <span id="sfxIcon">🔊</span>
-            <span id="sfxLabel">SFX: ON</span>
+          <button id="sfxToggleBtn" onclick="toggleAudio()" class="px-3 py-1.5 bg-[#F8F6F0] border-2 border-black text-xs font-mono font-bold text-black hover:bg-black hover:text-[#C8FF5A] transition">
+            <span id="sfxIcon">🔊</span> <span id="sfxLabel">SFX: ON</span>
           </button>
-          <span class="px-3.5 py-1.5 rounded-xl bg-white border border-slate-200 text-emerald-700 text-xs font-bold shadow-sm flex items-center gap-1.5">
-            <span class="w-2 h-2 rounded-full bg-emerald-500"></span>
-            PDB Active: minAvailable=1
+          <span class="px-3 py-1.5 bg-[#C8FF5A] text-black border-2 border-black text-xs font-mono font-bold">
+            PDB: minAvailable=1
           </span>
         </div>
       </div>
 
-      <!-- Live Chaos Banner (Populates dynamically when a pod is killed) -->
-      <div id="chaosBanner" class="hidden p-4 rounded-3xl bg-rose-50 border border-rose-200 text-rose-800 text-xs flex flex-col sm:flex-row items-center justify-between gap-3 shadow-bento">
-        <div class="flex items-center gap-3">
-          <span class="text-3xl">💥</span>
-          <div>
-            <p class="font-extrabold text-rose-900 text-sm" id="chaosBannerTitle">Replica Terminated!</p>
-            <p class="text-rose-700 mt-0.5" id="chaosBannerDesc">Kubernetes detected replica deficit. Surviving replica is absorbing 100% of traffic. Spawning replacement...</p>
-          </div>
+      <!-- Live Chaos Banner (If simple mode) -->
+      <div id="chaosBanner" class="hidden p-4 bg-[#fed7aa] border-2 border-black text-black font-mono text-xs flex items-center justify-between shadow-[3px_3px_0_#171717]">
+        <div>
+          <strong id="chaosBannerTitle" class="text-sm uppercase block font-black">REPLICA KILLED</strong>
+          <span id="chaosBannerDesc">Kubernetes ReplicaSet deficit detected. Replacement pod scheduling...</span>
         </div>
-        <span class="px-3 py-1.5 rounded-full bg-emerald-100 text-emerald-800 border border-emerald-300 text-xs font-bold whitespace-nowrap shadow-sm">
-          Zero-Downtime Serving Active
-        </span>
+        <span class="px-3 py-1 bg-black text-[#C8FF5A] text-[10px] font-bold uppercase">ZERO DOWNTIME MAINTAINED</span>
       </div>
 
-      <!-- Section 1: Live Serving Pod Cards (Interactive Pod Killers) -->
+      <!-- Serving Replica Pod Grid (Physical Instrument Modules) -->
       <div class="space-y-4">
-        <div class="flex items-center justify-between">
-          <div>
-            <h2 class="text-base font-extrabold text-slate-900 flex items-center gap-2">
-              <span>Interactive Serving Replicas</span>
-              <span class="text-xs font-semibold text-indigo-600 bg-indigo-50 px-2 py-0.5 rounded-md border border-indigo-200">serving namespace</span>
-            </h2>
-            <p class="text-xs text-slate-500 mt-0.5">Click &ldquo;Kill Replica&rdquo; on any live pod to watch Kubernetes self-heal in under 8 seconds:</p>
-          </div>
-          <button onclick="loadPods()" class="px-3.5 py-2 rounded-xl bg-white hover:bg-slate-50 border border-slate-200 text-xs font-bold text-slate-700 shadow-sm transition flex items-center gap-1.5">
-            <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15"/></svg>
-            Refresh Pods
+        <div class="flex items-center justify-between border-b-2 border-black pb-2">
+          <h2 class="text-sm font-bold uppercase tracking-wider text-black">
+            SERVING NAMESPACE PODS (MODEL-API REPLICAS)
+          </h2>
+          <button onclick="loadPods()" class="cypher-btn cypher-btn-secondary text-xs py-1.5 px-3">
+            REFRESH PODS
           </button>
         </div>
 
-        <!-- Serving Pods Grid (Populated dynamically) -->
         <div id="servingPodsGrid" class="grid grid-cols-1 md:grid-cols-2 gap-5">
-          <div class="p-8 col-span-2 rounded-3xl bg-white border border-slate-200 text-center text-slate-400 text-xs font-medium">
-            Loading serving pods...
+          <div class="p-8 col-span-2 cypher-panel text-center text-xs font-mono text-[#66645D]">
+            Loading serving pods from cluster...
           </div>
         </div>
       </div>
 
-      <!-- Section 2: Prove Zero-Downtime During Chaos Bento -->
-      <div class="bento-card rounded-3xl p-6 flex flex-col md:flex-row items-center justify-between gap-4">
+      <!-- Zero Downtime Assertion Bento -->
+      <div class="cypher-panel p-6 flex flex-col md:flex-row items-start md:items-center justify-between gap-4">
         <div>
-          <h3 class="text-sm font-extrabold text-slate-900 flex items-center gap-2">
-            <span>🛡️ Prove Zero Dropped Requests</span>
-          </h3>
-          <p class="text-xs text-slate-500 mt-1 max-w-xl">While a pod is terminating or booting up, fire a test prediction request to prove the service never answers 500 or drops traffic.</p>
+          <span class="micro-label">LIVE PROOF OF ZERO DROPPED REQUESTS</span>
+          <h3 class="text-base font-black uppercase text-black mt-0.5">Send Probe Request During Chaos</h3>
+          <p class="text-xs text-[#66645D]">Click this while a pod is crashing to prove the surviving replica absorbs 100% of traffic with zero 5xx errors.</p>
         </div>
-        <button onclick="quickTestInference()" class="px-5 py-3 rounded-2xl bg-emerald-600 hover:bg-emerald-700 text-white text-xs font-bold transition shadow-lg shadow-emerald-600/20 flex items-center gap-2 whitespace-nowrap">
-          <span>⚡ Send Live Prediction</span>
+        <button onclick="quickTestInference()" class="cypher-btn cypher-btn-lime">
+          PROVE ZERO-DOWNTIME (HTTP 200) &rarr;
         </button>
       </div>
 
-      <!-- Section 3: Automated Scenarios & Auto-Scaling Drills -->
-      <div>
-        <h2 class="text-base font-extrabold text-slate-900 mb-3">Automated Self-Healing Chaos Drills</h2>
-        <div class="grid grid-cols-1 md:grid-cols-2 gap-5">
-          
-          <!-- Scenario 1: Pod Kill Drill -->
-          <div class="bento-card rounded-3xl p-6 flex flex-col justify-between">
-            <div>
-              <div class="flex items-center justify-between mb-2">
-                <h4 class="text-sm font-extrabold text-slate-900 flex items-center gap-2">
-                  <span class="w-2.5 h-2.5 rounded-full bg-rose-500"></span>
-                  Pod Chaos Drill (chaos_pod.sh)
-                </h4>
-                <span class="text-[10px] font-mono font-bold px-2 py-0.5 rounded bg-slate-100 text-slate-600">CLI Drill</span>
-              </div>
-              <p class="text-xs text-slate-500 leading-relaxed mt-1">
-                Sends sustained queries while deleting a pod mid-stream. Verifies that recovery takes under 10 seconds and 0 requests fail.
-              </p>
-            </div>
-            <button onclick="executeAction('chaos_pod_kill')" class="mt-5 w-full py-3 px-4 rounded-2xl bg-rose-50 hover:bg-rose-600 text-rose-700 hover:text-white border border-rose-200 text-xs font-bold transition flex items-center justify-center gap-2">
-              <span>Run Automated Pod Kill Drill</span>
-            </button>
-          </div>
-
-          <!-- Scenario 2: Latency Chaos & Auto-Scaler -->
-          <div class="bento-card rounded-3xl p-6 flex flex-col justify-between">
-            <div>
-              <div class="flex items-center justify-between mb-2">
-                <h4 class="text-sm font-extrabold text-slate-900 flex items-center gap-2">
-                  <span class="w-2.5 h-2.5 rounded-full bg-indigo-500"></span>
-                  Latency Alert &amp; HPA Scaling (make demo-infra)
-                </h4>
-                <span class="text-[10px] font-mono font-bold px-2 py-0.5 rounded bg-slate-100 text-slate-600">Flow B Drill</span>
-              </div>
-              <p class="text-xs text-slate-500 leading-relaxed mt-1">
-                Injects 500ms delay &rarr; Prometheus detects HighP95Latency &rarr; Alertmanager triggers the in-cluster remediator &rarr; scales HPA floor from 2 to 4 pods!
-              </p>
-            </div>
-            <div class="grid grid-cols-2 gap-2 mt-5">
-              <button onclick="executeAction('demo_infra')" class="py-3 px-3 rounded-2xl bg-indigo-50 hover:bg-indigo-600 text-indigo-700 hover:text-white border border-indigo-200 text-xs font-bold transition flex items-center justify-center">
-                <span>Run Infra Drill</span>
-              </button>
-              <button onclick="executeAction('chaos_latency_clear')" class="py-3 px-3 rounded-2xl bg-slate-50 hover:bg-slate-200 text-slate-700 border border-slate-200 text-xs font-bold transition flex items-center justify-center">
-                <span>Clear Latency</span>
-              </button>
-            </div>
-          </div>
-
-        </div>
-      </div>
-
     </div>
 
-    <!-- ================= PAGE 4: DRIFT & RETRAINING (BENTO MATRIX) ================= -->
-    <div id="view-drift" class="view-panel hidden space-y-6">
+    <!-- ================= PAGE 4: DRIFT MONITOR ================= -->
+    <div id="view-drift" class="view-panel hidden space-y-8">
       
-      <div class="p-6 rounded-3xl bg-gradient-to-r from-purple-50/80 via-white to-indigo-50/80 border border-slate-200/80 shadow-bento flex flex-col md:flex-row md:items-center justify-between gap-4">
+      <div class="border-b-2 border-black pb-3 flex flex-col md:flex-row items-start md:items-center justify-between gap-4">
         <div>
-          <span class="px-3 py-1 rounded-full bg-purple-600 text-white text-[11px] font-bold tracking-wider uppercase inline-block mb-2">
-            Continuous Learning &amp; Drift Guardrails
+          <span class="micro-label text-black bg-[#C8FF5A] px-2 py-0.5 border border-black inline-block mb-1">
+            04 // STATISTICAL SURVEILLANCE
           </span>
-          <h1 class="text-2xl md:text-3xl font-extrabold text-slate-900 tracking-tight">
-            Statistical Drift Monitor &amp; Retraining
-          </h1>
-          <p class="text-xs text-slate-500 mt-1">Population Stability Index (PSI) and Kolmogorov-Smirnov (KS) monitoring across the 23 UCI features</p>
+          <h1 class="text-3xl font-black uppercase text-black">Statistical Drift Monitor</h1>
+          <p class="text-xs text-[#66645D]">Discrete midpoint-binned Population Stability Index (PSI) and Kolmogorov-Smirnov (KS) monitoring across the 23 UCI features</p>
         </div>
-        <span class="px-3.5 py-1.5 rounded-xl bg-white border border-slate-200 text-purple-700 text-xs font-mono font-bold shadow-sm">
-          Retrain Trigger: PSI &gt; 0.25 (Min 2 Features)
+        <span class="px-3.5 py-1.5 bg-[#F8F6F0] border-2 border-black font-mono text-xs font-bold text-black">
+          TRIGGER RULE: PSI &gt; 0.25 (MIN 2 FEATURES)
         </span>
       </div>
 
-      <!-- Drift Status Hero Bento -->
-      <div class="grid grid-cols-1 md:grid-cols-3 gap-5">
-        <div class="bento-card rounded-3xl p-6">
-          <span class="text-xs text-slate-400 font-bold uppercase tracking-wider block mb-1">System Drift State</span>
-          <span id="driftCardState" class="text-2xl font-extrabold text-emerald-600 flex items-center gap-2">
-            <span class="w-3 h-3 rounded-full bg-emerald-500"></span>
-            NORMAL (0 DRIFTED)
-          </span>
-          <p class="text-xs text-slate-500 mt-2 font-medium">Continuous evaluation across 1,000 window samples</p>
-        </div>
-
-        <div class="bento-card rounded-3xl p-6">
-          <span class="text-xs text-slate-400 font-bold uppercase tracking-wider block mb-1">Champion Model AUC</span>
-          <span class="text-2xl font-extrabold text-slate-900 font-mono">0.8970</span>
-          <p class="text-xs text-slate-500 mt-2 font-medium">Candidate Quality Floor: 0.700</p>
-        </div>
-
-        <div class="bento-card rounded-3xl p-6">
-          <span class="text-xs text-slate-400 font-bold uppercase tracking-wider block mb-1">Discrete Feature Safeguard</span>
-          <span class="text-2xl font-extrabold text-indigo-600 font-mono">ACTIVE</span>
-          <p class="text-xs text-slate-500 mt-2 font-medium">Sorted midpoint binning prevents false positive drift</p>
-        </div>
-      </div>
-
-      <!-- 23-Feature PSI Grid in Clean Bento Groups -->
-      <div class="space-y-5">
-        <div class="flex items-center justify-between">
-          <h2 class="text-base font-extrabold text-slate-900">23-Feature Population Stability Matrix</h2>
-          <span class="text-xs text-slate-500 font-mono">Green: &lt;0.10 &bull; Amber: 0.10&ndash;0.20 &bull; Red: &gt;0.20</span>
-        </div>
-
-        <!-- Group A: Demographics & Limits -->
-        <div class="bento-card rounded-3xl p-6 space-y-3">
-          <h3 class="text-xs font-extrabold uppercase tracking-wider text-slate-700">Group 1: Limits &amp; Demographics</h3>
+      <!-- 23 Feature Group Trays -->
+      <div class="space-y-6">
+        
+        <!-- Group 1: Demographics -->
+        <div class="cypher-panel p-6 space-y-3">
+          <span class="micro-label">GROUP 01 // DEMOGRAPHICS &amp; CREDIT LIMIT</span>
           <div id="psi_group_demographics" class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-3"></div>
         </div>
 
-        <!-- Group B: Repayment Delinquencies -->
-        <div class="bento-card rounded-3xl p-6 space-y-3">
-          <h3 class="text-xs font-extrabold uppercase tracking-wider text-slate-700">Group 2: Repayment History (pay_0 to pay_6)</h3>
+        <!-- Group 2: Repayment History -->
+        <div class="cypher-panel p-6 space-y-3">
+          <span class="micro-label">GROUP 02 // REPAYMENT DELINQUENCY MONTHS (PAY_0 TO PAY_6)</span>
           <div id="psi_group_repayment" class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-6 gap-3"></div>
         </div>
 
-        <!-- Group C: Billing Amounts -->
-        <div class="bento-card rounded-3xl p-6 space-y-3">
-          <h3 class="text-xs font-extrabold uppercase tracking-wider text-slate-700">Group 3: Monthly Billing Amounts (bill_amt1 to bill_amt6)</h3>
+        <!-- Group 3: Bill Statements -->
+        <div class="cypher-panel p-6 space-y-3">
+          <span class="micro-label">GROUP 03 // MONTHLY STATEMENT AMOUNTS (BILL_AMT1 TO BILL_AMT6)</span>
           <div id="psi_group_bills" class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-6 gap-3"></div>
         </div>
 
-        <!-- Group D: Payment Amounts -->
-        <div class="bento-card rounded-3xl p-6 space-y-3">
-          <h3 class="text-xs font-extrabold uppercase tracking-wider text-slate-700">Group 4: Monthly Payment Amounts (pay_amt1 to pay_amt6)</h3>
+        <!-- Group 4: Prior Payments -->
+        <div class="cypher-panel p-6 space-y-3">
+          <span class="micro-label">GROUP 04 // MONTHLY PRIOR PAYMENTS (PAY_AMT1 TO PAY_AMT6)</span>
           <div id="psi_group_payments" class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-6 gap-3"></div>
         </div>
+
       </div>
 
-      <!-- Retraining Trigger Bento -->
-      <div class="grid grid-cols-1 md:grid-cols-2 gap-5 pt-2">
-        
-        <div class="bento-card rounded-3xl p-6 flex flex-col justify-between">
+      <!-- Action Trigger Modules -->
+      <div class="grid grid-cols-1 md:grid-cols-2 gap-5">
+        <div class="cypher-panel-bright p-6 flex flex-col justify-between space-y-4">
           <div>
-            <h4 class="text-sm font-extrabold text-slate-900 mb-1.5 flex items-center gap-2">
-              <span class="w-2.5 h-2.5 rounded-full bg-rose-500"></span>
-              Step 1: Inject Covariate Drift (simulate_drift.py)
-            </h4>
-            <p class="text-xs text-slate-500 leading-relaxed">
-              Shifts repayment delays (pay_0 +2), inflates bills (+30%), and depresses limits (-25%). Rewrites Feast online store to trigger drift detection.
+            <span class="micro-label">ACTION 04.01 // SIMULATION</span>
+            <h4 class="text-base font-black uppercase text-black mt-1">Step 1: Inject Synthetic Drift Shock</h4>
+            <p class="text-xs text-[#66645D] mt-1 leading-relaxed">
+              Executes <code class="bg-[#E7E3D8] px-1 border border-black font-mono">simulate_drift.py</code> (shifts pay_0 +3, depresses limits -45%) and immediately streams 750 drifted requests to <code class="bg-[#E7E3D8] px-1 border border-black font-mono">model-api</code> to populate <code class="bg-[#E7E3D8] px-1 border border-black font-mono">prediction_log</code>.
             </p>
           </div>
-          <button onclick="executeAction('simulate_drift')" class="mt-5 w-full py-3 px-4 rounded-2xl bg-rose-50 hover:bg-rose-600 text-rose-700 hover:text-white border border-rose-200 text-xs font-bold transition">
-            Trigger Synthetic Drift Shock
+          <button onclick="executeAction('simulate_drift')" class="cypher-btn cypher-btn-danger w-full py-3.5">
+            💥 TRIGGER SYNTHETIC DRIFT SHOCK
           </button>
         </div>
 
-        <div class="bento-card rounded-3xl p-6 flex flex-col justify-between">
+        <div class="cypher-panel-bright p-6 flex flex-col justify-between space-y-4">
           <div>
-            <h4 class="text-sm font-extrabold text-slate-900 mb-1.5 flex items-center gap-2">
-              <span class="w-2.5 h-2.5 rounded-full bg-purple-500 animate-ping"></span>
-              Step 2: Run Full Autonomous Closed-Loop (demo_model.sh)
-            </h4>
-            <p class="text-xs text-slate-500 leading-relaxed">
-              Watches drift fire &rarr; triggers K8s retrain Job &rarr; Feast point-in-time join &rarr; Quality Gate &rarr; Staging loadcheck &rarr; zero-downtime canary rollout!
+            <span class="micro-label">ACTION 04.02 // AUTONOMOUS WORKFLOW</span>
+            <h4 class="text-base font-black uppercase text-black mt-1">Step 2: Run End-to-End Closed Loop</h4>
+            <p class="text-xs text-[#66645D] mt-1 leading-relaxed">
+              Executes <code class="bg-[#E7E3D8] px-1 border border-black font-mono">demo_model.sh</code>: captures drift alert &rarr; creates K8s retrain Job &rarr; runs Feast join &rarr; Quality Gate &rarr; Staging loadcheck &rarr; canary rollout.
             </p>
           </div>
-          <button onclick="executeAction('demo_model')" class="mt-5 w-full py-3 px-4 rounded-2xl bg-brand-600 hover:bg-brand-700 text-white text-xs font-bold transition shadow-lg shadow-brand-500/20">
-            Launch Closed-Loop Retrain Loop
+          <button onclick="executeAction('demo_model')" class="cypher-btn cypher-btn-lime w-full py-3.5">
+            ⚡ LAUNCH CLOSED-LOOP RETRAIN DEMO
           </button>
         </div>
-
       </div>
 
     </div>
 
-    <!-- ================= PAGE 5: DRILLS & TERMINAL BENTO ================= -->
+    <!-- ================= PAGE 5: CONSOLE ================= -->
     <div id="view-terminal" class="view-panel hidden space-y-6">
       
-      <div class="p-6 rounded-3xl bg-gradient-to-r from-slate-100 via-white to-indigo-50/80 border border-slate-200/80 shadow-bento flex flex-col md:flex-row md:items-center justify-between gap-4">
+      <div class="border-b-2 border-black pb-3 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
         <div>
-          <span class="px-3 py-1 rounded-full bg-slate-900 text-white text-[11px] font-bold tracking-wider uppercase inline-block mb-2">
-            Developer CLI
+          <span class="micro-label text-black bg-[#C8FF5A] px-2 py-0.5 border border-black inline-block mb-1">
+            05 // DEVELOPER EXECUTION RUNTIME
           </span>
-          <h1 class="text-2xl md:text-3xl font-extrabold text-slate-900 tracking-tight">
-            Live Execution Terminal &amp; Platform Drills
-          </h1>
-          <p class="text-xs text-slate-500 mt-1">Execute repeatable platform targets with real-time streaming output</p>
+          <h1 class="text-3xl font-black uppercase text-black">Platform Operator Console</h1>
+          <p class="text-xs text-[#66645D]">Execute verified platform actions with real-time Server-Sent Events (SSE) log streaming</p>
         </div>
         <div class="flex items-center gap-2">
-          <button onclick="clearTerminal()" class="px-3.5 py-2 rounded-xl bg-white hover:bg-slate-50 border border-slate-200 text-xs font-bold text-slate-700 shadow-sm transition">
-            Clear
+          <button onclick="clearTerminal()" class="cypher-btn cypher-btn-secondary text-xs py-1.5 px-3">
+            CLEAR
           </button>
-          <button onclick="copyTerminal()" class="px-3.5 py-2 rounded-xl bg-white hover:bg-slate-50 border border-slate-200 text-xs font-bold text-slate-700 shadow-sm transition">
-            Copy Logs
+          <button onclick="copyTerminal()" class="cypher-btn cypher-btn-secondary text-xs py-1.5 px-3">
+            COPY
           </button>
         </div>
       </div>
 
-      <!-- Quick Action Toolbar Bento -->
-      <div class="bento-card rounded-3xl p-4 flex flex-wrap gap-2.5 text-xs items-center">
-        <span class="text-slate-400 font-bold self-center mr-1 text-[11px] uppercase tracking-wider">Quick Drills:</span>
-        <button onclick="executeAction('reset_demo')" class="px-3.5 py-2 rounded-xl bg-emerald-50 hover:bg-emerald-100 text-emerald-800 border border-emerald-200 font-bold transition">
-          Restore Pristine Baseline
+      <!-- Action Buttons Grid -->
+      <div class="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-6 gap-2">
+        <button onclick="executeAction('simulate_drift')" class="p-3 bg-[#F8F6F0] hover:bg-[#C8FF5A] border-2 border-black text-left font-mono text-xs font-bold text-black transition">
+          [ 💥 DRIFT SHOCK ]
         </button>
-        <button onclick="executeAction('traffic_burst')" class="px-3.5 py-2 rounded-xl bg-cyan-50 hover:bg-cyan-100 text-cyan-800 border border-cyan-200 font-bold transition">
-          Fire 15 RPS Traffic Burst
+        <button onclick="executeAction('traffic_burst')" class="p-3 bg-[#F8F6F0] hover:bg-[#C8FF5A] border-2 border-black text-left font-mono text-xs font-bold text-black transition">
+          [ 🚀 TRAFFIC BURST ]
         </button>
-        <button onclick="executeAction('run_gate')" class="px-3.5 py-2 rounded-xl bg-indigo-50 hover:bg-indigo-100 text-brand-700 border border-indigo-200 font-bold transition">
-          Run Release Quality Gate
+        <button onclick="executeAction('chaos_pod_kill')" class="p-3 bg-[#F8F6F0] hover:bg-[#C8FF5A] border-2 border-black text-left font-mono text-xs font-bold text-black transition">
+          [ 💥 KILL POD DRILL ]
         </button>
-        <button onclick="executeAction('feast_rematerialize')" class="px-3.5 py-2 rounded-xl bg-sky-50 hover:bg-sky-100 text-sky-800 border border-sky-200 font-bold transition">
-          Rematerialize Feast Redis
+        <button onclick="executeAction('reset_demo')" class="p-3 bg-[#F8F6F0] hover:bg-[#C8FF5A] border-2 border-black text-left font-mono text-xs font-bold text-black transition">
+          [ 🔄 RESET BASELINE ]
         </button>
-        <button onclick="executeAction('e2e_tests')" class="px-3.5 py-2 rounded-xl bg-purple-50 hover:bg-purple-100 text-purple-800 border border-purple-200 font-bold transition">
-          Run End-to-End Suite
+        <button onclick="executeAction('run_gate')" class="p-3 bg-[#F8F6F0] hover:bg-[#C8FF5A] border-2 border-black text-left font-mono text-xs font-bold text-black transition">
+          [ 🛡️ QUALITY GATE ]
+        </button>
+        <button onclick="executeAction('e2e_tests')" class="p-3 bg-[#F8F6F0] hover:bg-[#C8FF5A] border-2 border-black text-left font-mono text-xs font-bold text-black transition">
+          [ 🧪 RUN ALL E2E ]
         </button>
       </div>
 
-      <!-- Terminal Output Container with macOS styling -->
-      <div class="rounded-3xl border border-slate-800 bg-[#0b0f19] shadow-2xl overflow-hidden">
-        <div class="bg-[#111625] px-5 py-3 border-b border-slate-800 flex items-center justify-between">
+      <!-- Terminal Window -->
+      <div class="border-2 border-black bg-black text-[#F8F6F0] shadow-[4px_4px_0_#171717] font-mono text-xs">
+        <div class="bg-[#171717] border-b-2 border-black px-4 py-2 flex items-center justify-between">
           <div class="flex items-center gap-2">
-            <span class="w-3 h-3 rounded-full bg-rose-500 inline-block"></span>
-            <span class="w-3 h-3 rounded-full bg-amber-500 inline-block"></span>
-            <span class="w-3 h-3 rounded-full bg-emerald-500 inline-block"></span>
-            <span id="activeCmdPill" class="ml-2 font-mono text-xs text-slate-400 hidden"></span>
+            <span class="w-2.5 h-2.5 bg-[#B52A24]"></span>
+            <span class="w-2.5 h-2.5 bg-[#B77900]"></span>
+            <span class="w-2.5 h-2.5 bg-[#1D7A4D]"></span>
+            <span class="text-[#66645D] text-[11px] ml-2">stdout // live process stream</span>
           </div>
-          <span id="execStatusPill" class="text-xs font-mono text-slate-400 font-semibold">Idle &bull; Ready</span>
+          <span id="terminalStatusPill" class="text-[10px] bg-black text-[#C8FF5A] px-2 py-0.5 border border-[#C8FF5A]">
+            STATUS: IDLE
+          </span>
         </div>
-        <pre id="terminalOutput" class="p-6 font-mono text-xs text-slate-200 overflow-y-auto max-h-[550px] leading-relaxed whitespace-pre-wrap"><span class="text-slate-500"># MLPlatform Execution Console Ready. Select an action or drill to stream real-time logs.</span></pre>
+        <div class="p-4 h-[420px] overflow-y-auto">
+          <pre id="terminalOutput" class="whitespace-pre-wrap leading-relaxed text-[#E7E3D8]"># MLPlatform Cypherpunk Execution Console Ready.
+# Select an automated drill above or execute targets via Makefile.
+</pre>
+        </div>
       </div>
 
     </div>
 
-    <!-- ================= PAGE 6: ECOSYSTEM PORTALS BENTO ================= -->
+    <!-- ================= PAGE 6: PORTALS ================= -->
     <div id="view-ecosystem" class="view-panel hidden space-y-6">
       
-      <div class="p-6 rounded-3xl bg-gradient-to-r from-indigo-50/80 via-white to-sky-50/80 border border-slate-200/80 shadow-bento">
-        <span class="px-3 py-1 rounded-full bg-indigo-600 text-white text-[11px] font-bold tracking-wider uppercase inline-block mb-2">
-          Platform Ecosystem
+      <div class="border-b-2 border-black pb-3">
+        <span class="micro-label text-black bg-[#C8FF5A] px-2 py-0.5 border border-black inline-block mb-1">
+          06 // CLUSTER INFRASTRUCTURE
         </span>
-        <h1 class="text-2xl md:text-3xl font-extrabold text-slate-900 tracking-tight">
-          External Observability &amp; Registry Portals
-        </h1>
-        <p class="text-xs text-slate-500 mt-1">Direct launchpad into pre-provisioned in-cluster dashboards and telemetry services</p>
+        <h1 class="text-3xl font-black uppercase text-black">Supporting Portals &amp; Telemetry</h1>
+        <p class="text-xs text-[#66645D]">Direct launchpads to in-cluster observability, experiment registries, object stores, and API definitions</p>
       </div>
 
       <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
         
         <!-- Grafana -->
-        <a href="http://localhost:3000" target="_blank" class="bento-card rounded-3xl p-7 transition flex flex-col justify-between group">
+        <a href="http://localhost:3000" target="_blank" class="cypher-panel p-6 flex flex-col justify-between hover:bg-[#F8F6F0] transition group">
           <div>
-            <div class="flex items-center justify-between mb-4">
-              <span class="text-3xl">📊</span>
-              <span class="text-xs font-mono px-2.5 py-1 rounded-full bg-amber-50 text-amber-700 border border-amber-200 font-bold">:3000</span>
+            <div class="flex items-center justify-between border-b-2 border-black pb-2 mb-3">
+              <span class="micro-label">PORTAL 06.01</span>
+              <span class="font-mono text-xs font-bold text-black bg-[#C8FF5A] px-2 py-0.5 border border-black">:3000</span>
             </div>
-            <h3 class="text-lg font-extrabold text-slate-900 group-hover:text-amber-600 transition-colors">Grafana Dashboards</h3>
-            <p class="text-xs text-slate-500 mt-2 leading-relaxed">
-              Pre-provisioned dashboards for ML Platform Health, Serving Performance (P95/error rates), and Statistical Drift Monitoring.
+            <h3 class="text-lg font-black uppercase text-black">Grafana Dashboards</h3>
+            <p class="text-xs text-[#66645D] mt-2 leading-relaxed">
+              Golden signals, P95 latency histograms, PodDisruptionBudget availability, and drift dashboards. Creds: <code class="font-mono text-black font-bold">admin / prom-operator</code>.
             </p>
           </div>
-          <div class="mt-6 pt-4 border-t border-slate-100 flex items-center justify-between text-xs text-amber-600 font-bold">
-            <span>Open Grafana</span>
+          <div class="mt-6 pt-3 border-t-2 border-black flex items-center justify-between text-xs font-bold text-black uppercase">
+            <span>LAUNCH GRAFANA</span>
             <span>&rarr;</span>
           </div>
         </a>
 
         <!-- MLflow -->
-        <a href="http://localhost:5000" target="_blank" class="bento-card rounded-3xl p-7 transition flex flex-col justify-between group">
+        <a href="http://localhost:5000" target="_blank" class="cypher-panel p-6 flex flex-col justify-between hover:bg-[#F8F6F0] transition group">
           <div>
-            <div class="flex items-center justify-between mb-4">
-              <span class="text-3xl">🧪</span>
-              <span class="text-xs font-mono px-2.5 py-1 rounded-full bg-cyan-50 text-cyan-700 border border-cyan-200 font-bold">:5000</span>
+            <div class="flex items-center justify-between border-b-2 border-black pb-2 mb-3">
+              <span class="micro-label">PORTAL 06.02</span>
+              <span class="font-mono text-xs font-bold text-black bg-[#C8FF5A] px-2 py-0.5 border border-black">:5000</span>
             </div>
-            <h3 class="text-lg font-extrabold text-slate-900 group-hover:text-cyan-600 transition-colors">MLflow Model Registry</h3>
-            <p class="text-xs text-slate-500 mt-2 leading-relaxed">
-              Track experiments, model runs, candidate vs champion version tags, ROC/AUC metrics, and S3 artifact lineage.
+            <h3 class="text-lg font-black uppercase text-black">MLflow Registry</h3>
+            <p class="text-xs text-[#66645D] mt-2 leading-relaxed">
+              Inspect model versions, champion vs candidate aliases, point-in-time training artifacts, and model parameters.
             </p>
           </div>
-          <div class="mt-6 pt-4 border-t border-slate-100 flex items-center justify-between text-xs text-cyan-600 font-bold">
-            <span>Open MLflow</span>
+          <div class="mt-6 pt-3 border-t-2 border-black flex items-center justify-between text-xs font-bold text-black uppercase">
+            <span>LAUNCH MLFLOW</span>
             <span>&rarr;</span>
           </div>
         </a>
 
         <!-- Swagger -->
-        <a href="http://localhost:8080/docs" target="_blank" class="bento-card rounded-3xl p-7 transition flex flex-col justify-between group">
+        <a href="http://localhost:8080/docs" target="_blank" class="cypher-panel p-6 flex flex-col justify-between hover:bg-[#F8F6F0] transition group">
           <div>
-            <div class="flex items-center justify-between mb-4">
-              <span class="text-3xl">⚡</span>
-              <span class="text-xs font-mono px-2.5 py-1 rounded-full bg-emerald-50 text-emerald-700 border border-emerald-200 font-bold">:8080/docs</span>
+            <div class="flex items-center justify-between border-b-2 border-black pb-2 mb-3">
+              <span class="micro-label">PORTAL 06.03</span>
+              <span class="font-mono text-xs font-bold text-black bg-[#C8FF5A] px-2 py-0.5 border border-black">:8080/docs</span>
             </div>
-            <h3 class="text-lg font-extrabold text-slate-900 group-hover:text-emerald-600 transition-colors">FastAPI Swagger UI</h3>
-            <p class="text-xs text-slate-500 mt-2 leading-relaxed">
-              Interactive OpenAPI documentation. Test <code class="text-slate-800">/predict</code>, <code class="text-slate-800">/model-info</code>, and readiness probes directly in browser.
+            <h3 class="text-lg font-black uppercase text-black">FastAPI Swagger UI</h3>
+            <p class="text-xs text-[#66645D] mt-2 leading-relaxed">
+              Interactive OpenAPI documentation. Test <code class="font-mono text-black">/predict</code>, <code class="font-mono text-black">/model-info</code>, and readiness probes directly.
             </p>
           </div>
-          <div class="mt-6 pt-4 border-t border-slate-100 flex items-center justify-between text-xs text-emerald-600 font-bold">
-            <span>Open Swagger API</span>
+          <div class="mt-6 pt-3 border-t-2 border-black flex items-center justify-between text-xs font-bold text-black uppercase">
+            <span>LAUNCH SWAGGER</span>
             <span>&rarr;</span>
           </div>
         </a>
 
         <!-- MinIO -->
-        <a href="http://localhost:9001" target="_blank" class="bento-card rounded-3xl p-7 transition flex flex-col justify-between group">
+        <a href="http://localhost:9001" target="_blank" class="cypher-panel p-6 flex flex-col justify-between hover:bg-[#F8F6F0] transition group">
           <div>
-            <div class="flex items-center justify-between mb-4">
-              <span class="text-3xl">📦</span>
-              <span class="text-xs font-mono px-2.5 py-1 rounded-full bg-rose-50 text-rose-700 border border-rose-200 font-bold">:9001</span>
+            <div class="flex items-center justify-between border-b-2 border-black pb-2 mb-3">
+              <span class="micro-label">PORTAL 06.04</span>
+              <span class="font-mono text-xs font-bold text-black bg-[#C8FF5A] px-2 py-0.5 border border-black">:9001</span>
             </div>
-            <h3 class="text-lg font-extrabold text-slate-900 group-hover:text-rose-600 transition-colors">MinIO S3 Object Storage</h3>
-            <p class="text-xs text-slate-500 mt-2 leading-relaxed">
-              S3 bucket browser containing offline Feast parquet files (<code class="text-slate-800">feast-offline</code>) and MLflow model binaries.
+            <h3 class="text-lg font-black uppercase text-black">MinIO S3 Storage</h3>
+            <p class="text-xs text-[#66645D] mt-2 leading-relaxed">
+              S3 bucket browser containing Feast offline parquet files (<code class="font-mono text-black">feast-offline</code>) and MLflow model binaries. Creds: <code class="font-mono text-black font-bold">minioadmin / minioadmin</code>.
             </p>
           </div>
-          <div class="mt-6 pt-4 border-t border-slate-100 flex items-center justify-between text-xs text-rose-600 font-bold">
-            <span>Open MinIO Console</span>
+          <div class="mt-6 pt-3 border-t-2 border-black flex items-center justify-between text-xs font-bold text-black uppercase">
+            <span>LAUNCH MINIO</span>
             <span>&rarr;</span>
           </div>
         </a>
 
         <!-- Alertmanager -->
-        <a href="http://localhost:9093" target="_blank" class="bento-card rounded-3xl p-7 transition flex flex-col justify-between group">
+        <a href="http://localhost:9093" target="_blank" class="cypher-panel p-6 flex flex-col justify-between hover:bg-[#F8F6F0] transition group">
           <div>
-            <div class="flex items-center justify-between mb-4">
-              <span class="text-3xl">🚨</span>
-              <span class="text-xs font-mono px-2.5 py-1 rounded-full bg-purple-50 text-purple-700 border border-purple-200 font-bold">:9093</span>
+            <div class="flex items-center justify-between border-b-2 border-black pb-2 mb-3">
+              <span class="micro-label">PORTAL 06.05</span>
+              <span class="font-mono text-xs font-bold text-black bg-[#C8FF5A] px-2 py-0.5 border border-black">:9093</span>
             </div>
-            <h3 class="text-lg font-extrabold text-slate-900 group-hover:text-purple-600 transition-colors">Prometheus Alertmanager</h3>
-            <p class="text-xs text-slate-500 mt-2 leading-relaxed">
-              Inspect firing alerts, alert routing rules, and the webhook dispatching to the in-cluster auto-remediator.
+            <h3 class="text-lg font-black uppercase text-black">Prometheus Alertmanager</h3>
+            <p class="text-xs text-[#66645D] mt-2 leading-relaxed">
+              Inspect firing alerts (HighP95Latency, ModelDriftDetected) and the webhook trigger to the in-cluster remediator.
             </p>
           </div>
-          <div class="mt-6 pt-4 border-t border-slate-100 flex items-center justify-between text-xs text-purple-600 font-bold">
-            <span>Open Alertmanager</span>
+          <div class="mt-6 pt-3 border-t-2 border-black flex items-center justify-between text-xs font-bold text-black uppercase">
+            <span>LAUNCH ALERTMANAGER</span>
             <span>&rarr;</span>
           </div>
         </a>
@@ -1060,146 +888,156 @@
   </main>
 
   <!-- ================= LOG VIEWER MODAL ================= -->
-  <div id="logModal" class="hidden fixed inset-0 z-50 bg-black/60 backdrop-blur-md flex items-center justify-center p-6">
-    <div class="bg-white border border-slate-200 rounded-3xl w-full max-w-4xl max-h-[85vh] flex flex-col shadow-2xl overflow-hidden">
-      <div class="px-6 py-4 border-b border-slate-200 flex items-center justify-between bg-slate-50">
+  <div id="logModal" class="hidden fixed inset-0 z-50 bg-black/70 flex items-center justify-center p-6">
+    <div class="bg-[#F8F6F0] border-2 border-black shadow-[8px_8px_0_#171717] w-full max-w-4xl max-h-[85vh] flex flex-col overflow-hidden">
+      <div class="px-6 py-4 border-b-2 border-black flex items-center justify-between bg-[#E7E3D8]">
         <div>
-          <h3 id="modalPodTitle" class="text-sm font-extrabold text-slate-900 font-mono">pod-name</h3>
-          <p class="text-xs text-slate-500">Tail logs (most recent 150 lines)</p>
+          <span class="micro-label">CONTAINER LOG STREAM</span>
+          <h3 id="modalPodTitle" class="text-sm font-bold text-black font-mono">pod-name</h3>
         </div>
-        <button onclick="closeLogModal()" class="text-slate-400 hover:text-slate-800 text-xl font-bold">&times;</button>
+        <button onclick="closeLogModal()" class="cypher-btn cypher-btn-secondary text-xs py-1 px-3">
+          CLOSE [ESC]
+        </button>
       </div>
-      <div class="p-6 overflow-y-auto flex-1 bg-[#090d16]">
-        <pre id="modalLogContent" class="font-mono text-xs text-slate-200 whitespace-pre-wrap leading-relaxed">Loading...</pre>
+      <div class="p-6 overflow-y-auto flex-1 bg-black text-[#E7E3D8] font-mono text-xs leading-relaxed">
+        <pre id="modalLogContent" class="whitespace-pre-wrap">Loading...</pre>
       </div>
     </div>
   </div>
 
-  <!-- ================= OBLIVION PROTOCOL HUD MODAL ================= -->
-  <div id="oblivionModal" class="hidden fixed inset-0 z-[100] flex items-center justify-center p-4 sm:p-6 oblivion-scanlines oblivion-vignette bg-slate-950/95 backdrop-blur-2xl transition-all duration-300">
-    <div id="oblivionModalCard" class="relative w-full max-w-3xl rounded-3xl bg-slate-900/95 border-2 border-rose-500/80 shadow-[0_0_80px_rgba(225,29,72,0.4)] p-6 sm:p-8 text-white overflow-hidden font-sans transition-all duration-500">
+  <!-- ================= OBLIVION PROTOCOL HUD MODAL (BRUTALIST SECTOR FAILURE CONSOLE) ================= -->
+  <div id="oblivionModal" class="hidden fixed inset-0 z-[100] flex items-center justify-center p-4 sm:p-6 bg-black/85 backdrop-blur-sm transition-all duration-200">
+    <div id="oblivionModalCard" class="relative w-full max-w-3xl bg-[#F8F6F0] border-4 border-black shadow-[10px_10px_0_#171717] p-6 sm:p-8 text-black overflow-hidden font-sans">
       
       <!-- Top Alert Ribbon -->
-      <div class="flex items-center justify-between border-b border-rose-500/30 pb-4 mb-6">
+      <div class="flex items-center justify-between border-b-2 border-black pb-4 mb-6 bg-[#C8FF5A] -mx-6 -mt-6 sm:-mx-8 sm:-mt-8 p-6 border-b-2 border-black">
         <div class="flex items-center gap-3">
-          <div id="oblivionAlertIcon" class="w-11 h-11 rounded-2xl bg-rose-500/20 border border-rose-500/60 flex items-center justify-center text-rose-400 text-2xl font-bold animate-pulse">
-            ⚠️
+          <div id="oblivionAlertIcon" class="w-10 h-10 bg-black text-[#C8FF5A] font-mono font-bold text-xl flex items-center justify-center border-2 border-black">
+            !
           </div>
           <div>
             <div class="flex items-center gap-2">
-              <span id="oblivionCodeBadge" class="text-xs font-mono font-extrabold uppercase tracking-widest text-rose-400">
-                CRITICAL EMERGENCY PROTOCOL // CODE: OBLIVION
+              <span id="oblivionCodeBadge" class="micro-label text-black font-black">
+                SECTOR FAILURE ALERT // PROTOCOL: OBLIVION
               </span>
-              <span id="oblivionAlertPill" class="px-2 py-0.5 rounded-full bg-rose-500/30 text-rose-300 text-[10px] font-mono font-bold animate-ping">
-                ALERT
+              <span id="oblivionAlertPill" class="px-2 py-0.5 bg-[#B52A24] text-white font-mono text-[10px] font-bold">
+                SIGKILL -9
               </span>
             </div>
-            <h2 id="oblivionHeaderTitle" class="text-xl sm:text-2xl font-black font-mono tracking-tight text-white glitch-text mt-0.5">
+            <h2 id="oblivionHeaderTitle" class="text-xl sm:text-2xl font-black font-mono tracking-tight text-black mt-0.5 uppercase">
               POD VAPORIZED FROM REPLICASET
             </h2>
           </div>
         </div>
-        <button onclick="dismissOblivionModal()" class="text-slate-400 hover:text-white px-3 py-1.5 rounded-xl bg-slate-800/80 border border-slate-700 text-xs font-mono transition">
-          ESC / Close
+        <button onclick="dismissOblivionModal()" class="cypher-btn cypher-btn-secondary text-xs py-1 px-3">
+          CLOSE
         </button>
       </div>
 
       <!-- Murdered Pod Target Box -->
-      <div class="mb-5 p-4 rounded-2xl bg-rose-950/40 border border-rose-500/40 font-mono text-xs text-rose-200 flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+      <div class="mb-5 p-3.5 bg-[#E7E3D8] border-2 border-black font-mono text-xs flex flex-col sm:flex-row sm:items-center justify-between gap-3">
         <div>
-          <span class="text-slate-400 uppercase">Target Pod:</span>
-          <span id="oblivionTargetPod" class="font-bold text-white ml-1">model-api-xxx</span>
+          <span class="micro-label">TERMINATED REPLICA:</span>
+          <span id="oblivionTargetPod" class="font-bold text-black ml-1">model-api-xxx</span>
         </div>
         <div class="flex items-center gap-2">
-          <span class="px-2.5 py-1 rounded-md bg-rose-500 text-white font-extrabold text-[11px] uppercase tracking-wide">
-            💥 SIGKILL -9 SENT
+          <span class="px-2 py-0.5 bg-black text-[#C8FF5A] text-[10px] font-bold uppercase">
+            EVICTED FROM NODE
           </span>
-          <span class="text-slate-400 text-[11px]">Namespace: <strong class="text-white">serving</strong></span>
+          <span class="text-[#66645D]">NAMESPACE: <strong>serving</strong></span>
         </div>
       </div>
 
       <!-- 3 Real-time Survival Metrics (Proof of Zero Downtime) -->
       <div class="grid grid-cols-1 sm:grid-cols-3 gap-3 mb-5 font-mono">
-        <div class="p-3.5 rounded-2xl bg-slate-800/80 border border-slate-700/80">
-          <p class="text-[10px] text-slate-400 uppercase font-bold tracking-wider">Traffic Impact</p>
-          <p class="text-xl font-black text-emerald-400 mt-1 flex items-center gap-1.5">
-            <span>0.00%</span>
-            <span class="text-[10px] text-slate-300 font-sans font-normal">(0 dropped)</span>
-          </p>
-          <p class="text-[10px] text-slate-400 mt-1">PDB minAvailable=1 guarded</p>
+        <div class="p-3.5 bg-[#F8F6F0] border-2 border-black">
+          <span class="micro-label">TRAFFIC IMPACT</span>
+          <p class="text-2xl font-black text-[#1D7A4D] mt-1">0.00%</p>
+          <p class="text-[10px] text-[#66645D] mt-1 font-bold">PDB minAvailable=1 guarded</p>
         </div>
-        <div class="p-3.5 rounded-2xl bg-slate-800/80 border border-slate-700/80">
-          <p class="text-[10px] text-slate-400 uppercase font-bold tracking-wider">Surviving Replicas</p>
-          <p id="oblivionSurvivingCount" class="text-xl font-black text-cyan-400 mt-1">3 Pods</p>
-          <p class="text-[10px] text-slate-400 mt-1">Absorbing 100% throughput</p>
+        <div class="p-3.5 bg-[#F8F6F0] border-2 border-black">
+          <span class="micro-label">SURVIVING REPLICAS</span>
+          <p id="oblivionSurvivingCount" class="text-2xl font-black text-black mt-1">3 Pods</p>
+          <p class="text-[10px] text-[#66645D] mt-1 font-bold">Absorbing 100% throughput</p>
         </div>
-        <div class="p-3.5 rounded-2xl bg-slate-800/80 border border-slate-700/80">
-          <p class="text-[10px] text-slate-400 uppercase font-bold tracking-wider">Self-Healing Timer</p>
-          <p id="oblivionTimer" class="text-xl font-black text-amber-400 mt-1">0.0s</p>
-          <p class="text-[10px] text-slate-400 mt-1">Target SLA: &lt; 15 seconds</p>
+        <div class="p-3.5 bg-[#F8F6F0] border-2 border-black">
+          <span class="micro-label">RECONCILIATION TIMER</span>
+          <p id="oblivionTimer" class="text-2xl font-black text-black mt-1">0.0s</p>
+          <p class="text-[10px] text-[#66645D] mt-1 font-bold">SLA Target: &lt; 15 seconds</p>
         </div>
       </div>
 
       <!-- Live Self-Healing Pipeline Tracker -->
       <div class="space-y-2 mb-5 font-mono text-xs">
-        <div class="flex items-center justify-between text-slate-300 mb-1">
-          <span class="font-bold flex items-center gap-1.5">
-            <span id="oblivionSpinIcon" class="inline-block animate-spin text-amber-400">⚡</span>
+        <div class="flex items-center justify-between text-black mb-1">
+          <span class="font-bold flex items-center gap-1.5 uppercase">
+            <span id="oblivionSpinIcon" class="inline-block animate-spin font-bold text-black">[*]</span>
             <span>AUTONOMOUS RECONCILIATION PIPELINE</span>
           </span>
-          <span id="oblivionProgressPct" class="font-bold text-rose-400">20%</span>
+          <span id="oblivionProgressPct" class="font-bold text-black bg-[#C8FF5A] px-2 py-0.5 border border-black">20%</span>
         </div>
 
-        <!-- Progress Bar -->
-        <div class="w-full h-2.5 rounded-full bg-slate-800 overflow-hidden border border-slate-700">
-          <div id="oblivionProgressBar" class="h-full bg-gradient-to-r from-rose-500 via-amber-400 to-emerald-400 transition-all duration-300" style="width: 20%"></div>
+        <!-- Progress Bar (Hard 2px Border) -->
+        <div class="w-full h-3 bg-[#E7E3D8] border-2 border-black overflow-hidden">
+          <div id="oblivionProgressBar" class="h-full bg-black transition-all duration-300" style="width: 20%"></div>
         </div>
 
         <!-- Timeline Steps -->
         <div class="pt-3 space-y-2 text-[11px]">
-          <div id="oblivionStep1" class="flex items-center gap-2 text-rose-300">
-            <span class="w-4 text-center font-bold">✓</span>
+          <div id="oblivionStep1" class="flex items-center gap-2 text-black font-bold">
+            <span class="w-4 text-center">[X]</span>
             <span>[T+0.0s] Target replica terminated via API. Container evaporated from worker node.</span>
           </div>
-          <div id="oblivionStep2" class="flex items-center gap-2 text-emerald-400">
-            <span class="w-4 text-center font-bold">✓</span>
+          <div id="oblivionStep2" class="flex items-center gap-2 text-[#1D7A4D] font-bold">
+            <span class="w-4 text-center">[V]</span>
             <span>[T+0.2s] PodDisruptionBudget engaged: traffic seamlessly absorbed by remaining replicas.</span>
           </div>
-          <div id="oblivionStep3" class="flex items-center gap-2 text-amber-300">
-            <span id="step3Icon" class="w-4 text-center font-bold animate-pulse">⏳</span>
+          <div id="oblivionStep3" class="flex items-center gap-2 text-black font-bold">
+            <span id="step3Icon" class="w-4 text-center">[-]</span>
             <span id="step3Text">[T+1.5s] K8s ReplicaSet controller detects deficit (desired 4, available 3). Scheduling replacement...</span>
           </div>
-          <div id="oblivionStep4" class="flex items-center gap-2 text-slate-500">
-            <span id="step4Icon" class="w-4 text-center font-bold">○</span>
+          <div id="oblivionStep4" class="flex items-center gap-2 text-[#66645D]">
+            <span id="step4Icon" class="w-4 text-center">[ ]</span>
             <span id="step4Text">[Pending] Kubelet pulling localhost:5001/model-api:dev &amp; executing container runtime bootstrap.</span>
           </div>
-          <div id="oblivionStep5" class="flex items-center gap-2 text-slate-500">
-            <span id="step5Icon" class="w-4 text-center font-bold">○</span>
+          <div id="oblivionStep5" class="flex items-center gap-2 text-[#66645D]">
+            <span id="step5Icon" class="w-4 text-center">[ ]</span>
             <span id="step5Text">[Pending] Liveness &amp; Readiness probes (/healthz, /readyz) validation.</span>
           </div>
         </div>
       </div>
 
       <!-- Live Serving Test Verification During Oblivion -->
-      <div class="p-3.5 rounded-2xl bg-black/60 border border-slate-800 flex items-center justify-between text-xs font-mono">
+      <div class="p-3 bg-[#E7E3D8] border-2 border-black flex items-center justify-between text-xs font-mono">
         <div class="flex items-center gap-2">
-          <span class="w-2.5 h-2.5 rounded-full bg-emerald-400 animate-ping"></span>
-          <span class="text-slate-300">Live Traffic Probe:</span>
-          <span id="oblivionProbeStatus" class="text-emerald-400 font-bold">Pinging /predict during pod crash...</span>
+          <span class="w-2 h-2 bg-[#1D7A4D]"></span>
+          <span class="text-[#66645D]">LIVE TRAFFIC PROBE:</span>
+          <span id="oblivionProbeStatus" class="text-black font-bold">Pinging /predict during pod crash...</span>
         </div>
-        <span id="oblivionProbeLatency" class="text-slate-400 font-bold">-- ms</span>
+        <span id="oblivionProbeLatency" class="text-black font-bold">-- ms</span>
       </div>
 
       <!-- Action Footer -->
-      <div id="oblivionFooter" class="mt-5 pt-4 border-t border-slate-800 flex flex-col sm:flex-row items-center justify-between gap-3">
-        <span id="oblivionStatusNote" class="text-xs font-mono text-slate-400">
-          Kubernetes autonomous control plane is reconciling the cluster state...
+      <div id="oblivionFooter" class="mt-5 pt-4 border-t-2 border-black flex flex-col sm:flex-row items-center justify-between gap-3">
+        <span id="oblivionStatusNote" class="text-xs font-mono text-[#66645D]">
+          Kubernetes autonomous control plane is reconciling the cluster replica count...
         </span>
-        <button id="oblivionDismissBtn" onclick="dismissOblivionModal()" class="hidden px-5 py-2.5 rounded-xl bg-emerald-500 hover:bg-emerald-600 text-white text-xs font-bold font-mono transition shadow-lg shadow-emerald-500/30">
-          ✨ Return to Bento Dashboard
+        <button id="oblivionDismissBtn" onclick="dismissOblivionModal()" class="hidden cypher-btn cypher-btn-lime">
+          RETURN TO DASHBOARD &rarr;
         </button>
       </div>
 
+    </div>
+  </div>
+
+  <!-- Toast Notification Container -->
+  <div id="toast" class="fixed bottom-6 right-6 z-50 hidden cypher-panel-bright p-4 max-w-sm">
+    <div class="flex items-start gap-3">
+      <span id="toastIcon" class="text-lg">⚡</span>
+      <div class="flex-1 font-mono">
+        <strong id="toastTitle" class="block text-xs font-bold uppercase text-black">Notification</strong>
+        <p id="toastMessage" class="text-[11px] text-[#66645D] mt-0.5 leading-snug">Message content</p>
+      </div>
     </div>
   </div>
 
@@ -1222,120 +1060,114 @@
       window.location.hash = tabId;
 
       document.querySelectorAll('.view-panel').forEach(el => el.classList.add('hidden'));
-      document.querySelectorAll('.tab-pill').forEach(el => el.classList.remove('active'));
+      document.querySelectorAll('.cypher-tab').forEach(el => el.classList.remove('active'));
 
       const activeView = document.getElementById(`view-${tabId}`);
       const activeBtn = document.getElementById(`tab-${tabId}`);
       if (activeView) activeView.classList.remove('hidden');
       if (activeBtn) activeBtn.classList.add('active');
 
-      if (tabId === 'scoring') loadCustomerProfile(document.getElementById('inputCustomerId').value || '1');
       if (tabId === 'chaos') loadPods();
+      if (tabId === 'scoring') loadCustomerProfile('1');
     }
 
-    // Initialize on Page Load
-    document.addEventListener('DOMContentLoaded', () => {
-      const initialTab = window.location.hash.replace('#', '') || 'overview';
-      switchTab(initialTab);
+    // Initialize from URL hash
+    window.addEventListener('DOMContentLoaded', () => {
+      const hash = window.location.hash.replace('#', '');
+      if (hash && document.getElementById(`view-${hash}`)) {
+        switchTab(hash);
+      } else {
+        switchTab('overview');
+      }
 
-      refreshData();
-      setInterval(pollMetrics, 2000);
-      setInterval(pollStatus, 4000);
+      loadCustomerProfile('1');
+      pollSystemStatus();
+      pollMetrics();
+      loadPods();
+
+      setInterval(pollSystemStatus, 6000);
+      setInterval(pollMetrics, 2500);
       setInterval(() => {
-        if (currentTab === 'chaos' || currentTab === 'overview') loadPods();
-      }, 2000);
+        if (currentTab === 'chaos') loadPods();
+      }, 3000);
     });
 
-    window.addEventListener('hashchange', () => {
-      const hashTab = window.location.hash.replace('#', '') || 'overview';
-      if (hashTab !== currentTab) switchTab(hashTab);
-    });
-
-    // Refresh all state
-    async function refreshData() {
-      const icon = document.getElementById('refreshIcon');
-      if (icon) icon.classList.add('animate-spin');
-      await Promise.all([pollStatus(), pollMetrics(), loadPods()]);
-      if (icon) icon.classList.remove('animate-spin');
-    }
-
-    // Toast notifications
-    function showToast(title, message, icon = 'ℹ️') {
-      const toast = document.getElementById('toastNotification');
+    // Toast System
+    function showToast(title, message, icon = '⚡') {
+      const toast = document.getElementById('toast');
       document.getElementById('toastTitle').innerText = title;
       document.getElementById('toastMessage').innerText = message;
       document.getElementById('toastIcon').innerText = icon;
       toast.classList.remove('hidden');
-      setTimeout(hideToast, 6000);
+      setTimeout(() => toast.classList.add('hidden'), 4500);
     }
 
-    function hideToast() {
-      document.getElementById('toastNotification').classList.add('hidden');
-    }
-
-    // Poll Cluster & Model Status
-    async function pollStatus() {
+    // Poll System Status
+    async function pollSystemStatus() {
       try {
         const res = await fetch('/api/status');
         if (!res.ok) return;
         const data = await res.json();
 
-        // Model version pill
         if (data.serving_model) {
-          document.getElementById('navModelBadge').innerText = `v${data.serving_model.version} • UCI Taiwan`;
-          document.getElementById('scoringModelVer').innerText = `loan-default (v${data.serving_model.version})`;
+          const ver = data.serving_model.version || '4';
+          const subVer = document.getElementById('subHeaderModelVer');
+          if (subVer) subVer.innerText = `loan-default:v${ver}`;
+          const champTitle = document.getElementById('championModelTitle');
+          if (champTitle) champTitle.innerText = `Champion Model Version ${ver}`;
+          const runId = data.serving_model.mlflow_run_id || '07ca3e968db44c5eb288fe70f6d75cd3';
+          const metaElem = document.getElementById('metaRunId');
+          if (metaElem) metaElem.innerText = runId;
         }
 
-        // Drift status
-        const pill = document.getElementById('overviewDriftPill');
-        const driftCard = document.getElementById('driftCardState');
+        const pill = document.getElementById('clusterHealthBadge');
+        if (data.nodes_ready === data.nodes_total && data.nodes_total > 0) {
+          pill.className = 'hidden sm:flex items-center gap-2 px-3 py-1 bg-[#F8F6F0] border-2 border-black font-mono text-xs font-bold text-black';
+          pill.innerHTML = `<span class="w-2 h-2 bg-[#1D7A4D]"></span><span>KIND // ${data.nodes_ready}/${data.nodes_total} NODES READY</span>`;
+        }
+
+        const driftPill = document.getElementById('driftStatePill');
         if (data.drift_detected) {
-          pill.className = 'px-3.5 py-1.5 text-xs font-bold rounded-xl bg-rose-50 text-rose-700 border border-rose-200 flex items-center gap-1.5 shadow-sm animate-pulse';
-          pill.innerHTML = `<span class="w-2 h-2 rounded-full bg-rose-500 animate-ping"></span> Drift Status: Alert Active`;
-          if (driftCard) {
-            driftCard.className = 'text-2xl font-extrabold text-rose-600 flex items-center gap-2 animate-pulse';
-            driftCard.innerHTML = `<span class="w-3 h-3 rounded-full bg-rose-500"></span> DRIFT ALERT ACTIVE`;
-          }
+          driftPill.className = 'px-2 py-0.5 bg-[#B52A24] text-white border border-black font-bold uppercase text-[10px] animate-pulse';
+          driftPill.innerText = 'DRIFT: BREACH DETECTED';
         } else {
-          pill.className = 'px-3.5 py-1.5 text-xs font-bold rounded-xl bg-emerald-50 text-emerald-700 border border-emerald-200/80 flex items-center gap-1.5 shadow-sm';
-          pill.innerHTML = `<span class="w-2 h-2 rounded-full bg-emerald-500"></span> Drift Status: Normal (0)`;
-          if (driftCard) {
-            driftCard.className = 'text-2xl font-extrabold text-emerald-600 flex items-center gap-2';
-            driftCard.innerHTML = `<span class="w-3 h-3 rounded-full bg-emerald-500"></span> NORMAL (0 DRIFTED)`;
-          }
+          driftPill.className = 'px-2 py-0.5 bg-black text-[#C8FF5A] border border-black font-bold uppercase text-[10px]';
+          driftPill.innerText = 'DRIFT: STABLE';
         }
       } catch (err) {
-        console.error('Failed polling status:', err);
+        console.error('Failed polling system status:', err);
       }
     }
 
-    // Poll Golden Signals & PSI
+    // Poll Live Metrics
     async function pollMetrics() {
       try {
         const res = await fetch('/api/metrics');
         if (!res.ok) return;
         const data = await res.json();
 
-        // Golden signals
         document.getElementById('metricRPS').innerText = data.rps.toFixed(1);
         document.getElementById('metricErrors').innerText = data.error_rate_pct.toFixed(1) + '%';
-        document.getElementById('metricP95').innerText = data.p95_latency_ms !== null ? data.p95_latency_ms.toFixed(1) : '--';
+        document.getElementById('metricP95').innerText = data.p95_latency_ms !== null ? data.p95_latency_ms.toFixed(1) + 'ms' : '--';
         document.getElementById('metricP50').innerText = data.p50_latency_ms !== null ? data.p50_latency_ms.toFixed(1) + ' ms' : '-- ms';
 
-        // Replicas badge
+        if (data.champion_auc !== undefined && data.champion_auc !== null) {
+          const aucElem = document.getElementById('championAucMetric');
+          if (aucElem) aucElem.innerText = `${data.champion_auc.toFixed(4)} (Pass Gate)`;
+        }
+
         const badge = document.getElementById('metricReplicasBadge');
         if (data.replicas_available < data.replicas_desired) {
-          badge.innerText = 'Self-Healing';
-          badge.className = 'px-2 py-0.5 rounded-md bg-amber-50 text-amber-700 text-[10px] font-bold border border-amber-200 animate-pulse';
-          document.getElementById('metricReplicas').className = 'text-4xl font-extrabold text-amber-600 font-mono tracking-tight';
+          badge.innerText = 'RECONCILING REPLICAS...';
+          badge.className = 'font-bold text-[#B77900] animate-pulse';
+          document.getElementById('metricReplicas').className = 'text-5xl font-black text-[#B77900] font-mono tracking-tighter';
         } else {
-          badge.innerText = 'Healthy';
-          badge.className = 'px-2 py-0.5 rounded-md bg-emerald-50 text-emerald-700 text-[10px] font-bold border border-emerald-200';
-          document.getElementById('metricReplicas').className = 'text-4xl font-extrabold text-slate-900 font-mono tracking-tight';
+          badge.innerText = 'ALL REPLICAS ONLINE';
+          badge.className = 'font-bold text-[#1D7A4D]';
+          document.getElementById('metricReplicas').className = 'text-5xl font-black text-black font-mono tracking-tighter';
         }
         document.getElementById('metricReplicas').innerText = data.replicas_available;
 
-        // Render Grouped Feature PSI
         if (data.feature_psi) {
           renderFeaturePsiGroups(data.feature_psi);
         }
@@ -1344,7 +1176,7 @@
       }
     }
 
-    // Render 23 features into clean groups
+    // Render 23 features into flat cypherpunk trays
     function renderFeaturePsiGroups(psiData) {
       for (const [groupName, features] of Object.entries(FEATURE_GROUPS)) {
         const container = document.getElementById(`psi_group_${groupName}`);
@@ -1353,34 +1185,34 @@
         let html = '';
         for (const feat of features) {
           const psi = psiData[feat] !== undefined ? psiData[feat] : 0.0;
-          let barColor = 'bg-emerald-500';
-          let textColor = 'text-emerald-700';
-          let statusText = 'Stable';
+          let barBg = 'bg-[#1D7A4D]';
+          let textColor = 'text-[#1D7A4D]';
+          let statusText = 'STABLE';
 
-          if (psi > 0.20) {
-            barColor = 'bg-rose-500';
-            textColor = 'text-rose-600 font-bold';
-            statusText = 'Breach';
+          if (psi > 0.25) {
+            barBg = 'bg-[#B52A24]';
+            textColor = 'text-[#B52A24] font-black';
+            statusText = 'BREACH';
           } else if (psi > 0.10) {
-            barColor = 'bg-amber-500';
-            textColor = 'text-amber-600 font-bold';
-            statusText = 'Elevated';
+            barBg = 'bg-[#B77900]';
+            textColor = 'text-[#B77900] font-bold';
+            statusText = 'ELEVATED';
           }
 
-          const pct = Math.min(Math.max((psi / 0.35) * 100, 3), 100);
+          const pct = Math.min(Math.max((psi / 0.40) * 100, 4), 100);
 
           html += `
-            <div class="p-3.5 rounded-2xl bg-slate-50 border border-slate-200/80 space-y-1.5">
-              <div class="flex justify-between items-center text-xs">
-                <span class="font-bold text-slate-800 font-mono">${feat}</span>
-                <span class="${textColor} font-mono font-bold">${psi.toFixed(3)}</span>
+            <div class="p-3 bg-[#F8F6F0] border-2 border-black space-y-1.5">
+              <div class="flex justify-between items-center text-xs font-mono">
+                <span class="font-bold text-black uppercase">${feat}</span>
+                <span class="${textColor} font-bold">${psi.toFixed(3)}</span>
               </div>
-              <div class="w-full bg-slate-200 rounded-full h-2 overflow-hidden">
-                <div class="h-2 rounded-full ${barColor} transition-all duration-500" style="width: ${pct}%"></div>
+              <div class="w-full bg-[#E7E3D8] border border-black h-2 overflow-hidden">
+                <div class="h-full ${barBg}" style="width: ${pct}%"></div>
               </div>
-              <div class="flex justify-between text-[10px] text-slate-400 font-semibold">
-                <span>Threshold 0.25</span>
-                <span>${statusText}</span>
+              <div class="flex justify-between text-[10px] font-mono text-[#66645D]">
+                <span>LIMIT 0.25</span>
+                <span class="font-bold">${statusText}</span>
               </div>
             </div>
           `;
@@ -1410,20 +1242,20 @@
         if (!this.ctx) return;
         try {
           const now = this.ctx.currentTime;
-          // Deep 808 Sub-Bass Impact Sweep
+          // Sub-bass sweep
           const osc = this.ctx.createOscillator();
           const gain = this.ctx.createGain();
           osc.type = 'sawtooth';
-          osc.frequency.setValueAtTime(220, now);
-          osc.frequency.exponentialRampToValueAtTime(32, now + 0.85);
-          gain.gain.setValueAtTime(0.6, now);
+          osc.frequency.setValueAtTime(240, now);
+          osc.frequency.exponentialRampToValueAtTime(30, now + 0.85);
+          gain.gain.setValueAtTime(0.65, now);
           gain.gain.exponentialRampToValueAtTime(0.01, now + 1.2);
           osc.connect(gain);
           gain.connect(this.ctx.destination);
           osc.start(now);
           osc.stop(now + 1.25);
 
-          // White noise debris crackle
+          // White noise crackle
           const bufferSize = this.ctx.sampleRate * 0.45;
           const buffer = this.ctx.createBuffer(1, bufferSize, this.ctx.sampleRate);
           const data = buffer.getChannelData(0);
@@ -1431,12 +1263,12 @@
           const noise = this.ctx.createBufferSource();
           noise.buffer = buffer;
           const noiseGain = this.ctx.createGain();
-          noiseGain.gain.setValueAtTime(0.35, now);
+          noiseGain.gain.setValueAtTime(0.4, now);
           noiseGain.gain.exponentialRampToValueAtTime(0.01, now + 0.5);
           noise.connect(noiseGain);
           noiseGain.connect(this.ctx.destination);
           noise.start(now);
-        } catch (e) { console.warn('SFX failed', e); }
+        } catch (e) {}
       }
       playSirens() {
         if (!this.enabled) return;
@@ -1444,17 +1276,17 @@
         if (!this.ctx) return;
         try {
           const now = this.ctx.currentTime;
-          [0, 0.28, 0.56, 0.84].forEach((offset, idx) => {
+          [0, 0.26, 0.52].forEach((offset, idx) => {
             const osc = this.ctx.createOscillator();
             const gain = this.ctx.createGain();
             osc.type = 'square';
             osc.frequency.setValueAtTime(idx % 2 === 0 ? 880 : 660, now + offset);
             gain.gain.setValueAtTime(0.08, now + offset);
-            gain.gain.exponentialRampToValueAtTime(0.005, now + offset + 0.22);
+            gain.gain.exponentialRampToValueAtTime(0.005, now + offset + 0.20);
             osc.connect(gain);
             gain.connect(this.ctx.destination);
             osc.start(now + offset);
-            osc.stop(now + offset + 0.24);
+            osc.stop(now + offset + 0.22);
           });
         } catch (e) {}
       }
@@ -1464,18 +1296,17 @@
         if (!this.ctx) return;
         try {
           const now = this.ctx.currentTime;
-          // Harmonic Cyber Chime
-          [523.25, 659.25, 783.99, 1046.50, 1318.51].forEach((freq, i) => {
+          [523.25, 659.25, 783.99, 1046.50].forEach((freq, i) => {
             const osc = this.ctx.createOscillator();
             const gain = this.ctx.createGain();
             osc.type = 'triangle';
             osc.frequency.setValueAtTime(freq, now + (i * 0.07));
-            gain.gain.setValueAtTime(0.18, now + (i * 0.07));
+            gain.gain.setValueAtTime(0.2, now + (i * 0.07));
             gain.gain.exponentialRampToValueAtTime(0.001, now + 1.2 + (i * 0.07));
             osc.connect(gain);
             gain.connect(this.ctx.destination);
             osc.start(now + (i * 0.07));
-            osc.stop(now + 1.4);
+            osc.stop(now + 1.3);
           });
         } catch (e) {}
       }
@@ -1485,10 +1316,8 @@
 
     function toggleAudio() {
       cyberAudio.enabled = !cyberAudio.enabled;
-      const icon = document.getElementById('sfxIcon');
-      const label = document.getElementById('sfxLabel');
-      if (icon) icon.innerText = cyberAudio.enabled ? '🔊' : '🔇';
-      if (label) label.innerText = cyberAudio.enabled ? 'SFX: ON' : 'SFX: OFF';
+      document.getElementById('sfxIcon').innerText = cyberAudio.enabled ? '🔊' : '🔇';
+      document.getElementById('sfxLabel').innerText = cyberAudio.enabled ? 'SFX: ON' : 'SFX: OFF';
     }
 
     let oblivionTimerInterval = null;
@@ -1503,71 +1332,43 @@
     }
 
     async function triggerOblivionSequence(ns, podName) {
-      // 1. Audio SFX & Screen Shake
+      // 1. Audio SFX & Seismic Rumble
       cyberAudio.playExplosion();
-      setTimeout(() => cyberAudio.playSirens(), 380);
+      setTimeout(() => cyberAudio.playSirens(), 350);
 
       document.body.classList.add('oblivion-shake');
-      setTimeout(() => document.body.classList.remove('oblivion-shake'), 950);
+      setTimeout(() => document.body.classList.remove('oblivion-shake'), 800);
 
-      // 2. Vaporize Pod Card in UI
+      // 2. Mark pod card as vaporizing
       const podCard = document.getElementById(`pod-card-${podName}`);
-      if (podCard) {
-        podCard.classList.add('pod-vaporizing');
-      }
+      if (podCard) podCard.classList.add('pod-vaporizing');
 
-      // 3. Reset Oblivion Modal UI Elements
+      // 3. Setup Modal
       const modal = document.getElementById('oblivionModal');
-      const modalCard = document.getElementById('oblivionModalCard');
       const headerTitle = document.getElementById('oblivionHeaderTitle');
-      const codeBadge = document.getElementById('oblivionCodeBadge');
-      const alertPill = document.getElementById('oblivionAlertPill');
-      const alertIcon = document.getElementById('oblivionAlertIcon');
       const dismissBtn = document.getElementById('oblivionDismissBtn');
-      const spinIcon = document.getElementById('oblivionSpinIcon');
       const progressPct = document.getElementById('oblivionProgressPct');
       const progressBar = document.getElementById('oblivionProgressBar');
       const statusNote = document.getElementById('oblivionStatusNote');
 
-      modalCard.className = 'relative w-full max-w-3xl rounded-3xl bg-slate-900/95 border-2 border-rose-500/80 shadow-[0_0_80px_rgba(225,29,72,0.4)] p-6 sm:p-8 text-white overflow-hidden font-sans transition-all duration-500';
-      headerTitle.className = 'text-xl sm:text-2xl font-black font-mono tracking-tight text-white glitch-text mt-0.5';
       headerTitle.innerText = 'POD VAPORIZED FROM REPLICASET';
-      codeBadge.innerText = 'CRITICAL EMERGENCY PROTOCOL // CODE: OBLIVION';
-      codeBadge.className = 'text-xs font-mono font-extrabold uppercase tracking-widest text-rose-400';
-      alertPill.className = 'px-2 py-0.5 rounded-full bg-rose-500/30 text-rose-300 text-[10px] font-mono font-bold animate-ping';
-      alertPill.innerText = 'ALERT';
-      alertIcon.innerText = '⚠️';
-      alertIcon.className = 'w-11 h-11 rounded-2xl bg-rose-500/20 border border-rose-500/60 flex items-center justify-center text-rose-400 text-2xl font-bold animate-pulse';
-
       document.getElementById('oblivionTargetPod').innerText = podName;
       document.getElementById('oblivionSurvivingCount').innerText = '3 Pods';
       dismissBtn.classList.add('hidden');
-      spinIcon.className = 'inline-block animate-spin text-amber-400';
       progressPct.innerText = '25%';
-      progressPct.className = 'font-bold text-rose-400';
       progressBar.style.width = '25%';
-      progressBar.className = 'h-full bg-gradient-to-r from-rose-500 via-amber-400 to-emerald-400 transition-all duration-300';
-      statusNote.innerText = 'Kubernetes autonomous control plane is reconciling cluster replica deficit...';
+      statusNote.innerText = 'Kubernetes autonomous control plane is reconciling replica deficit...';
 
-      // Reset Timeline Steps
-      document.getElementById('step3Icon').innerText = '⏳';
-      document.getElementById('step3Icon').className = 'w-4 text-center font-bold animate-pulse';
+      document.getElementById('step3Icon').innerText = '[-]';
       document.getElementById('step3Text').innerText = '[T+1.5s] K8s ReplicaSet controller detects deficit (desired 4, available 3). Scheduling replacement...';
-      document.getElementById('oblivionStep3').className = 'flex items-center gap-2 text-amber-300';
-
-      document.getElementById('step4Icon').innerText = '○';
-      document.getElementById('step4Icon').className = 'w-4 text-center font-bold';
+      document.getElementById('step4Icon').innerText = '[ ]';
       document.getElementById('step4Text').innerText = '[Pending] Kubelet pulling localhost:5001/model-api:dev & executing container runtime bootstrap.';
-      document.getElementById('oblivionStep4').className = 'flex items-center gap-2 text-slate-500';
-
-      document.getElementById('step5Icon').innerText = '○';
-      document.getElementById('step5Icon').className = 'w-4 text-center font-bold';
+      document.getElementById('step5Icon').innerText = '[ ]';
       document.getElementById('step5Text').innerText = '[Pending] Liveness & Readiness probes (/healthz, /readyz) validation.';
-      document.getElementById('oblivionStep5').className = 'flex items-center gap-2 text-slate-500';
 
       modal.classList.remove('hidden');
 
-      // 4. Start Stopwatch
+      // 4. Stopwatch
       const startTime = performance.now();
       if (oblivionTimerInterval) clearInterval(oblivionTimerInterval);
       oblivionTimerInterval = setInterval(() => {
@@ -1575,7 +1376,7 @@
         document.getElementById('oblivionTimer').innerText = elapsed.toFixed(1) + 's';
       }, 100);
 
-      // 5. Fire Live Inference Probe in background
+      // 5. Fire background test probe
       (async () => {
         try {
           const probeStart = performance.now();
@@ -1590,18 +1391,16 @@
             document.getElementById('oblivionProbeLatency').innerText = probeLatency + ' ms';
           }
         } catch (e) {
-          document.getElementById('oblivionProbeStatus').innerText = 'Connection Handshake Maintained';
+          document.getElementById('oblivionProbeStatus').innerText = 'Active Connection Maintained';
         }
       })();
 
-      // 6. Send Kill Pod Command to Backend
+      // 6. Delete Pod API call
       try {
         fetch(`/api/kill-pod/${ns}/${podName}`, { method: 'POST' });
-      } catch (err) {
-        console.error('Failed triggering kill-pod:', err);
-      }
+      } catch (err) {}
 
-      // 7. Polling Loop to Watch Kubernetes Resurrect the Replica
+      // 7. Watch for replacement pod
       let replacementPodName = null;
       let isHealed = false;
 
@@ -1613,42 +1412,28 @@
           const pods = await res.json();
           const servingPods = pods.filter(p => p.namespace === 'serving');
 
-          // Find replacement pod (not equal to dead podName)
           if (!replacementPodName) {
             const newPod = servingPods.find(p => p.name !== podName && (p.ready === '0/1' || p.age.endsWith('s')));
             if (newPod) {
               replacementPodName = newPod.name;
               window.lastSpawnedPod = replacementPodName;
 
-              document.getElementById('step3Icon').innerText = '✓';
-              document.getElementById('step3Icon').className = 'w-4 text-center font-bold text-emerald-400';
-              document.getElementById('oblivionStep3').className = 'flex items-center gap-2 text-emerald-400';
+              document.getElementById('step3Icon').innerText = '[V]';
               document.getElementById('step3Text').innerText = `[T+1.8s] Replacement pod assigned by scheduler: ${replacementPodName}`;
-
-              document.getElementById('step4Icon').innerText = '⏳';
-              document.getElementById('step4Icon').className = 'w-4 text-center font-bold animate-pulse text-amber-300';
-              document.getElementById('oblivionStep4').className = 'flex items-center gap-2 text-amber-300';
-              document.getElementById('step4Text').innerText = `[T+3.5s] Bootstrapping container image on node (status: ${newPod.status})`;
-
+              document.getElementById('step4Icon').innerText = '[-]';
+              document.getElementById('step4Text').innerText = `[T+3.2s] Bootstrapping container image on node (${newPod.status})`;
               progressPct.innerText = '55%';
               progressBar.style.width = '55%';
             }
           }
 
-          // Track readiness
           if (replacementPodName) {
             const target = servingPods.find(p => p.name === replacementPodName);
             if (target) {
               if (target.status === 'Running' && target.ready === '0/1') {
-                document.getElementById('step4Icon').innerText = '✓';
-                document.getElementById('step4Icon').className = 'w-4 text-center font-bold text-emerald-400';
-                document.getElementById('oblivionStep4').className = 'flex items-center gap-2 text-emerald-400';
-
-                document.getElementById('step5Icon').innerText = '⏳';
-                document.getElementById('step5Icon').className = 'w-4 text-center font-bold animate-pulse text-amber-300';
-                document.getElementById('oblivionStep5').className = 'flex items-center gap-2 text-amber-300';
+                document.getElementById('step4Icon').innerText = '[V]';
+                document.getElementById('step5Icon').innerText = '[-]';
                 document.getElementById('step5Text').innerText = '[T+6.0s] Running /readyz probe... Awaiting HTTP 200 threshold.';
-
                 progressPct.innerText = '80%';
                 progressBar.style.width = '80%';
               }
@@ -1661,53 +1446,32 @@
                 const finalTime = ((performance.now() - startTime) / 1000).toFixed(1);
                 document.getElementById('oblivionTimer').innerText = finalTime + 's';
 
-                // Play Cyber Recovery Chime!
                 cyberAudio.playRecovery();
 
-                // Step 5 Complete
-                document.getElementById('step5Icon').innerText = '✓';
-                document.getElementById('step5Icon').className = 'w-4 text-center font-bold text-emerald-400';
-                document.getElementById('oblivionStep5').className = 'flex items-center gap-2 text-emerald-400';
-                document.getElementById('step5Text').innerText = `[T+${finalTime}s] /readyz probe PASSED! 1/1 Ready. Healthy replica admitted to service pool.`;
+                document.getElementById('step5Icon').innerText = '[V]';
+                document.getElementById('step5Text').innerText = `[T+${finalTime}s] /readyz PASSED! 1/1 Ready. Healthy replica serving traffic.`;
 
-                // Update Progress to 100%
                 progressPct.innerText = '100%';
-                progressPct.className = 'font-bold text-emerald-400';
                 progressBar.style.width = '100%';
-                progressBar.className = 'h-full bg-emerald-400 transition-all duration-300';
+                progressBar.className = 'h-full bg-[#1D7A4D] transition-all duration-300';
 
-                // Transform Modal Card to Victory Emerald
-                modalCard.className = 'relative w-full max-w-3xl rounded-3xl bg-slate-900/95 border-2 border-emerald-500 shadow-[0_0_100px_rgba(16,185,129,0.5)] p-6 sm:p-8 text-white overflow-hidden font-sans transition-all duration-500';
-                headerTitle.className = 'text-xl sm:text-2xl font-black font-mono tracking-tight text-emerald-400 mt-0.5';
-                headerTitle.innerText = '✨ SELF-HEALING COMPLETE! ZERO DOWNTIME PROVEN';
-                codeBadge.innerText = 'AUTONOMOUS RECONCILIATION SUCCESS';
-                codeBadge.className = 'text-xs font-mono font-extrabold uppercase tracking-widest text-emerald-400';
-                alertPill.className = 'px-2 py-0.5 rounded-full bg-emerald-500/30 text-emerald-300 text-[10px] font-mono font-bold';
-                alertPill.innerText = 'RESTORED';
-                alertIcon.innerText = '✨';
-                alertIcon.className = 'w-11 h-11 rounded-2xl bg-emerald-500/20 border border-emerald-500/60 flex items-center justify-center text-emerald-400 text-2xl font-bold';
-
+                headerTitle.innerText = 'SELF-HEALING COMPLETE! ZERO DOWNTIME';
                 document.getElementById('oblivionSurvivingCount').innerText = `${servingPods.length} Pods (All Ready)`;
-                statusNote.innerText = `Cluster recovered in ${finalTime}s with 100% availability. Zero downtime maintained.`;
+                statusNote.innerText = `Cluster recovered in ${finalTime}s with 100% availability.`;
                 dismissBtn.classList.remove('hidden');
 
-                showToast('Replica Self-Healed', `New pod ${replacementPodName} is live & healthy!`, '✨');
+                showToast('Replica Self-Healed', `Pod ${replacementPodName} is live & healthy!`, '✨');
                 loadPods();
 
-                // Auto dismiss after 4 seconds
-                setTimeout(() => {
-                  dismissOblivionModal();
-                }, 4000);
+                setTimeout(dismissOblivionModal, 3500);
               }
             }
           }
-        } catch (err) {
-          console.error('Oblivion monitor poll failed:', err);
-        }
+        } catch (err) {}
       }, 750);
     }
 
-    // Load serving pods & render interactive chaos cards
+    // Load Serving Pods (Physical Brutalist Cards)
     async function loadPods() {
       const container = document.getElementById('servingPodsGrid');
       if (!container) return;
@@ -1719,55 +1483,46 @@
 
         const servingPods = pods.filter(p => p.namespace === 'serving');
         if (servingPods.length === 0) {
-          container.innerHTML = `<div class="p-8 col-span-2 rounded-3xl bg-white border border-slate-200 text-center text-slate-500 text-xs">No serving pods detected.</div>`;
+          container.innerHTML = `<div class="p-8 col-span-2 cypher-panel text-center text-xs font-mono text-[#66645D]">No serving pods detected in cluster.</div>`;
           return;
         }
 
         container.innerHTML = servingPods.map((p, idx) => {
-          let statusBadge = 'bg-emerald-50 text-emerald-700 border-emerald-200';
-          let statusText = p.status;
           let isHealthy = p.status === 'Running' && p.ready === '1/1';
+          let statusBadge = isHealthy ? 'bg-[#F8F6F0] text-[#1D7A4D] border-black' : 'bg-[#fed7aa] text-black border-black';
           const isNewlySpawned = window.lastSpawnedPod === p.name;
-
-          if (p.status === 'Terminating') {
-            statusBadge = 'bg-rose-50 text-rose-700 border-rose-300 animate-pulse font-bold';
-            statusText = '💥 Terminating';
-          } else if (p.status === 'ContainerCreating' || p.status === 'Pending') {
-            statusBadge = 'bg-amber-50 text-amber-700 border-amber-300 animate-pulse font-bold';
-            statusText = '⚡ Self-Healing (Booting)';
-          }
-
-          const haloClass = isNewlySpawned ? 'pod-spawned-halo border-emerald-400 bg-emerald-50/20' : '';
+          const haloClass = isNewlySpawned ? 'pod-spawned-halo' : '';
 
           return `
-            <div id="pod-card-${p.name}" class="bento-card rounded-3xl p-6 flex flex-col justify-between shadow-bento ${haloClass}">
+            <div id="pod-card-${p.name}" class="cypher-panel p-6 flex flex-col justify-between ${haloClass}">
               <div>
-                <div class="flex items-center justify-between mb-4">
-                  <div class="flex items-center gap-2.5">
-                    <span class="text-base font-extrabold text-slate-900 font-mono">Serving Replica #${idx + 1}</span>
-                    <span class="px-2.5 py-0.5 rounded-full text-[11px] font-mono font-bold border ${statusBadge}">${statusText}</span>
-                    ${isNewlySpawned ? '<span class="px-2 py-0.5 rounded-full text-[10px] font-mono font-black bg-emerald-600 text-white animate-pulse">✨ NEW REPLICA</span>' : ''}
+                <div class="flex items-center justify-between border-b-2 border-black pb-3 mb-3">
+                  <div class="flex items-center gap-2">
+                    <span class="micro-label">REPLICA 03.0${idx + 1}</span>
+                    ${isNewlySpawned ? '<span class="px-1.5 py-0.5 bg-[#C8FF5A] text-black text-[10px] font-mono font-bold border border-black">SPAWNED</span>' : ''}
                   </div>
-                  <span class="text-xs font-mono text-slate-400 font-semibold">${p.age}</span>
+                  <span class="px-2 py-0.5 text-xs font-mono font-bold border-2 ${statusBadge}">
+                    ${p.ready} ${p.status.toUpperCase()}
+                  </span>
                 </div>
 
-                <div class="space-y-2 text-xs text-slate-600 font-mono">
-                  <p class="truncate"><span class="text-slate-400">Pod:</span> <strong class="text-slate-900">${p.name}</strong></p>
-                  <p><span class="text-slate-400">Ready Status:</span> <strong class="${isHealthy ? 'text-emerald-700' : 'text-amber-700'}">${p.ready}</strong></p>
-                  <p><span class="text-slate-400">Restarts:</span> <strong class="${p.restarts > 0 ? 'text-amber-600' : 'text-slate-700'}">${p.restarts}</strong></p>
+                <div class="space-y-1.5 text-xs font-mono">
+                  <p class="truncate"><span class="text-[#66645D]">NAME:</span> <strong class="text-black">${p.name}</strong></p>
+                  <p><span class="text-[#66645D]">AGE:</span> <strong class="text-black">${p.age}</strong></p>
+                  <p><span class="text-[#66645D]">RESTARTS:</span> <strong class="text-black">${p.restarts}</strong></p>
                 </div>
               </div>
 
-              <div class="mt-6 pt-4 border-t border-slate-100 flex items-center justify-between gap-2">
-                <button onclick="viewPodLogs('${p.namespace}', '${p.name}')" class="px-3.5 py-2 rounded-xl bg-slate-50 hover:bg-slate-100 border border-slate-200 text-xs font-bold text-slate-700 transition">
-                  Logs
+              <div class="mt-5 pt-3 border-t-2 border-black flex items-center justify-between gap-2">
+                <button onclick="viewPodLogs('${p.namespace}', '${p.name}')" class="cypher-btn cypher-btn-secondary text-[10px] py-1.5 px-3">
+                  LOGS
                 </button>
                 ${isHealthy ? `
-                  <button onclick="killPod('${p.namespace}', '${p.name}')" class="px-4 py-2 rounded-xl bg-rose-50 hover:bg-rose-600 text-rose-700 hover:text-white border border-rose-200 text-xs font-bold transition flex items-center gap-1.5 shadow-sm">
-                    <span>💥</span> Kill Replica
+                  <button onclick="killPod('${p.namespace}', '${p.name}')" class="cypher-btn cypher-btn-danger text-[10px] py-1.5 px-3">
+                    💥 KILL REPLICA
                   </button>
                 ` : `
-                  <span class="text-xs font-mono font-bold text-slate-400">Reconciling...</span>
+                  <span class="text-xs font-mono font-bold text-[#66645D]">RECONCILING...</span>
                 `}
               </div>
             </div>
@@ -1778,7 +1533,7 @@
       }
     }
 
-    // Kill specific pod & watch self-healing
+    // Kill Pod Trigger
     async function killPod(ns, name) {
       const oblivionActive = document.getElementById('oblivionToggle')?.checked ?? true;
       if (oblivionActive) {
@@ -1786,30 +1541,25 @@
         return;
       }
 
-      if (!confirm(`Trigger Chaos Drill:\n\nDelete pod "${name}" in ${ns}?\n\nWatch Kubernetes immediately detect replica deficit and self-heal in real time while inference remains uninterrupted.`)) return;
+      if (!confirm(`Confirm Pod Destruction:\n\nDelete replica "${name}" in ${ns}?`)) return;
 
       const banner = document.getElementById('chaosBanner');
       if (banner) {
-        document.getElementById('chaosBannerTitle').innerText = `💥 Killed ${name}`;
-        document.getElementById('chaosBannerDesc').innerText = `Kubernetes ReplicaSet detected deficit. Replacement replica is spawning now while serving traffic continues...`;
+        document.getElementById('chaosBannerTitle').innerText = `💥 KILLED ${name}`;
+        document.getElementById('chaosBannerDesc').innerText = `Kubernetes ReplicaSet deficit detected. Replacement replica spawning now...`;
         banner.classList.remove('hidden');
-        setTimeout(() => banner.classList.add('hidden'), 9000);
+        setTimeout(() => banner.classList.add('hidden'), 8000);
       }
-
-      showToast('Replica Terminated', `Deleted ${name}. Watch replacement pod boot up!`, '💥');
 
       try {
         await fetch(`/api/kill-pod/${ns}/${name}`, { method: 'POST' });
         await loadPods();
-        await pollMetrics();
-      } catch (err) {
-        alert('Failed deleting pod: ' + err);
-      }
+      } catch (err) {}
     }
 
-    // Single prediction check from Chaos Lab
+    // Single Prediction Check
     async function quickTestInference() {
-      showToast('Testing Serving', 'Sending test inference request to prove zero downtime...', '⚡');
+      showToast('PROBE SENT', 'Testing inference during pod crash...', '⚡');
       try {
         const res = await fetch('/api/predict', {
           method: 'POST',
@@ -1818,12 +1568,10 @@
         });
         const data = await res.json();
         if (data.status === 'success') {
-          showToast('Success (HTTP 200)', `Answered in ${data.latency_ms} ms (${data.risk_level})! Zero downtime proven.`, '🛡️');
-        } else {
-          showToast('Error', data.message || 'Request failed', '❌');
+          showToast('PROBE PASSED (HTTP 200)', `Latency: ${data.latency_ms}ms • Zero downtime maintained.`, '🛡️');
         }
       } catch (e) {
-        showToast('Error', 'Connection failure: ' + e, '❌');
+        showToast('ERROR', e.message, '❌');
       }
     }
 
@@ -1841,7 +1589,7 @@
       scoreCurrentBorrower();
     }
 
-    // Fetch Borrower Profile from Backend
+    // Load Borrower Profile
     async function loadCustomerProfile(id) {
       try {
         const res = await fetch(`/api/customer-profile/${id}`);
@@ -1856,153 +1604,112 @@
           const pay0Elem = document.getElementById('profPay0');
           if (data.pay_0 > 0) {
             pay0Elem.innerText = `${data.pay_0} months delay`;
-            pay0Elem.className = 'font-mono font-extrabold text-rose-600 text-sm mt-0.5 block';
-          } else if (data.pay_0 === 0) {
-            pay0Elem.innerText = 'On time (revolving)';
-            pay0Elem.className = 'font-mono font-extrabold text-emerald-700 text-sm mt-0.5 block';
+            pay0Elem.className = 'font-bold text-[#B52A24] text-sm mt-0.5';
           } else {
-            pay0Elem.innerText = `Paid in full (${data.pay_0})`;
-            pay0Elem.className = 'font-mono font-extrabold text-emerald-700 text-sm mt-0.5 block';
+            pay0Elem.innerText = data.pay_0 === 0 ? 'On time (revolving)' : `Paid in full (${data.pay_0})`;
+            pay0Elem.className = 'font-bold text-[#1D7A4D] text-sm mt-0.5';
           }
 
           document.getElementById('profBill').innerText = '$' + data.bill_amt1.toLocaleString();
-          document.getElementById('profPaid').innerText = '$' + data.pay_amt1.toLocaleString();
         }
-      } catch (err) {
-        console.error('Failed loading customer profile:', err);
-      }
+      } catch (err) {}
     }
 
     // Score Current Borrower
     async function scoreCurrentBorrower() {
-      const custId = document.getElementById('inputCustomerId').value.trim() || '1';
-      const btn = document.getElementById('btnScoreLoan');
-      btn.disabled = true;
-      btn.innerHTML = `<svg class="w-4 h-4 animate-spin text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15"/></svg> <span class="text-white">Scoring...</span>`;
+      const id = document.getElementById('inputCustomerId').value || '1';
+      const probElem = document.getElementById('scoreProbability');
+      const barElem = document.getElementById('scoreProbBar');
+      const verdictElem = document.getElementById('scoreRiskLevel');
+      const latencyElem = document.getElementById('scoreLatencyBadge');
+      const verdictBox = document.getElementById('verdictBox');
+
+      probElem.innerText = '...';
+      verdictElem.innerText = 'CALCULATING...';
 
       try {
         const res = await fetch('/api/predict', {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ customer_id: custId })
+          body: JSON.stringify({ customer_id: id })
         });
         const data = await res.json();
-        btn.disabled = false;
-        btn.innerHTML = `<svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M13 10V3L4 14h7v7l9-11h-7z"/></svg> <span>Score Borrower</span>`;
-
         if (data.status === 'success') {
-          const prob = (data.default_probability * 100).toFixed(1);
-          document.getElementById('probValue').innerText = prob + '%';
-          document.getElementById('probProgressBar').style.width = prob + '%';
-          document.getElementById('scoringLatencyBadge').innerText = `Latency: ${data.latency_ms} ms`;
-
-          const card = document.getElementById('decisionCard');
-          const badge = document.getElementById('decisionBadge');
-          const title = document.getElementById('decisionTitle');
-          const desc = document.getElementById('decisionDesc');
+          const pct = (data.default_probability * 100).toFixed(1);
+          probElem.innerText = pct + '%';
+          barElem.style.width = pct + '%';
+          latencyElem.innerText = `LATENCY: ${data.latency_ms.toFixed(1)} MS`;
+          document.getElementById('scoreModelVer').innerText = `Champion v${data.model_version}`;
 
           if (data.prediction === 1) {
-            card.className = 'p-6 rounded-3xl bg-rose-50 border border-rose-200 text-center mb-6 transition-all shadow-sm';
-            badge.className = 'inline-block px-4 py-1.5 rounded-full text-xs font-extrabold uppercase tracking-wider bg-rose-100 text-rose-700 border border-rose-200 mb-2';
-            badge.innerText = 'HIGH RISK';
-            title.innerText = '⚠️ Loan Default Predicted';
-            title.className = 'text-2xl font-extrabold text-rose-900';
-            desc.innerText = `Borrower probability of default (${prob}%) exceeds safety threshold.`;
-            document.getElementById('probProgressBar').className = 'h-2.5 rounded-full bg-rose-500 transition-all duration-700';
+            verdictElem.innerText = 'HIGH RISK // DEFAULT';
+            verdictBox.className = 'p-5 border-2 border-black bg-[#fed7aa] text-center space-y-1';
+            barElem.className = 'h-full bg-[#B52A24] transition-all duration-300';
           } else {
-            card.className = 'p-6 rounded-3xl bg-emerald-50 border border-emerald-200 text-center mb-6 transition-all shadow-sm';
-            badge.className = 'inline-block px-4 py-1.5 rounded-full text-xs font-extrabold uppercase tracking-wider bg-emerald-100 text-emerald-700 border border-emerald-200 mb-2';
-            badge.innerText = 'LOW RISK';
-            title.innerText = '🛡️ Loan Approved';
-            title.className = 'text-2xl font-extrabold text-emerald-900';
-            desc.innerText = `Borrower profile demonstrates high creditworthiness (${prob}% default risk).`;
-            document.getElementById('probProgressBar').className = 'h-2.5 rounded-full bg-emerald-500 transition-all duration-700';
+            verdictElem.innerText = 'APPROVED // LOW RISK';
+            verdictBox.className = 'p-5 border-2 border-black bg-[#ecfdf5] text-center space-y-1';
+            barElem.className = 'h-full bg-[#1D7A4D] transition-all duration-300';
           }
-        } else {
-          alert('Scoring failed: ' + (data.message || 'Unknown error'));
         }
       } catch (err) {
-        btn.disabled = false;
-        btn.innerHTML = `Score Borrower`;
-        alert('Error connecting to backend: ' + err);
+        verdictElem.innerText = 'ERROR';
       }
     }
 
-    // Streaming Action Execution (Console/Terminal)
+    // Terminal Execution Controller (SSE Streaming)
     async function executeAction(actionName) {
+      switchTab('terminal');
+      const term = document.getElementById('terminalOutput');
+      const pill = document.getElementById('terminalStatusPill');
+
+      term.innerHTML += `\n\n=======================================================\n`;
+      term.innerHTML += `[${new Date().toISOString()}] DISPATCHING: ${actionName}\n`;
+      term.innerHTML += `=======================================================\n`;
+
+      pill.innerText = 'STATUS: RUNNING';
+      pill.className = 'text-[10px] bg-[#C8FF5A] text-black px-2 py-0.5 border border-black font-bold';
+
       if (activeEventSource) {
-        if (!confirm('A drill task is already running. Terminate and start new action?')) return;
         activeEventSource.close();
       }
 
-      switchTab('terminal');
-
-      const term = document.getElementById('terminalOutput');
-      const pill = document.getElementById('execStatusPill');
-      const cmdPill = document.getElementById('activeCmdPill');
-
-      pill.innerText = `Running: ${actionName}...`;
-      pill.className = 'text-xs font-mono text-brand-600 font-bold';
-
-      term.innerHTML += `\n<span class="text-indigo-400 font-bold">&gt;&gt;&gt; [${new Date().toLocaleTimeString()}] Triggering platform drill: ${actionName}</span>\n`;
-      term.scrollTop = term.scrollHeight;
-
       try {
-        const res = await fetch('/api/action', {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ action: actionName })
-        });
-        const data = await res.json();
-        if (!res.ok) throw new Error(data.detail || 'Failed triggering action');
-
-        cmdPill.innerText = `$ ${data.command}`;
-        cmdPill.classList.remove('hidden');
-
-        activeEventSource = new EventSource(`/api/stream/${data.execution_id}`);
+        activeEventSource = new EventSource(`/api/stream/${actionName}`);
 
         activeEventSource.onmessage = (event) => {
-          try {
-            const msg = JSON.parse(event.data);
-            if (msg.type === 'stdout') {
-              term.innerHTML += escapeHtml(msg.line);
-              term.scrollTop = term.scrollHeight;
-            } else if (msg.type === 'end') {
-              const code = msg.exit_code;
-              term.innerHTML += `\n<span class="${code === 0 ? 'text-emerald-400' : 'text-rose-400'} font-bold">✔ Task finished with exit code ${code}</span>\n`;
-              term.scrollTop = term.scrollHeight;
-              pill.innerText = code === 0 ? 'Status: Success' : 'Status: Failed';
-              pill.className = code === 0 ? 'text-xs font-mono text-emerald-600 font-bold' : 'text-xs font-mono text-rose-600 font-bold';
-              activeEventSource.close();
-              activeEventSource = null;
-              pollMetrics();
-              pollStatus();
-            }
-          } catch (e) {
-            console.error('Error parsing SSE:', e);
+          if (event.data === '[DONE]') {
+            activeEventSource.close();
+            activeEventSource = null;
+            pill.innerText = 'STATUS: COMPLETED';
+            pill.className = 'text-[10px] bg-black text-[#C8FF5A] px-2 py-0.5 border border-[#C8FF5A] font-bold';
+            showToast('ACTION COMPLETE', `Target ${actionName} finished execution.`, '✅');
+            pollMetrics();
+            loadPods();
+            return;
           }
+          term.innerHTML += escapeHtml(event.data) + '\n';
+          term.parentElement.scrollTop = term.parentElement.scrollHeight;
         };
 
         activeEventSource.onerror = () => {
-          activeEventSource.close();
+          if (activeEventSource) activeEventSource.close();
           activeEventSource = null;
-          pill.innerText = 'Stream Closed';
+          pill.innerText = 'STATUS: STREAM CLOSED';
         };
 
       } catch (err) {
-        term.innerHTML += `<span class="text-rose-500 font-bold">Error: ${err.message}</span>\n`;
-        pill.innerText = 'Status: Error';
+        term.innerHTML += `Error: ${err.message}\n`;
+        pill.innerText = 'STATUS: ERROR';
       }
     }
 
     function clearTerminal() {
-      document.getElementById('terminalOutput').innerHTML = '<span class="text-slate-500"># Console cleared. Ready for next drill command.</span>\n';
+      document.getElementById('terminalOutput').innerHTML = '# Console cleared.\n';
     }
 
     function copyTerminal() {
-      const text = document.getElementById('terminalOutput').innerText;
-      navigator.clipboard.writeText(text);
-      showToast('Copied', 'Terminal output copied to clipboard!', '📋');
+      navigator.clipboard.writeText(document.getElementById('terminalOutput').innerText);
+      showToast('COPIED', 'Terminal logs copied to clipboard.', '📋');
     }
 
     async function viewPodLogs(ns, name) {
