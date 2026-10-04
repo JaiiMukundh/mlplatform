@@ -202,3 +202,28 @@ Architecture and implementation decisions are recorded chronologically.
   — never directly on the laptop. Run artifacts (`eval_set.parquet`,
   `reference.parquet`) remain fetchable from the host through the tracking
   server's artifact-proxy endpoint.
+
+## 2026-10-03 — Retraining platform shape (P8)
+
+- **Decision:** one toolbox image (`localhost:5001/retrain:dev`, extending
+  the training image with kubectl 1.37.1 + helm 3.22.0, both checksum
+  verified) runs retrain Jobs; the Job executes the SAME release scripts the
+  workflow uses (`model_release_local.sh`, `deploy.sh`, `smoke.sh`,
+  `loadcheck.py`, `run_gate.sh` + charts), so local and GitHub releases stay
+  behaviorally identical per SPEC P8.4. The retrain ServiceAccount's release
+  powers (helm-equivalent: deployments/services/secrets/HPAs in
+  serving+staging, jobs/pods/logs in data, namespaces get/create) are
+  namespace-scoped and demo-only by design.
+- **Namespaces:** SPEC 5.2 names an `mlops` namespace, but MLflow already
+  lives in `data` (P6.1) and every secret the Jobs need lives there too.
+  Locally, drift-monitor runs in `observability` (metrics neighbor) and all
+  Jobs run in `data`; no `mlops` namespace is created and no secret is
+  mirrored twice. The AWS port (P9.5) may introduce `mlops` if cross-account
+  boundaries require it.
+- **Redis is ephemeral, the registry cursor is not:** Redis runs with
+  `--appendonly no` and no volume (rebuildable by design), while Feast's
+  incremental cursor lives in the SQL registry. After a Redis wipe,
+  `materialize-incremental` sees an already-covered window and writes
+  nothing — recovery is `make feast-rematerialize` (full window). The
+  serving reader returns a shaped empty frame on a wiped store, so the API
+  answers 404 (`unknown_customers`), never a 500.

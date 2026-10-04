@@ -377,3 +377,20 @@ Only observed command output is recorded here.
   `make lint` -> All checks passed.
 - Next action: deploy and verify the P8.2 drift monitor plus P8.3 retrain Job
   template/RBAC on the live local cluster.
+- P8.2/P8.3 PASS (2026-10-04) — `helm lint deploy/charts/drift-monitor
+  deploy/charts/retrain` -> 2 charts linted, 0 failed; `make deploy-monitor`
+  rebuilt/pushed both images, upgraded both releases, restarted the reused
+  `dev`-tag monitor pod, and completed its first evaluation. `/state` reported
+  champion `68`, 1,000 samples, and three drifted features; `/metrics`
+  exposed per-feature PSI/KS, drift flag, sample count, last-evaluation time,
+  and retrain counter. ServiceAccount checks returned `yes` for `create` and
+  `list` Jobs in `data`.
+- Trigger drill: after two consecutive breached windows the monitor created
+  `retrain-68-1791104712` with `ttlSecondsAfterFinished=3600`,
+  `backoffLimit=1`, label `app=retrain`, parent champion, and drift report
+  injected from the ConfigMap template. The existing dirty cluster then made
+  the Job fail correctly because champion 68 had no labels newer than its
+  `data_end`; that is the expected explicit failure path, not a successful
+  retrain. A clean-room self-heal run is the next action.
+- Next action: finish P8.4 retraining and dispatch on a reset baseline plus a
+  newly simulated drift snapshot.

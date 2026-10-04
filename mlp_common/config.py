@@ -36,6 +36,21 @@ class ServiceSettings(BaseSettings):
 SettingsT = TypeVar("SettingsT", bound=ServiceSettings)
 
 
+class DriftSettings(ServiceSettings):
+    """Environment contract for drift detection and retraining (SPEC 5.4)."""
+
+    service_name: str = "drift-monitor"
+    drift_interval_seconds: int = 60
+    drift_window_size: int = 1000
+    drift_min_samples: int = 500
+    drift_psi_threshold: float = 0.25
+    drift_ks_d_threshold: float = 0.2
+    drift_ks_p: float = 0.01
+    drift_min_features: int = 2
+    drift_consecutive: int = 2
+    retrain_cooldown_seconds: int = 300
+
+
 @lru_cache
 def load_settings(settings_type: type[SettingsT] = ServiceSettings) -> SettingsT:
     """Load and cache an environment-backed settings instance."""

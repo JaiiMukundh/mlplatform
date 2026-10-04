@@ -4,7 +4,8 @@ SHELL := /usr/bin/env bash
 .PHONY: help bootstrap preflight lint fmt test build up down deploy forward seed-data train \
 	traffic demo-infra demo-model reset-demo tofu-local-apply tofu-local-destroy \
 	build-training publish-feast-data feast-apply feast-materialize feast-verify \
-	train-mlflow gate-candidate feast-rematerialize model-release-local
+	train-mlflow gate-candidate feast-rematerialize model-release-local \
+	deploy-monitor
 
 help: ## Show the supported project commands.
 	@awk 'BEGIN {FS = ":.*## "; printf "MLPlatform targets:\n\n"} /^[a-zA-Z0-9_-]+:.*## / {printf "  %-22s %s\n", $$1, $$2}' $(MAKEFILE_LIST)
@@ -61,6 +62,9 @@ gate-candidate: build-training ## Score a candidate version (VERSION=N) in-clust
 model-release-local: ## Release a candidate to prod (VERSION=N, TAG=dev) (P7.3).
 	@bash scripts/model_release_local.sh "${VERSION:?set VERSION=N}" "${TAG:-dev}"
 
+deploy-monitor: ## Build and deploy the drift monitor and retrain platform (P8).
+	@bash scripts/deploy_monitor.sh
+
 up: ## Build the complete local platform from scratch.
 	@bash scripts/check_host.sh
 	@tofu -chdir=infra/envs/local init
@@ -93,10 +97,10 @@ demo-infra: ## Demonstrate Kubernetes and alert self-healing.
 	@echo "TODO(P5.7): demo-infra"
 
 demo-model: ## Demonstrate drift-triggered retraining and release.
-	@echo "TODO(P8.7): demo-model"
+	@bash scripts/demo_model.sh
 
 reset-demo: ## Restore the repeatable demo baseline.
-	@echo "TODO(P8.7): reset-demo"
+	@uv run python scripts/reset_demo.py
 
 tofu-local-apply: ## Apply the local OpenTofu stack.
 	@tofu -chdir=infra/envs/local apply -auto-approve
