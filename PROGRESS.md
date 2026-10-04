@@ -477,4 +477,11 @@ Only observed command output is recorded here.
   PostgreSQL connection drops and PredictionLogger buffer exhaustion, MLflow registry timeouts, and staging
   release gate rejections); detailed repeatable demo reset procedure (`make reset-demo` / `scripts/reset_demo.py`);
   and added explicit secret rotation protocols for PostgreSQL, MinIO/S3, and Grafana with rolling updates.
-- Next action: implement P10.3 write the technical design document.
+- P10.3 PASS (2026-10-04) — Technical Design Document (TDD) completed in `docs/TDD.md`:
+  details core problem statement (silent degradation and training-serving skew), goals/non-goals,
+  sub-50ms decoupled serving architecture, point-in-time Feast historical join mechanics, statistical
+  drift detection safeguards (PSI/KS debouncing, cooldown, active-job locking), remediation engine design,
+  alternatives considered matrix (Kind vs AWS, pinned versions vs floating aliases, MLflow artifact baseline vs
+  rolling window, Alloy vs Promtail), enterprise security hardening (UID 10001, NetworkPolicy default-deny,
+  RBAC least privilege), comprehensive financial cost breakdown ($0.00 local vs ~$0.27/hr AWS), and future roadmap.
+- Next action: implement P10.4 add the contributions template.
