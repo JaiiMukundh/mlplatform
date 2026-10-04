@@ -463,4 +463,11 @@ Only observed command output is recorded here.
   `aws-validate`, `aws-plan`, `aws-apply` (safety blocked with human guardrail message), and
   `aws-destroy`; comprehensive runbook compiled in `docs/aws-port.md` covering cost estimation
   (~$0.27/hr), guardrails, OIDC CI/CD configuration, and teardown verification.
-- Next action: implement P10.1 architecture documentation.
+- P10.1 PASS (2026-10-04) — Comprehensive architecture documentation produced in `docs/architecture.md`:
+  includes visual system topology (Mermaid flowcharts and generated 1200x700 `docs/architecture.png`),
+  full 13-component catalog across 3 namespaces (`serving`, `data`, `observability`), detailed sequence diagrams
+  for the three core operational flows (Flow A request serving with async prediction buffering, Flow B
+  infrastructure self-healing via Alertmanager webhook remediator, and Flow C autonomous closed-loop drift
+  detection and retraining), complete data model specifications (PostgreSQL schemas, Feast Feature Views and
+  services, and MLflow S3 artifact hierarchies), and Architecture Decision Records (ADR) summary table.
+- Next action: implement P10.2 complete the runbook.
