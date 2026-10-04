@@ -68,7 +68,10 @@ ACTION_COMMANDS: dict[str, str] = {
     ),
     "chaos_pod_kill": "bash scripts/chaos_pod.sh",
     "demo_infra": "bash scripts/chaos_alert.sh",
-    "simulate_drift": "uv run python scripts/simulate_drift.py --scenario both",
+    "simulate_drift": (
+        "uv run python scripts/simulate_drift.py --scenario both && "
+        "uv run python scripts/traffic.py --rps 30 --duration 25 --url http://localhost:8080"
+    ),
     "demo_model": "bash scripts/demo_model.sh",
     "run_gate": "bash scripts/run_gate.sh",
     "feast_rematerialize": "make feast-rematerialize",

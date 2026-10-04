@@ -33,34 +33,30 @@ from ml.evaluate import evaluate_binary_classifier
 from mlp_common.schemas import MODEL_FEATURES
 
 DATA_DIR = Path("data")
-TARGET_POSITIVE_RATE = 0.12
-
-#: Concept-drift mechanism: the debt_to_income effect flips sign, credit and
-#: late-payment effects weaken, utilization strengthens (baseline was
-#: [-0.70, 1.00, -0.55, 0.85, -0.45, 0.80]). Drops the champion by ~0.18 AUC.
-CONCEPT_WEIGHTS = np.array([-0.70, -0.50, 0.10, 0.50, -0.45, 1.20])
+TARGET_POSITIVE_RATE = 0.2212
 
 
 def shifted_snapshot(latest: pd.DataFrame, timestamp: pd.Timestamp) -> pd.DataFrame:
     """Copy the latest snapshot and apply covariate shifts to UCI Taiwan features."""
     frame = latest.copy()
     frame[TIMESTAMP_COLUMN] = timestamp
-    frame["pay_0"] = (frame["pay_0"] + 2.0).clip(upper=8.0)
-    frame["limit_bal"] = (frame["limit_bal"] * 0.75).round()
-    frame["bill_amt1"] = (frame["bill_amt1"] * 1.3).round()
+    frame["pay_0"] = (frame["pay_0"] + 3.0).clip(upper=8.0)
+    frame["limit_bal"] = (frame["limit_bal"] * 0.55).round()
+    frame["bill_amt1"] = (frame["bill_amt1"] * 1.6).round()
+    frame["pay_amt1"] = (frame["pay_amt1"] * 0.35).round()
     return frame[[ENTITY_COLUMN, TIMESTAMP_COLUMN, *FEATURE_COLUMNS]]
 
 
 def concept_labels(features: pd.DataFrame, *, seed: int = 11) -> pd.DataFrame:
     """Generate labels for new rows under the drifted concept."""
     rng = np.random.default_rng(seed)
-    stress = (
-        (features["bill_amt1"] / (features["limit_bal"] + 1000.0)) * 2.0
-        + (features["age"] > 45).astype(float) * 1.5
-        + (features["pay_0"] >= 1.0).astype(float) * 1.0
+    signal = (
+        -(features["pay_0"] * 1.0)
+        + (features["limit_bal"] / 40000.0)
+        + rng.normal(0, 1.0, len(features))
     )
-    prob = 1.0 / (1.0 + np.exp(-(stress - 1.5)))
-    outcomes = (rng.random(len(features)) < prob).astype("int8")
+    threshold = float(np.percentile(signal, (1 - TARGET_POSITIVE_RATE) * 100))
+    outcomes = (signal > threshold).astype("int8")
     return features[[ENTITY_COLUMN, TIMESTAMP_COLUMN]].assign(
         **{LABEL_COLUMN: outcomes}
     )
@@ -106,16 +102,6 @@ def main() -> int:
     validate_features(new_features)
     validate_labels(new_labels)
 
-    updated_features = pd.concat([features, new_features], ignore_index=True)
-    updated_labels = pd.concat([labels, new_labels], ignore_index=True)
-    updated_features.to_parquet(args.data_dir / "features.parquet", index=False)
-    updated_labels.to_parquet(args.data_dir / "labels.parquet", index=False)
-    new_features.to_parquet(args.data_dir / "features_latest.parquet", index=False)
-    print(
-        f"simulate_drift scenario={args.scenario} "
-        f"new_timestamp={new_timestamp.date()} rows={len(new_features)}"
-    )
-
     model = joblib.load("artifacts/model.joblib")
     baseline = labels.loc[labels[TIMESTAMP_COLUMN] == labels[TIMESTAMP_COLUMN].max()]
     baseline_features = features.merge(
@@ -136,6 +122,16 @@ def main() -> int:
     if args.scenario in ("concept", "both") and drop < 0.07:
         print("ERROR: concept drift must drop champion AUC by >= 0.07")
         return 1
+
+    updated_features = pd.concat([features, new_features], ignore_index=True)
+    updated_labels = pd.concat([labels, new_labels], ignore_index=True)
+    updated_features.to_parquet(args.data_dir / "features.parquet", index=False)
+    updated_labels.to_parquet(args.data_dir / "labels.parquet", index=False)
+    new_features.to_parquet(args.data_dir / "features_latest.parquet", index=False)
+    print(
+        f"simulate_drift scenario={args.scenario} "
+        f"new_timestamp={new_timestamp.date()} rows={len(new_features)}"
+    )
 
     subprocess.run(["bash", "scripts/publish_feast_data.sh"], check=True)
     subprocess.run(
