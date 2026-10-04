@@ -405,3 +405,12 @@ Only observed command output is recorded here.
   features. The Job completed successfully and local dispatch used the same
   release scripts as CI.
 - Next action: finish P8.5 retraining metrics/alert and P8.6 dashboard panels.
+- P8.5/P8.6 PASS (2026-10-04) — Prometheus queries returned
+  `model_champion_auc=0.834877`, `model_candidate_auc=0.834877`,
+  `model_drift_detected=0`, six `model_feature_psi` series, and the drift
+  window/last-evaluation gauges. The live `observability-content` release was
+  upgraded; `RetrainFailed` now selects local `data` Jobs, and the ML Health
+  dashboard includes PSI/KS thresholds, drift flag/window/retrain panels,
+  champion-vs-candidate AUC, and a Prometheus retrain-event annotation.
+- Next action: run the repeatable `make demo-model` orchestration and close
+  the remaining P8 safeguards checklist.

@@ -49,7 +49,8 @@ spec:
             summary: "drift monitor raised the drift flag (P8)"
             runbook: "docs/runbook.md#modeldriftdetected"
         - alert: RetrainFailed
-          expr: kube_job_status_failed{namespace="mlops",job_name=~"retrain-.*"} > 0
+          # Local Jobs run in data; the AWS port may override this namespace.
+          expr: kube_job_status_failed{namespace="data",job_name=~"retrain-.*"} > 0
           for: 1m
           labels: {severity: critical}
           annotations:
