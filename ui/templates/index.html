@@ -259,71 +259,71 @@
           </div>
 
           <!-- Feature PSI Bars Grid -->
-          <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+          <div id="feature_psi_grid" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-3">
             
-            <!-- Feature 1: Income -->
+            <!-- Feature 1: pay_0 -->
             <div class="p-3 rounded-xl bg-dark-bg border border-dark-border space-y-1.5">
               <div class="flex justify-between text-xs">
-                <span class="font-medium text-slate-300">income</span>
-                <span id="psi_income" class="font-mono font-bold text-emerald-400">0.005</span>
+                <span class="font-medium text-slate-300">pay_0 (repayment delay)</span>
+                <span id="psi_pay_0" class="font-mono font-bold text-emerald-400">0.005</span>
               </div>
               <div class="w-full bg-slate-800 rounded-full h-2 overflow-hidden">
-                <div id="bar_income" class="h-2 rounded-full bg-emerald-500 transition-all duration-500" style="width: 2.5%"></div>
+                <div id="bar_pay_0" class="h-2 rounded-full bg-emerald-500 transition-all duration-500" style="width: 2.5%"></div>
               </div>
             </div>
 
-            <!-- Feature 2: Debt to Income -->
+            <!-- Feature 2: limit_bal -->
             <div class="p-3 rounded-xl bg-dark-bg border border-dark-border space-y-1.5">
               <div class="flex justify-between text-xs">
-                <span class="font-medium text-slate-300">debt_to_income</span>
-                <span id="psi_debt_to_income" class="font-mono font-bold text-emerald-400">0.008</span>
+                <span class="font-medium text-slate-300">limit_bal (credit limit)</span>
+                <span id="psi_limit_bal" class="font-mono font-bold text-emerald-400">0.008</span>
               </div>
               <div class="w-full bg-slate-800 rounded-full h-2 overflow-hidden">
-                <div id="bar_debt_to_income" class="h-2 rounded-full bg-emerald-500 transition-all duration-500" style="width: 4%"></div>
+                <div id="bar_limit_bal" class="h-2 rounded-full bg-emerald-500 transition-all duration-500" style="width: 4%"></div>
               </div>
             </div>
 
-            <!-- Feature 3: Credit History Months -->
+            <!-- Feature 3: bill_amt1 -->
             <div class="p-3 rounded-xl bg-dark-bg border border-dark-border space-y-1.5">
               <div class="flex justify-between text-xs">
-                <span class="font-medium text-slate-300">credit_history_months</span>
-                <span id="psi_credit_history_months" class="font-mono font-bold text-emerald-400">0.003</span>
+                <span class="font-medium text-slate-300">bill_amt1 (bill statement)</span>
+                <span id="psi_bill_amt1" class="font-mono font-bold text-emerald-400">0.003</span>
               </div>
               <div class="w-full bg-slate-800 rounded-full h-2 overflow-hidden">
-                <div id="bar_credit_history_months" class="h-2 rounded-full bg-emerald-500 transition-all duration-500" style="width: 1.5%"></div>
+                <div id="bar_bill_amt1" class="h-2 rounded-full bg-emerald-500 transition-all duration-500" style="width: 1.5%"></div>
               </div>
             </div>
 
-            <!-- Feature 4: Late Payments 90d -->
+            <!-- Feature 4: pay_amt1 -->
             <div class="p-3 rounded-xl bg-dark-bg border border-dark-border space-y-1.5">
               <div class="flex justify-between text-xs">
-                <span class="font-medium text-slate-300">num_late_payments_90d</span>
-                <span id="psi_num_late_payments_90d" class="font-mono font-bold text-emerald-400">0.004</span>
+                <span class="font-medium text-slate-300">pay_amt1 (payment amount)</span>
+                <span id="psi_pay_amt1" class="font-mono font-bold text-emerald-400">0.004</span>
               </div>
               <div class="w-full bg-slate-800 rounded-full h-2 overflow-hidden">
-                <div id="bar_num_late_payments_90d" class="h-2 rounded-full bg-emerald-500 transition-all duration-500" style="width: 2%"></div>
+                <div id="bar_pay_amt1" class="h-2 rounded-full bg-emerald-500 transition-all duration-500" style="width: 2%"></div>
               </div>
             </div>
 
-            <!-- Feature 5: Avg Monthly Balance -->
+            <!-- Feature 5: age -->
             <div class="p-3 rounded-xl bg-dark-bg border border-dark-border space-y-1.5">
               <div class="flex justify-between text-xs">
-                <span class="font-medium text-slate-300">avg_monthly_balance</span>
-                <span id="psi_avg_monthly_balance" class="font-mono font-bold text-emerald-400">0.006</span>
+                <span class="font-medium text-slate-300">age</span>
+                <span id="psi_age" class="font-mono font-bold text-emerald-400">0.002</span>
               </div>
               <div class="w-full bg-slate-800 rounded-full h-2 overflow-hidden">
-                <div id="bar_avg_monthly_balance" class="h-2 rounded-full bg-emerald-500 transition-all duration-500" style="width: 3%"></div>
+                <div id="bar_age" class="h-2 rounded-full bg-emerald-500 transition-all duration-500" style="width: 1%"></div>
               </div>
             </div>
 
-            <!-- Feature 6: Utilization Ratio -->
+            <!-- Feature 6: education -->
             <div class="p-3 rounded-xl bg-dark-bg border border-dark-border space-y-1.5">
               <div class="flex justify-between text-xs">
-                <span class="font-medium text-slate-300">utilization_ratio</span>
-                <span id="psi_utilization_ratio" class="font-mono font-bold text-emerald-400">0.007</span>
+                <span class="font-medium text-slate-300">education</span>
+                <span id="psi_education" class="font-mono font-bold text-emerald-400">0.001</span>
               </div>
               <div class="w-full bg-slate-800 rounded-full h-2 overflow-hidden">
-                <div id="bar_utilization_ratio" class="h-2 rounded-full bg-emerald-500 transition-all duration-500" style="width: 3.5%"></div>
+                <div id="bar_education" class="h-2 rounded-full bg-emerald-500 transition-all duration-500" style="width: 1%"></div>
               </div>
             </div>
 
@@ -439,7 +439,7 @@
               </span>
               <span class="text-[10px] font-mono px-1.5 py-0.5 rounded bg-dark-bg text-dark-muted">simulate_drift.py</span>
             </div>
-            <p class="text-xs text-dark-muted">Shifts income, debt-to-income, and late payments in offline Parquet and re-materializes Redis.</p>
+            <p class="text-xs text-dark-muted">Shifts repayment delays (pay_0), credit limit (limit_bal), and bill amounts (bill_amt1) in offline Parquet and re-materializes Redis.</p>
           </div>
           <button onclick="executeAction('simulate_drift')" class="mt-4 w-full py-2 px-3 rounded-lg bg-rose-600/20 hover:bg-rose-600 text-rose-400 hover:text-white font-medium text-xs border border-rose-500/30 transition flex items-center justify-center gap-2">
             <span>Trigger Synthetic Drift</span>
@@ -641,9 +641,26 @@
 
         // Feature PSI bars
         if (data.feature_psi) {
+          const grid = document.getElementById('feature_psi_grid');
           for (const [feat, psi] of Object.entries(data.feature_psi)) {
-            const psiElem = document.getElementById(`psi_${feat}`);
-            const barElem = document.getElementById(`bar_${feat}`);
+            let psiElem = document.getElementById(`psi_${feat}`);
+            let barElem = document.getElementById(`bar_${feat}`);
+            if (!psiElem && grid) {
+              const card = document.createElement('div');
+              card.className = 'p-3 rounded-xl bg-dark-bg border border-dark-border space-y-1.5';
+              card.innerHTML = `
+                <div class="flex justify-between text-xs">
+                  <span class="font-medium text-slate-300">${feat}</span>
+                  <span id="psi_${feat}" class="font-mono font-bold text-emerald-400">0.000</span>
+                </div>
+                <div class="w-full bg-slate-800 rounded-full h-2 overflow-hidden">
+                  <div id="bar_${feat}" class="h-2 rounded-full bg-emerald-500 transition-all duration-500" style="width: 2%"></div>
+                </div>
+              `;
+              grid.appendChild(card);
+              psiElem = document.getElementById(`psi_${feat}`);
+              barElem = document.getElementById(`bar_${feat}`);
+            }
             if (psiElem && barElem) {
               psiElem.innerText = psi.toFixed(3);
               const pct = Math.min(Math.max((psi / 0.5) * 100, 1), 100);

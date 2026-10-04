@@ -16,7 +16,7 @@ import json
 import subprocess
 import urllib.request
 
-BASELINE_VERSION = "2"
+BASELINE_VERSION = "4"
 
 
 def _mlflow(path: str, method: str = "GET", payload: bytes | None = None) -> bytes:

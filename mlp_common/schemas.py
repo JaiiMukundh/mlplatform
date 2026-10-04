@@ -11,12 +11,29 @@ CustomerId = Annotated[int, Field(ge=0)]
 Probability = Annotated[float, Field(ge=0.0, le=1.0)]
 
 MODEL_FEATURES = [
-    "income",
-    "debt_to_income",
-    "credit_history_months",
-    "num_late_payments_90d",
-    "avg_monthly_balance",
-    "utilization_ratio",
+    "limit_bal",
+    "sex",
+    "education",
+    "marriage",
+    "age",
+    "pay_0",
+    "pay_2",
+    "pay_3",
+    "pay_4",
+    "pay_5",
+    "pay_6",
+    "bill_amt1",
+    "bill_amt2",
+    "bill_amt3",
+    "bill_amt4",
+    "bill_amt5",
+    "bill_amt6",
+    "pay_amt1",
+    "pay_amt2",
+    "pay_amt3",
+    "pay_amt4",
+    "pay_amt5",
+    "pay_amt6",
 ]
 
 

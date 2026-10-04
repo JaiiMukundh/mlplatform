@@ -1,4 +1,4 @@
-"""Column contracts for the synthetic loan-default data set."""
+"""Column contracts for the UCI Taiwan loan-default data set."""
 
 from __future__ import annotations
 
@@ -11,14 +11,7 @@ LABEL_COLUMN = "default_next_90d"
 
 FEATURE_COLUMNS = list(MODEL_FEATURES)
 
-FEATURE_DTYPES = {
-    "income": "float64",
-    "debt_to_income": "float64",
-    "credit_history_months": "float64",
-    "num_late_payments_90d": "int64",
-    "avg_monthly_balance": "float64",
-    "utilization_ratio": "float64",
-}
+FEATURE_DTYPES = {name: "float64" for name in FEATURE_COLUMNS}
 
 
 def validate_features(frame: pd.DataFrame) -> None:

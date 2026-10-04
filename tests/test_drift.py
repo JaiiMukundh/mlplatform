@@ -76,16 +76,17 @@ def test_report_flags_drift_only_above_min_features() -> None:
     size = 2_000
     ref = pd.DataFrame({name: rng.normal(0.0, 1.0, size) for name in MODEL_FEATURES})
     cur = ref.copy()
-    cur["income"] = rng.normal(2.0, 1.0, size)
+    f0, f1 = MODEL_FEATURES[0], MODEL_FEATURES[1]
+    cur[f0] = rng.normal(2.0, 1.0, size)
 
     single = feature_drift_report(ref, cur, MODEL_FEATURES, min_features=2)
     assert isinstance(single, DriftReport)
-    assert single.drifted_features == ["income"]
+    assert single.drifted_features == [f0]
     assert single.drifted is False
 
-    cur["debt_to_income"] = rng.normal(2.0, 1.0, size)
+    cur[f1] = rng.normal(2.0, 1.0, size)
     double = feature_drift_report(ref, cur, MODEL_FEATURES, min_features=2)
-    assert set(double.drifted_features) == {"income", "debt_to_income"}
+    assert set(double.drifted_features) == {f0, f1}
     assert double.drifted is True
 
 
@@ -99,3 +100,14 @@ def test_report_is_quiet_on_baseline_traffic() -> None:
 
     assert report.drifted is False
     assert report.drifted_features == []
+
+
+def test_psi_handles_discrete_features() -> None:
+    """Discrete binary features do not false-positive on small sample variance."""
+    rng = np.random.RandomState(5)
+    # Binary categories e.g. 1.0 and 2.0 (like sex)
+    ref = rng.choice([1.0, 2.0], size=5_000, p=[0.4, 0.6])
+    cur = rng.choice([1.0, 2.0], size=1_000, p=[0.4, 0.6])
+
+    val = psi(ref, cur)
+    assert val < 0.05

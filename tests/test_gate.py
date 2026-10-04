@@ -93,7 +93,7 @@ def test_gate_rejects_regression_beyond_tolerance() -> None:
 
 def test_gate_rejects_missing_feature() -> None:
     """A model trained without one serving feature fails signature compat."""
-    features = [name for name in FEATURE_COLUMNS if name != "income"]
+    features = [name for name in FEATURE_COLUMNS if name != FEATURE_COLUMNS[0]]
     report = _report(candidate_features=features)
 
     assert not report.passed

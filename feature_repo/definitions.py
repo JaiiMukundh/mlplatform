@@ -12,7 +12,7 @@ import os
 from datetime import timedelta
 
 from feast import Entity, FeatureService, FeatureView, Field, FileSource, ValueType
-from feast.types import Float32, Int64
+from feast.types import Float32
 
 customer = Entity(
     name="customer",
@@ -35,12 +35,29 @@ customer_features = FeatureView(
     entities=[customer],
     ttl=timedelta(days=365),
     schema=[
-        Field(name="income", dtype=Float32),
-        Field(name="debt_to_income", dtype=Float32),
-        Field(name="credit_history_months", dtype=Float32),
-        Field(name="num_late_payments_90d", dtype=Int64),
-        Field(name="avg_monthly_balance", dtype=Float32),
-        Field(name="utilization_ratio", dtype=Float32),
+        Field(name="limit_bal", dtype=Float32),
+        Field(name="sex", dtype=Float32),
+        Field(name="education", dtype=Float32),
+        Field(name="marriage", dtype=Float32),
+        Field(name="age", dtype=Float32),
+        Field(name="pay_0", dtype=Float32),
+        Field(name="pay_2", dtype=Float32),
+        Field(name="pay_3", dtype=Float32),
+        Field(name="pay_4", dtype=Float32),
+        Field(name="pay_5", dtype=Float32),
+        Field(name="pay_6", dtype=Float32),
+        Field(name="bill_amt1", dtype=Float32),
+        Field(name="bill_amt2", dtype=Float32),
+        Field(name="bill_amt3", dtype=Float32),
+        Field(name="bill_amt4", dtype=Float32),
+        Field(name="bill_amt5", dtype=Float32),
+        Field(name="bill_amt6", dtype=Float32),
+        Field(name="pay_amt1", dtype=Float32),
+        Field(name="pay_amt2", dtype=Float32),
+        Field(name="pay_amt3", dtype=Float32),
+        Field(name="pay_amt4", dtype=Float32),
+        Field(name="pay_amt5", dtype=Float32),
+        Field(name="pay_amt6", dtype=Float32),
     ],
     online=True,
     source=customer_features_source,

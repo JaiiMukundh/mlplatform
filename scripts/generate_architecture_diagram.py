@@ -1,6 +1,9 @@
 """Generates docs/architecture.png architecture diagram."""
-from PIL import Image, ImageDraw, ImageFont
+
 import os
+
+from PIL import Image, ImageDraw
+
 
 def create_diagram():
     width = 1200
@@ -17,11 +20,16 @@ def create_diagram():
     c_accent_green = "#50fa7b"
     c_accent_orange = "#ffb86c"
     c_accent_pink = "#ff79c6"
-    c_line = "#44475a"
 
     # Title
-    draw.rectangle([(20, 20), (width - 20, 70)], fill="#313244", outline=c_header, width=2)
-    draw.text((40, 32), "Autonomous Self-Healing Production ML Platform (Architecture)", fill=c_text)
+    draw.rectangle(
+        [(20, 20), (width - 20, 70)], fill="#313244", outline=c_header, width=2
+    )
+    draw.text(
+        (40, 32),
+        "Autonomous Self-Healing Production ML Platform (Architecture)",
+        fill=c_text,
+    )
 
     # Section 1: Ingress & Client
     draw.rectangle([(40, 100), (240, 260)], fill=c_card, outline=c_subtext, width=2)
@@ -32,7 +40,9 @@ def create_diagram():
     draw.text((55, 220), "- Synthetic Drift Tool", fill=c_accent_orange)
 
     # Section 2: Serving Namespace (ns: serving)
-    draw.rectangle([(280, 100), (620, 380)], fill=c_card, outline=c_accent_green, width=2)
+    draw.rectangle(
+        [(280, 100), (620, 380)], fill=c_card, outline=c_accent_green, width=2
+    )
     draw.text((300, 115), "Serving Namespace (ns: serving)", fill=c_accent_green)
     draw.text((300, 145), "model-api (FastAPI, 2..6 Pods, HPA)", fill=c_text)
     draw.text((320, 175), "* Pinned Model Version (immutable)", fill=c_subtext)
@@ -46,7 +56,7 @@ def create_diagram():
     # Section 3: Data Services Namespace (ns: data)
     draw.rectangle([(660, 100), (1140, 380)], fill=c_card, outline=c_header, width=2)
     draw.text((680, 115), "Data & ML Platform Namespace (ns: data)", fill=c_header)
-    
+
     # Sub-boxes in data ns
     draw.rectangle([(680, 150), (890, 240)], fill="#383a59", outline=c_border, width=1)
     draw.text((690, 160), "Feast Online Store", fill=c_subtext)
@@ -69,30 +79,83 @@ def create_diagram():
     draw.text((920, 320), "Aliases: champion / candidate", fill=c_accent_green)
 
     # Section 4: Closed-Loop Self-Healing & Automation (Flow C)
-    draw.rectangle([(40, 420), (580, 660)], fill=c_card, outline=c_accent_orange, width=2)
-    draw.text((60, 435), "Closed-Loop Model Self-Healing (Flow C)", fill=c_accent_orange)
-    draw.text((60, 470), "1. drift-monitor: checks prediction_log features vs MLflow reference", fill=c_text)
-    draw.text((60, 495), "2. PSI / KS breaches threshold across consecutive evaluations", fill=c_text)
-    draw.text((60, 520), "3. Spawns Kubernetes Retrain Job (ns: data, ServiceAccount: retrain)", fill=c_text)
-    draw.text((60, 545), "4. Retrain Job: Feast point-in-time join -> LightGBM train -> candidate", fill=c_text)
-    draw.text((60, 570), "5. Quality Gate: AUC floor, regression check, schema verification", fill=c_text)
-    draw.text((60, 595), "6. Staging 2,000-req load test -> Promote champion -> Rolling update", fill=c_text)
-    draw.text((60, 620), "7. Drift resolves; monitor sets model_drift_detected=0", fill=c_accent_green)
+    draw.rectangle(
+        [(40, 420), (580, 660)], fill=c_card, outline=c_accent_orange, width=2
+    )
+    draw.text(
+        (60, 435), "Closed-Loop Model Self-Healing (Flow C)", fill=c_accent_orange
+    )
+    draw.text(
+        (60, 470),
+        "1. drift-monitor: checks prediction_log features vs MLflow reference",
+        fill=c_text,
+    )
+    draw.text(
+        (60, 495),
+        "2. PSI / KS breaches threshold across consecutive evaluations",
+        fill=c_text,
+    )
+    draw.text(
+        (60, 520),
+        "3. Spawns Kubernetes Retrain Job (ns: data, ServiceAccount: retrain)",
+        fill=c_text,
+    )
+    draw.text(
+        (60, 545),
+        "4. Retrain Job: Feast point-in-time join -> LightGBM train -> candidate",
+        fill=c_text,
+    )
+    draw.text(
+        (60, 570),
+        "5. Quality Gate: AUC floor, regression check, schema verification",
+        fill=c_text,
+    )
+    draw.text(
+        (60, 595),
+        "6. Staging 2,000-req load test -> Promote champion -> Rolling update",
+        fill=c_text,
+    )
+    draw.text(
+        (60, 620),
+        "7. Drift resolves; monitor sets model_drift_detected=0",
+        fill=c_accent_green,
+    )
 
     # Section 5: Observability & Infra Remediation (Flow B)
-    draw.rectangle([(620, 420), (1140, 660)], fill=c_card, outline=c_accent_pink, width=2)
-    draw.text((640, 435), "Observability & Infrastructure Remediation (Flow B)", fill=c_accent_pink)
-    draw.text((640, 470), "Prometheus & Alertmanager (kube-prometheus-stack)", fill=c_subtext)
-    draw.text((660, 495), "- Alert Rules: HighP95Latency, HighErrorRate, ModelDriftDetected", fill=c_text)
+    draw.rectangle(
+        [(620, 420), (1140, 660)], fill=c_card, outline=c_accent_pink, width=2
+    )
+    draw.text(
+        (640, 435),
+        "Observability & Infrastructure Remediation (Flow B)",
+        fill=c_accent_pink,
+    )
+    draw.text(
+        (640, 470), "Prometheus & Alertmanager (kube-prometheus-stack)", fill=c_subtext
+    )
+    draw.text(
+        (660, 495),
+        "- Alert Rules: HighP95Latency, HighErrorRate, ModelDriftDetected",
+        fill=c_text,
+    )
     draw.text((640, 525), "Remediator Service (FastAPI /alert webhook)", fill=c_subtext)
-    draw.text((660, 550), "- Automated scaling: adjusts HPA floor minReplicas dynamically", fill=c_text)
+    draw.text(
+        (660, 550),
+        "- Automated scaling: adjusts HPA floor minReplicas dynamically",
+        fill=c_text,
+    )
     draw.text((660, 575), "- Correlated Grafana Annotations & audit trail", fill=c_text)
-    draw.text((640, 605), "Loki + Grafana Alloy & 3 Provisioned Dashboards", fill=c_subtext)
-    draw.text((660, 630), "- Service Health | Logs Explorer | ML Platform Health", fill=c_text)
+    draw.text(
+        (640, 605), "Loki + Grafana Alloy & 3 Provisioned Dashboards", fill=c_subtext
+    )
+    draw.text(
+        (660, 630), "- Service Health | Logs Explorer | ML Platform Health", fill=c_text
+    )
 
     os.makedirs("docs", exist_ok=True)
     img.save("docs/architecture.png")
     print("Saved docs/architecture.png")
+
 
 if __name__ == "__main__":
     create_diagram()

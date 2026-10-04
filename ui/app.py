@@ -192,12 +192,12 @@ async def get_metrics() -> dict[str, Any]:
         "champion_auc": 0.835,
         "candidate_auc": 0.0,
         "feature_psi": {
-            "income": 0.005,
-            "debt_to_income": 0.008,
-            "credit_history_months": 0.003,
-            "num_late_payments_90d": 0.004,
-            "avg_monthly_balance": 0.006,
-            "utilization_ratio": 0.007,
+            "pay_0": 0.005,
+            "limit_bal": 0.008,
+            "bill_amt1": 0.003,
+            "pay_amt1": 0.004,
+            "age": 0.002,
+            "education": 0.001,
         },
     }
 
@@ -391,7 +391,12 @@ async def execute_predict(req: PredictRequest) -> dict[str, Any]:
                 if preds:
                     pred_item = preds[0]
                     prob = float(pred_item.get("default_probability", 0.0))
-                    label = int(pred_item.get("prediction", 0))
+                    fallback_label = int(prob >= 0.5)
+                    label = int(
+                        pred_item.get(
+                            "label", pred_item.get("prediction", fallback_label)
+                        )
+                    )
                     risk = (
                         "HIGH RISK (DEFAULT)" if label == 1 else "LOW RISK (APPROVED)"
                     )

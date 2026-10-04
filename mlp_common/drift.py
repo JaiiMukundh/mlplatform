@@ -48,11 +48,18 @@ def psi(
     cur = cur[~np.isnan(cur)]
     if len(ref) == 0 or len(cur) == 0:
         raise ValueError("psi requires non-empty reference and current samples")
+    unique_ref = np.sort(np.unique(ref))
+    if len(unique_ref) < 2:
+        # Truly constant reference: any mean shift is total drift, else none.
+        return 0.0 if np.allclose(ref.mean(), cur.mean()) else 1.0
     edges = np.unique(np.quantile(ref, np.linspace(0, 1, bins + 1)))
     if len(edges) < 3:
-        # Near-constant reference: any mean shift is total drift, else none.
-        return 0.0 if np.allclose(ref.mean(), cur.mean()) else 1.0
-    edges[0], edges[-1] = -np.inf, np.inf
+        # Discrete feature with few distinct values: bin by midpoints
+        # between unique values.
+        midpoints = (unique_ref[:-1] + unique_ref[1:]) / 2.0
+        edges = np.concatenate(([-np.inf], midpoints, [np.inf]))
+    else:
+        edges[0], edges[-1] = -np.inf, np.inf
     expected = np.histogram(ref, edges)[0] / len(ref)
     actual = np.histogram(cur, edges)[0] / len(cur)
     expected = np.clip(expected, eps, None)

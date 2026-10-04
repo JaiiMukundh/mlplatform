@@ -16,7 +16,7 @@ def make_record(customer_id: int = 1) -> PredictionRecord:
         request_id="request-1",
         model_version="1",
         customer_id=customer_id,
-        features={"income": 10.5},
+        features={"limit_bal": 20000.0},
         score=0.25,
     )
 
@@ -24,7 +24,7 @@ def make_record(customer_id: int = 1) -> PredictionRecord:
 def test_record_serializes_features_for_jsonb() -> None:
     """Database mappings encode feature dictionaries as compact JSON."""
     mapping = make_record().database_mapping()
-    assert mapping["features"] == '{"income":10.5}'
+    assert mapping["features"] == '{"limit_bal":20000.0}'
 
 
 def test_enqueue_never_blocks_and_rejects_when_full() -> None:

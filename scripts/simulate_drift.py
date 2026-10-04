@@ -21,7 +21,6 @@ import joblib
 import numpy as np
 import pandas as pd
 
-from ml.data.generate import _calibrate_intercept, _generate_labels
 from ml.data.schemas import (
     ENTITY_COLUMN,
     FEATURE_COLUMNS,
@@ -43,29 +42,25 @@ CONCEPT_WEIGHTS = np.array([-0.70, -0.50, 0.10, 0.50, -0.45, 1.20])
 
 
 def shifted_snapshot(latest: pd.DataFrame, timestamp: pd.Timestamp) -> pd.DataFrame:
-    """Copy the latest snapshot and apply the SPEC covariate shifts."""
-    rng = np.random.default_rng(7)
+    """Copy the latest snapshot and apply covariate shifts to UCI Taiwan features."""
     frame = latest.copy()
     frame[TIMESTAMP_COLUMN] = timestamp
-    frame["income"] = frame["income"] * 0.75
-    frame["debt_to_income"] = (frame["debt_to_income"] + 0.15).clip(upper=1.0)
-    frame["num_late_payments_90d"] = rng.poisson(lam=1.4, size=len(frame)).astype(
-        "int64"
-    )
-    frame["utilization_ratio"] = (frame["utilization_ratio"] + 0.15).clip(upper=1.0)
+    frame["pay_0"] = (frame["pay_0"] + 2.0).clip(upper=8.0)
+    frame["limit_bal"] = (frame["limit_bal"] * 0.75).round()
+    frame["bill_amt1"] = (frame["bill_amt1"] * 1.3).round()
     return frame[[ENTITY_COLUMN, TIMESTAMP_COLUMN, *FEATURE_COLUMNS]]
 
 
 def concept_labels(features: pd.DataFrame, *, seed: int = 11) -> pd.DataFrame:
     """Generate labels for new rows under the drifted concept."""
     rng = np.random.default_rng(seed)
-    matrix = features[FEATURE_COLUMNS].to_numpy(dtype="float64")
-    standardized = (matrix - matrix.mean(axis=0)) / matrix.std(axis=0)
-    noise = rng.normal(loc=0.0, scale=0.5, size=len(features))
-    signal = standardized @ CONCEPT_WEIGHTS + noise
-    intercept = _calibrate_intercept(signal, TARGET_POSITIVE_RATE)
-    probabilities = 1.0 / (1.0 + np.exp(-(signal + intercept)))
-    outcomes = rng.binomial(1, probabilities).astype("int8")
+    stress = (
+        (features["bill_amt1"] / (features["limit_bal"] + 1000.0)) * 2.0
+        + (features["age"] > 45).astype(float) * 1.5
+        + (features["pay_0"] >= 1.0).astype(float) * 1.0
+    )
+    prob = 1.0 / (1.0 + np.exp(-(stress - 1.5)))
+    outcomes = (rng.random(len(features)) < prob).astype("int8")
     return features[[ENTITY_COLUMN, TIMESTAMP_COLUMN]].assign(
         **{LABEL_COLUMN: outcomes}
     )
@@ -103,8 +98,9 @@ def main() -> int:
     else:
         new_features = shifted_snapshot(latest, new_timestamp)
     if args.scenario == "covariate":
-        # Same concept on shifted features: reuse the baseline mechanism.
-        new_labels = _generate_labels(np.random.default_rng(21), new_features)
+        # Same concept on shifted features: reuse the customer's baseline labels.
+        new_labels = labels.loc[labels[TIMESTAMP_COLUMN] == max_timestamp].copy()
+        new_labels[TIMESTAMP_COLUMN] = new_timestamp
     else:
         new_labels = concept_labels(new_features)
     validate_features(new_features)

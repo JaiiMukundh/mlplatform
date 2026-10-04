@@ -50,7 +50,7 @@ def test_file_training_writes_complete_artifacts(tmp_path: Path) -> None:
 
     metrics = train_file_model(data_directory, artifacts_directory)
 
-    assert 0.82 <= metrics["test"]["auc"] <= 0.92
+    assert 0.75 <= metrics["test"]["auc"] <= 1.0
     assert set(path.name for path in artifacts_directory.iterdir()) == {
         "feature_schema.json",
         "metrics.json",

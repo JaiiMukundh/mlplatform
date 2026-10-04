@@ -237,3 +237,12 @@ Architecture and implementation decisions are recorded chronologically.
   nothing — recovery is `make feast-rematerialize` (full window). The
   serving reader returns a shaped empty frame on a wiped store, so the API
   answers 404 (`unknown_customers`), never a 500.
+
+## 2026-10-04 — Migration to UCI Taiwan Credit Card Default Dataset and Discrete PSI Binning
+
+- **Decision:** Replaced the initial 6 synthetic features with the official UCI Taiwan Credit Card Default Dataset (30,000 real borrowers, 23 raw features: `limit_bal`, `sex`, `education`, `marriage`, `age`, `pay_0`, `pay_2..6`, `bill_amt1..6`, `pay_amt1..6`, and binary target `default payment next month` mapped to `default_next_90d`).
+- **Feature Store & Types:** All 23 predictors are modeled as `Float32` in Feast to avoid protobuf signed varint issues with negative delinquency codes (`-2`, `-1`) and ensure consistent byte-level Redis hashing (`0x35` tag).
+- **Quality Gate Schema Evolution:** Release quality gate handles cross-schema upgrades gracefully when a candidate's signature evolves from a legacy champion, evaluating the candidate on absolute merit against an AUC floor of 0.70.
+- **Discrete & Low-Cardinality PSI Binning:** Extended Population Stability Index (PSI) calculation to construct bin edges via sorted unique midpoints when quantile binning yields fewer than 3 edges (e.g. binary `sex`). This prevents sample variance on discrete features from triggering false-positive drift alarms while maintaining strict sensitivity to true covariate shift.
+- **Central Control Plane UI:** Added a comprehensive FastAPI + Tailwind dashboard (`ui/app.py`, port 8050) providing real-time Golden Signals, 23-feature PSI tracking, cluster pod state, live interactive single/batch borrower risk assessment, and one-click demo drill triggers.
+

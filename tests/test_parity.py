@@ -37,12 +37,29 @@ FEATURE_VIEW = "customer_features"
 #: Raw hash bytes captured live for customer 1 (2026-10-03), with the values
 #: Feast's own reader returned for the same entity.
 GOLDEN_FIELDS = {
-    "income": ("3cb8caaa", "358a9a2f47", 44954.5390625),
-    "debt_to_income": ("f98b0e18", "35ffbed43d", 0.10387992113828659),
-    "credit_history_months": ("cfde2c4d", "3524936f42", 59.89369201660156),
-    "num_late_payments_90d": ("5608ccf5", "2000", 0),
-    "avg_monthly_balance": ("3a246d72", "3593388d46", 18076.287109375),
-    "utilization_ratio": ("37875286", "352411683e", 0.2266278862953186),
+    "limit_bal": ("66e5365a", "3500409c46", 20000.0),
+    "sex": ("ba0cf310", "3500000040", 2.0),
+    "education": ("af519fd3", "3500000040", 2.0),
+    "marriage": ("61466a3b", "350000803f", 1.0),
+    "age": ("63a2a427", "350000c041", 24.0),
+    "pay_0": ("6fd1d8cc", "3500000040", 2.0),
+    "pay_2": ("8a73550a", "3500000040", 2.0),
+    "pay_3": ("44e708fd", "35000080bf", -1.0),
+    "pay_4": ("57fa4dff", "35000080bf", -1.0),
+    "pay_5": ("4c522ade", "35000000c0", -2.0),
+    "pay_6": ("1b2b8d11", "35000000c0", -2.0),
+    "bill_amt1": ("b9d2fcab", "3500907445", 3913.0),
+    "bill_amt2": ("e745170e", "3500e04145", 3102.0),
+    "bill_amt3": ("9b9d19b7", "3500402c44", 689.0),
+    "bill_amt4": ("e8d7bc42", "3500000000", 0.0),
+    "bill_amt5": ("81a37d0c", "3500000000", 0.0),
+    "bill_amt6": ("49b45439", "3500000000", 0.0),
+    "pay_amt1": ("64951b53", "3500000000", 0.0),
+    "pay_amt2": ("94959503", "3500402c44", 689.0),
+    "pay_amt3": ("e2df119a", "3500000000", 0.0),
+    "pay_amt4": ("15c88c5d", "3500000000", 0.0),
+    "pay_amt5": ("16d43667", "3500000000", 0.0),
+    "pay_amt6": ("a078c2cf", "3500000000", 0.0),
 }
 GOLDEN_KEY = (
     "01000000020000000b000000637573746f6d65725f69640400000008000000"
@@ -113,11 +130,7 @@ def _canned_store(frame: pd.DataFrame) -> dict[bytes, dict[bytes, bytes]]:
         record = {b"_ts:customer_features": b"\x08\x80\xc5\xf6\xd5\x06"}
         for name in MODEL_FEATURES:
             value = getattr(row, name)
-            raw = (
-                _encode_int(int(value))
-                if name == "num_late_payments_90d"
-                else _encode_float(float(value))
-            )
+            raw = _encode_float(float(value))
             record[field_key(FEATURE_VIEW, name)] = raw
         store[entity_key(int(row.customer_id))] = record
     return store
@@ -163,10 +176,7 @@ def test_reader_matches_offline_snapshot() -> None:
         for name in MODEL_FEATURES:
             expected = getattr(row, name)
             actual = frame.loc[int(row.customer_id), name]
-            if name == "num_late_payments_90d":
-                assert actual == int(expected)
-            else:
-                assert actual == np.float32(expected)
+            assert actual == np.float32(expected)
 
 
 def test_unknown_ids_are_excluded_not_fabricated() -> None:

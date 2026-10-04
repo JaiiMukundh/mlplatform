@@ -39,7 +39,7 @@ def _one(url: str, customer_id: int, timeout: float) -> tuple[float, bool]:
 def run_loadcheck(url: str, total: int, rps: float, seed: int = 7) -> dict[str, float]:
     """Fire ``total`` requests at ``rps`` and summarize latency/errors."""
     rng = random.Random(seed)
-    ids = [rng.randint(0, 19999) for _ in range(total)]
+    ids = [rng.randint(1, 30000) for _ in range(total)]
     latencies: list[float] = []
     errors = 0
     deadline = time.perf_counter()
