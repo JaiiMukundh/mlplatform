@@ -428,5 +428,11 @@ Only observed command output is recorded here.
   samples, consecutive-breach counting/reset, cooldown, active Jobs, failed
   Jobs without completion timestamps, post-parent data requirements, and
   local/GitHub dispatch behavior.
-- Next action: run the complete test/lint gates, then assess P8 stretch items
-  and move to P9 integration/hardening.
+- P9.1 PASS (2026-10-04) — `make e2e` -> 3 passed, 1 warning in 522.00s.
+  The serving test verified health/readiness, Prometheus metrics, model-info,
+  and predictions; the infra test deleted a serving pod with a <=1% error
+  budget; the model test ran the unattended synthetic drift demo and verified
+  champion/model convergence with drift cleared. Focused reruns also passed:
+  infra 1 passed in 12.10s and serving 1 passed in 0.07s.
+- Next action: implement P9.2 clean-room rebuild, then the P9 hardening and
+  failure-mode work.

@@ -2,6 +2,16 @@
 
 Architecture and implementation decisions are recorded chronologically.
 
+## 2026-10-04 — Make E2E runs include the model self-healing demo
+
+- **Decision:** `make e2e` sets `MLP_E2E_RUN_DEMO=1`, so the model self-healing
+  test resets the local platform, injects synthetic drift, and waits for the
+  unattended retrain/release loop before asserting the converged state.
+- **Reason:** P9.1 explicitly makes the P8.7 self-healing timeline part of the
+  E2E acceptance. Keeping the orchestration in the test makes one repeatable
+  Makefile command cover serving, pod recovery, and model recovery; the test
+  can still be run as a fast state assertion by omitting that environment flag.
+
 ## 2026-10-02 — Flat, single-project repository layout
 
 - **Decision:** Replace the nested `libs/<pkg>/src/<pkg>/` and `services/<svc>/src/<svc>/`

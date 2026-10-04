@@ -5,7 +5,7 @@ SHELL := /usr/bin/env bash
 	traffic demo-infra demo-model reset-demo tofu-local-apply tofu-local-destroy \
 	build-training publish-feast-data feast-apply feast-materialize feast-verify \
 	train-mlflow gate-candidate feast-rematerialize model-release-local \
-	deploy-monitor
+	deploy-monitor e2e
 
 help: ## Show the supported project commands.
 	@awk 'BEGIN {FS = ":.*## "; printf "MLPlatform targets:\n\n"} /^[a-zA-Z0-9_-]+:.*## / {printf "  %-22s %s\n", $$1, $$2}' $(MAKEFILE_LIST)
@@ -64,6 +64,9 @@ model-release-local: ## Release a candidate to prod (VERSION=N, TAG=dev) (P7.3).
 
 deploy-monitor: ## Build and deploy the drift monitor and retrain platform (P8).
 	@bash scripts/deploy_monitor.sh
+
+e2e: ## Run the local serving and self-healing end-to-end tests.
+	@MLP_RUN_E2E=1 MLP_E2E_RUN_DEMO=1 uv run pytest tests/e2e -q
 
 up: ## Build the complete local platform from scratch.
 	@bash scripts/check_host.sh

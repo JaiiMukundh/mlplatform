@@ -99,7 +99,7 @@ Checkboxes are changed only after the corresponding acceptance check has been ob
 
 ## P9 — Integration, Hardening, AWS Port
 
-- [ ] P9.1 Build end-to-end tests.
+- [x] P9.1 Build end-to-end tests.
 - [ ] P9.2 Prove a clean-room rebuild.
 - [ ] P9.3 Complete hardening.
 - [ ] P9.4 Document and test failure modes.
