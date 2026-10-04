@@ -133,13 +133,19 @@ def parse_args() -> argparse.Namespace:
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("--out", type=Path, default=Path("data"))
     parser.add_argument("--seed", type=int, default=42)
+    parser.add_argument(
+        "--end-date",
+        type=dt.date.fromisoformat,
+        default=None,
+        help="UTC date for the latest snapshot (default: yesterday)",
+    )
     return parser.parse_args()
 
 
 def main() -> None:
     """Generate and report the three local Parquet assets."""
     args = parse_args()
-    dataset = generate_dataset(seed=args.seed)
+    dataset = generate_dataset(seed=args.seed, end_date=args.end_date)
     write_dataset(dataset, args.out)
     positive_rate = dataset.labels[LABEL_COLUMN].mean()
     print(

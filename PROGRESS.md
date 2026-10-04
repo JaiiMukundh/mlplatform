@@ -414,3 +414,19 @@ Only observed command output is recorded here.
   champion-vs-candidate AUC, and a Prometheus retrain-event annotation.
 - Next action: run the repeatable `make demo-model` orchestration and close
   the remaining P8 safeguards checklist.
+- P8.7 PASS (2026-10-04) — the final `make demo-model` run is recorded in
+  `docs/demo/model-selfheal.md`: baseline traffic 2,356 requests with 0
+  errors and `drifted=false`; synthetic `both` drift lowered AUC 0.8562 ->
+  0.6714; the monitor raised the flag, Job `retrain-2-1791107413` registered
+  v75, the shared gate/staging/prod checks passed, and the monitor cleared the
+  flag after rollout with max PSI 0.0146. Reset now flushes Redis and recovers
+  stale pending staging Helm revisions, making the demo repeatable after an
+  interrupted run. No screen clip is attached; the timestamped terminal log
+  is the captured evidence.
+- P8.8 PASS (2026-10-04) — `uv run pytest tests/test_drift_safeguards.py
+  tests/test_retrain.py -q` -> 18 passed; safeguards cover insufficient
+  samples, consecutive-breach counting/reset, cooldown, active Jobs, failed
+  Jobs without completion timestamps, post-parent data requirements, and
+  local/GitHub dispatch behavior.
+- Next action: run the complete test/lint gates, then assess P8 stretch items
+  and move to P9 integration/hardening.

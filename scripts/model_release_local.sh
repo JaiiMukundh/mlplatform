@@ -54,8 +54,11 @@ if ! env VERSION="${VERSION}" bash scripts/run_gate.sh; then
 fi
 
 echo "--- step 2: staging deploy ---"
-scripts/deploy.sh model-api-staging staging "${IMAGE_TAG}" \
-  --set model.version="${VERSION}" --set service.nodePort=30081
+if ! scripts/deploy.sh model-api-staging staging "${IMAGE_TAG}" \
+  --set model.version="${VERSION}" --set service.nodePort=30081; then
+  helm rollback model-api-staging -n staging || true
+  reject_version "staging deploy failed"
+fi
 
 echo "--- step 3: staging loadcheck ---"
 if ! python3 scripts/loadcheck.py --url "${STAGING_URL}" --total 2000 --rps 20; then

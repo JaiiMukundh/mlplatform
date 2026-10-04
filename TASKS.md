@@ -92,8 +92,8 @@ Checkboxes are changed only after the corresponding acceptance check has been ob
 - [x] P8.4 Implement retraining and dispatch.
 - [x] P8.5 Export retraining metrics.
 - [x] P8.6 Complete the ML health dashboard.
-- [ ] P8.7 Implement repeatable drift demos.
-- [ ] P8.8 Test retraining safeguards.
+- [x] P8.7 Implement repeatable drift demos.
+- [x] P8.8 Test retraining safeguards.
 - [ ] P8.9 Add performance monitoring. (stretch)
 - [ ] P8.10 Add score-distribution drift. (stretch)
 
