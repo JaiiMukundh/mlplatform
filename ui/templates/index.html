@@ -3,593 +3,1013 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>MLPlatform — Autonomous Self-Healing Control Plane</title>
+  <title>MLPlatform — Autonomous MLOps & Self-Healing Control Plane</title>
   <script src="https://cdn.tailwindcss.com"></script>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&family=JetBrains+Mono:wght@400;500;600&display=swap" rel="stylesheet">
   <script>
     tailwind.config = {
       darkMode: 'class',
       theme: {
         extend: {
+          fontFamily: {
+            sans: ['Inter', 'system-ui', 'sans-serif'],
+            mono: ['JetBrains Mono', 'monospace'],
+          },
           colors: {
             brand: {
               50: '#eef2ff',
+              100: '#e0e7ff',
+              400: '#818cf8',
               500: '#6366f1',
               600: '#4f46e5',
               700: '#4338ca',
               900: '#1e1b4b',
             },
-            dark: {
-              bg: '#0a0d14',
-              card: '#111622',
-              cardHover: '#161c2c',
-              border: '#1e2638',
-              muted: '#64748b'
+            canvas: {
+              bg: '#080c14',
+              surface: '#0f172a',
+              card: '#131d35',
+              cardHover: '#182442',
+              border: '#1e2d4d',
+              borderHover: '#2d416b',
+              muted: '#718096',
             }
-          },
-          fontFamily: {
-            mono: ['JetBrains Mono', 'Fira Code', 'monospace']
           }
         }
       }
     }
   </script>
   <style>
-    @keyframes pulse-slow {
-      0%, 100% { opacity: 1; transform: scale(1); }
-      50% { opacity: 0.6; transform: scale(0.96); }
+    body { background-color: #080c14; font-family: 'Inter', system-ui, sans-serif; }
+    .glass-nav {
+      background: rgba(15, 23, 42, 0.88);
+      backdrop-filter: blur(16px);
+      -webkit-backdrop-filter: blur(16px);
     }
-    .pulse-glow { animation: pulse-slow 2.5s infinite ease-in-out; }
+    .tab-btn.active {
+      background-color: rgba(99, 102, 241, 0.15);
+      color: #818cf8;
+      border-color: rgba(99, 102, 241, 0.35);
+      font-weight: 600;
+    }
     ::-webkit-scrollbar { width: 6px; height: 6px; }
-    ::-webkit-scrollbar-track { background: #0a0d14; }
-    ::-webkit-scrollbar-thumb { background: #1e2638; border-radius: 3px; }
-    ::-webkit-scrollbar-thumb:hover { background: #334155; }
-    .glass {
-      background: rgba(17, 22, 34, 0.85);
-      backdrop-filter: blur(12px);
-      -webkit-backdrop-filter: blur(12px);
+    ::-webkit-scrollbar-track { background: #080c14; }
+    ::-webkit-scrollbar-thumb { background: #1e2d4d; border-radius: 4px; }
+    ::-webkit-scrollbar-thumb:hover { background: #3b82f6; }
+    @keyframes pulse-subtle {
+      0%, 100% { opacity: 1; }
+      50% { opacity: 0.5; }
     }
+    .pulse-subtle { animation: pulse-subtle 2s infinite ease-in-out; }
   </style>
 </head>
-<body class="bg-dark-bg text-slate-100 min-h-screen font-sans antialiased selection:bg-brand-500 selection:text-white">
+<body class="text-slate-100 min-h-screen selection:bg-brand-500 selection:text-white flex flex-col">
 
-  <!-- Top Navigation Header -->
-  <header class="sticky top-0 z-50 glass border-b border-dark-border px-6 py-3.5 flex flex-wrap items-center justify-between gap-4">
-    <div class="flex items-center space-x-4">
-      <div class="w-10 h-10 rounded-xl bg-gradient-to-tr from-brand-600 to-indigo-400 flex items-center justify-center shadow-lg shadow-brand-500/20">
-        <svg class="w-6 h-6 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 10V3L4 14h7v7l9-11h-7z"/>
-        </svg>
-      </div>
-      <div>
-        <div class="flex items-center space-x-2.5">
-          <h1 class="text-lg font-bold tracking-tight text-white">MLPlatform Control Plane</h1>
-          <span id="clusterBadge" class="px-2 py-0.5 text-xs font-semibold rounded-full bg-emerald-500/10 text-emerald-400 border border-emerald-500/20 flex items-center gap-1.5">
-            <span class="w-1.5 h-1.5 rounded-full bg-emerald-400 animate-ping"></span>
-            Kind (3 Nodes Ready)
-          </span>
-          <span id="driftBadge" class="px-2 py-0.5 text-xs font-semibold rounded-full bg-slate-800 text-slate-300 border border-slate-700">
-            Drift: Checking...
-          </span>
+  <!-- ================= TOP NAVIGATION BAR ================= -->
+  <header class="sticky top-0 z-50 glass-nav border-b border-canvas-border px-6 py-3.5">
+    <div class="max-w-7xl mx-auto flex flex-col md:flex-row items-center justify-between gap-4">
+      
+      <!-- Brand & Status Badges -->
+      <div class="flex items-center gap-4">
+        <a href="#overview" onclick="switchTab('overview')" class="flex items-center gap-3 group">
+          <div class="w-10 h-10 rounded-xl bg-gradient-to-tr from-brand-600 via-indigo-500 to-cyan-400 flex items-center justify-center shadow-lg shadow-brand-500/25 group-hover:scale-105 transition-transform">
+            <svg class="w-5 h-5 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 10V3L4 14h7v7l9-11h-7z"/>
+            </svg>
+          </div>
+          <div>
+            <div class="flex items-center gap-2">
+              <span class="text-base font-bold tracking-tight text-white group-hover:text-brand-400 transition-colors">MLPlatform</span>
+              <span id="navModelBadge" class="px-2 py-0.5 text-[11px] font-mono font-semibold rounded-md bg-brand-500/15 text-brand-400 border border-brand-500/30">
+                v4 • UCI Taiwan
+              </span>
+            </div>
+            <p class="text-[11px] text-slate-400">Autonomous Self-Healing Credit Engine</p>
+          </div>
+        </a>
+
+        <!-- Cluster Status Pill -->
+        <div id="clusterHealthPill" class="hidden sm:flex items-center gap-2 px-3 py-1 rounded-full bg-emerald-500/10 border border-emerald-500/20 text-emerald-400 text-xs font-medium">
+          <span class="w-2 h-2 rounded-full bg-emerald-400 animate-ping"></span>
+          <span>Kind (3/3 Nodes Ready)</span>
         </div>
-        <p class="text-xs text-dark-muted">Autonomous Self-Healing Credit Scoring Engine • Kubernetes & OpenTofu</p>
       </div>
-    </div>
 
-    <!-- Quick External Portals -->
-    <div class="flex items-center space-x-2">
-      <a href="http://localhost:3000" target="_blank" class="px-3 py-1.5 text-xs font-medium rounded-lg bg-dark-card hover:bg-dark-cardHover border border-dark-border text-slate-300 hover:text-white transition flex items-center gap-1.5 shadow-sm">
-        <svg class="w-3.5 h-3.5 text-amber-400" fill="currentColor" viewBox="0 0 24 24"><path d="M12 2a10 10 0 1010 10A10 10 0 0012 2zm1 14.5h-2v-2h2zm0-4h-2V7h2z"/></svg>
-        Grafana (:3000)
-      </a>
-      <a href="http://localhost:5000" target="_blank" class="px-3 py-1.5 text-xs font-medium rounded-lg bg-dark-card hover:bg-dark-cardHover border border-dark-border text-slate-300 hover:text-white transition flex items-center gap-1.5 shadow-sm">
-        <svg class="w-3.5 h-3.5 text-cyan-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 11H5m14 0a2 2 0 012 2v6a2 2 0 01-2 2H5a2 2 0 01-2-2v-6a2 2 0 012-2m14 0V9a2 2 0 00-2-2M5 11V9a2 2 0 012-2m0 0V5a2 2 0 012-2h6a2 2 0 012 2v2M7 7h10"/></svg>
-        MLflow (:5000)
-      </a>
-      <a href="http://localhost:8080/docs" target="_blank" class="px-3 py-1.5 text-xs font-medium rounded-lg bg-dark-card hover:bg-dark-cardHover border border-dark-border text-slate-300 hover:text-white transition flex items-center gap-1.5 shadow-sm">
-        <svg class="w-3.5 h-3.5 text-emerald-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 20l4-16m4 4l4 4-4 4M6 16l-4-4 4-4"/></svg>
-        Swagger API (:8080)
-      </a>
-      <a href="http://localhost:9001" target="_blank" class="px-3 py-1.5 text-xs font-medium rounded-lg bg-dark-card hover:bg-dark-cardHover border border-dark-border text-slate-300 hover:text-white transition flex items-center gap-1.5 shadow-sm">
-        <svg class="w-3.5 h-3.5 text-rose-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 7v10c0 2 1 3 3 3h10c2 0 3-1 3-3V7c0-2-1-3-3-3H7c-2 0-3 1-3 3z"/></svg>
-        MinIO (:9001)
-      </a>
-      <button onclick="refreshData()" class="p-1.5 rounded-lg bg-dark-card hover:bg-dark-cardHover border border-dark-border text-slate-400 hover:text-white transition" title="Refresh Live State">
-        <svg id="refreshIcon" class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15"/></svg>
-      </button>
+      <!-- Navigation Tabs (Landing Pages) -->
+      <nav class="flex items-center gap-1.5 bg-canvas-surface/80 p-1.5 rounded-xl border border-canvas-border text-xs font-medium text-slate-300">
+        <button id="tab-overview" onclick="switchTab('overview')" class="tab-btn px-3.5 py-1.5 rounded-lg hover:text-white transition flex items-center gap-1.5">
+          <span>📊</span>
+          <span>Overview</span>
+        </button>
+        <button id="tab-scoring" onclick="switchTab('scoring')" class="tab-btn px-3.5 py-1.5 rounded-lg hover:text-white transition flex items-center gap-1.5">
+          <span>💳</span>
+          <span>Loan Scorer</span>
+        </button>
+        <button id="tab-chaos" onclick="switchTab('chaos')" class="tab-btn px-3.5 py-1.5 rounded-lg hover:text-white transition flex items-center gap-1.5">
+          <span>⚡</span>
+          <span>Chaos Lab</span>
+        </button>
+        <button id="tab-drift" onclick="switchTab('drift')" class="tab-btn px-3.5 py-1.5 rounded-lg hover:text-white transition flex items-center gap-1.5">
+          <span>📈</span>
+          <span>Drift Monitor</span>
+        </button>
+        <button id="tab-terminal" onclick="switchTab('terminal')" class="tab-btn px-3.5 py-1.5 rounded-lg hover:text-white transition flex items-center gap-1.5">
+          <span>💻</span>
+          <span>Console</span>
+        </button>
+        <button id="tab-ecosystem" onclick="switchTab('ecosystem')" class="tab-btn px-3.5 py-1.5 rounded-lg hover:text-white transition flex items-center gap-1.5">
+          <span>🔗</span>
+          <span>Portals</span>
+        </button>
+      </nav>
+
     </div>
   </header>
 
-  <!-- Main Content Layout -->
-  <main class="max-w-7xl mx-auto px-6 py-8 space-y-8">
+  <!-- ================= NOTIFICATION TOAST ================= -->
+  <div id="toastNotification" class="hidden fixed bottom-6 right-6 z-50 max-w-md p-4 rounded-xl shadow-2xl transition-all duration-300 transform border flex items-center justify-between gap-3">
+    <div class="flex items-center gap-3">
+      <span id="toastIcon" class="text-xl"></span>
+      <div>
+        <p id="toastTitle" class="text-xs font-bold text-white"></p>
+        <p id="toastMessage" class="text-xs text-slate-300"></p>
+      </div>
+    </div>
+    <button onclick="hideToast()" class="text-slate-400 hover:text-white text-sm font-bold">&times;</button>
+  </div>
 
-    <!-- Row 1: Golden Signals & Metrics Cards -->
-    <section class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-5">
+  <!-- ================= MAIN APPLICATION CONTENT ================= -->
+  <main class="flex-1 max-w-7xl w-full mx-auto px-6 py-8">
+
+    <!-- ================= PAGE 1: OVERVIEW ================= -->
+    <div id="view-overview" class="view-panel space-y-8">
       
-      <!-- Card 1: Throughput RPS -->
-      <div class="bg-dark-card border border-dark-border rounded-2xl p-5 shadow-sm relative overflow-hidden group hover:border-brand-500/40 transition">
-        <div class="flex items-center justify-between text-dark-muted mb-2">
-          <span class="text-xs font-semibold uppercase tracking-wider">Inference Throughput</span>
-          <span class="w-2 h-2 rounded-full bg-emerald-400"></span>
-        </div>
-        <div class="flex items-baseline space-x-2">
-          <span id="metricRPS" class="text-3xl font-bold tracking-tight text-white">0.0</span>
-          <span class="text-xs text-dark-muted font-medium">req / sec</span>
-        </div>
-        <div class="mt-3 flex items-center justify-between text-xs text-dark-muted">
-          <span>Error Rate: <strong id="metricErrors" class="text-slate-200">0.0%</strong></span>
-          <span class="text-emerald-400 font-medium">SLA: 99.9%</span>
-        </div>
-        <div class="absolute bottom-0 left-0 right-0 h-1 bg-gradient-to-r from-emerald-500 to-teal-400 opacity-60"></div>
-      </div>
-
-      <!-- Card 2: P95 Latency -->
-      <div class="bg-dark-card border border-dark-border rounded-2xl p-5 shadow-sm relative overflow-hidden group hover:border-brand-500/40 transition">
-        <div class="flex items-center justify-between text-dark-muted mb-2">
-          <span class="text-xs font-semibold uppercase tracking-wider">P95 Response Latency</span>
-          <svg class="w-4 h-4 text-cyan-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"/></svg>
-        </div>
-        <div class="flex items-baseline space-x-2">
-          <span id="metricP95" class="text-3xl font-bold tracking-tight text-white">16.0</span>
-          <span class="text-xs text-dark-muted font-medium">ms</span>
-        </div>
-        <div class="mt-3 flex items-center justify-between text-xs text-dark-muted">
-          <span>P50: <strong id="metricP50" class="text-slate-200">8.5 ms</strong></span>
-          <span class="text-cyan-400 font-medium">Target: &lt; 50ms</span>
-        </div>
-        <div id="latencyBar" class="absolute bottom-0 left-0 right-0 h-1 bg-gradient-to-r from-cyan-500 to-blue-400 opacity-60"></div>
-      </div>
-
-      <!-- Card 3: Pod Replicas / HPA -->
-      <div class="bg-dark-card border border-dark-border rounded-2xl p-5 shadow-sm relative overflow-hidden group hover:border-brand-500/40 transition">
-        <div class="flex items-center justify-between text-dark-muted mb-2">
-          <span class="text-xs font-semibold uppercase tracking-wider">Serving Replicas (HPA)</span>
-          <svg class="w-4 h-4 text-indigo-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 11H5m14 0a2 2 0 012 2v6a2 2 0 01-2 2H5a2 2 0 01-2-2v-6a2 2 0 012-2m14 0V9a2 2 0 00-2-2M5 11V9a2 2 0 012-2m0 0V5a2 2 0 012-2h6a2 2 0 012 2v2M7 7h10"/></svg>
-        </div>
-        <div class="flex items-baseline space-x-2">
-          <span id="metricReplicas" class="text-3xl font-bold tracking-tight text-white">2</span>
-          <span class="text-xs text-dark-muted font-medium">/ 6 pods</span>
-        </div>
-        <div class="mt-3 flex items-center justify-between text-xs text-dark-muted">
-          <span>Target CPU: <strong>60%</strong></span>
-          <span id="remediatorStatus" class="text-indigo-400 font-medium">Remediator: Active</span>
-        </div>
-        <div class="absolute bottom-0 left-0 right-0 h-1 bg-gradient-to-r from-indigo-500 to-purple-400 opacity-60"></div>
-      </div>
-
-      <!-- Card 4: Model Version & AUC -->
-      <div class="bg-dark-card border border-dark-border rounded-2xl p-5 shadow-sm relative overflow-hidden group hover:border-brand-500/40 transition">
-        <div class="flex items-center justify-between text-dark-muted mb-2">
-          <span class="text-xs font-semibold uppercase tracking-wider">Active Model</span>
-          <span class="px-1.5 py-0.5 text-[10px] font-bold uppercase rounded bg-brand-500/20 text-brand-300">Champion</span>
-        </div>
-        <div class="flex items-baseline space-x-2">
-          <span id="metricModelVer" class="text-3xl font-bold tracking-tight text-white">v2</span>
-          <span id="metricAUC" class="text-xs text-dark-muted font-medium">AUC: 0.835</span>
-        </div>
-        <div class="mt-3 flex items-center justify-between text-xs text-dark-muted">
-          <span>Feature Svc: <strong class="text-slate-200">loan_default_v1</strong></span>
-          <span class="text-purple-400 font-medium">Immutable Deploy</span>
-        </div>
-        <div class="absolute bottom-0 left-0 right-0 h-1 bg-gradient-to-r from-purple-500 to-pink-400 opacity-60"></div>
-      </div>
-
-    </section>
-
-    <!-- Row 2: Interactive Prediction Playground & Feature PSI Drift Gauges -->
-    <section class="grid grid-cols-1 lg:grid-cols-12 gap-6">
-
-      <!-- Left Column: Interactive Prediction Playground (5 cols) -->
-      <div class="lg:col-span-5 bg-dark-card border border-dark-border rounded-2xl p-6 shadow-sm flex flex-col justify-between">
+      <!-- Page Header -->
+      <div class="flex flex-col md:flex-row md:items-center justify-between gap-4 pb-2 border-b border-canvas-border">
         <div>
-          <div class="flex items-center justify-between mb-4">
-            <div>
-              <h2 class="text-base font-bold text-white flex items-center gap-2">
-                <svg class="w-5 h-5 text-brand-500" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2"/></svg>
-                Real-Time Inference Playground
-              </h2>
-              <p class="text-xs text-dark-muted">Test live model scoring with Feast Redis feature hydration</p>
+          <h1 class="text-2xl font-extrabold tracking-tight text-white flex items-center gap-2.5">
+            Platform Executive Overview
+          </h1>
+          <p class="text-xs text-slate-400 mt-1">Real-time health, telemetry, and architecture vitals across the autonomous credit platform</p>
+        </div>
+        <div class="flex items-center gap-3">
+          <span id="overviewDriftPill" class="px-3 py-1 text-xs font-semibold rounded-full bg-emerald-500/10 text-emerald-400 border border-emerald-500/20 flex items-center gap-1.5">
+            <span class="w-1.5 h-1.5 rounded-full bg-emerald-400"></span>
+            Drift Status: Normal (0 Drifted)
+          </span>
+          <button onclick="refreshData()" class="p-2 rounded-lg bg-canvas-card hover:bg-canvas-cardHover border border-canvas-border text-slate-300 hover:text-white transition" title="Refresh Live State">
+            <svg id="refreshIcon" class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15"/></svg>
+          </button>
+        </div>
+      </div>
+
+      <!-- Golden Signals (4 Hero Cards) -->
+      <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-5">
+        
+        <!-- Throughput -->
+        <div class="bg-canvas-card border border-canvas-border rounded-2xl p-5 shadow-sm hover:border-canvas-borderHover transition">
+          <div class="flex items-center justify-between text-slate-400 text-xs font-semibold uppercase tracking-wider mb-2">
+            <span>Inference Traffic</span>
+            <span class="w-2 h-2 rounded-full bg-emerald-400"></span>
+          </div>
+          <div class="flex items-baseline gap-2">
+            <span id="metricRPS" class="text-3xl font-extrabold text-white">0.0</span>
+            <span class="text-xs text-slate-400 font-medium">req / sec</span>
+          </div>
+          <p class="text-xs text-slate-400 mt-2">Active HTTP inference load on <code class="text-slate-300">/predict</code></p>
+        </div>
+
+        <!-- Latency -->
+        <div class="bg-canvas-card border border-canvas-border rounded-2xl p-5 shadow-sm hover:border-canvas-borderHover transition">
+          <div class="flex items-center justify-between text-slate-400 text-xs font-semibold uppercase tracking-wider mb-2">
+            <span>P95 Response Latency</span>
+            <span class="text-[11px] text-cyan-400 font-mono">SLA &lt;150ms</span>
+          </div>
+          <div class="flex items-baseline gap-2">
+            <span id="metricP95" class="text-3xl font-extrabold text-white">--</span>
+            <span class="text-xs text-slate-400 font-medium">ms</span>
+          </div>
+          <p class="text-xs text-slate-400 mt-2">Median: <span id="metricP50" class="text-slate-300 font-semibold">-- ms</span> (Feast Redis + Scoring)</p>
+        </div>
+
+        <!-- Error Rate -->
+        <div class="bg-canvas-card border border-canvas-border rounded-2xl p-5 shadow-sm hover:border-canvas-borderHover transition">
+          <div class="flex items-center justify-between text-slate-400 text-xs font-semibold uppercase tracking-wider mb-2">
+            <span>Error Rate</span>
+            <span class="text-[11px] text-emerald-400 font-mono">SLA 99.9%</span>
+          </div>
+          <div class="flex items-baseline gap-2">
+            <span id="metricErrors" class="text-3xl font-extrabold text-white">0.0%</span>
+          </div>
+          <p class="text-xs text-slate-400 mt-2">Zero 5xx errors across pod deletions</p>
+        </div>
+
+        <!-- Replicas -->
+        <div class="bg-canvas-card border border-canvas-border rounded-2xl p-5 shadow-sm hover:border-canvas-borderHover transition">
+          <div class="flex items-center justify-between text-slate-400 text-xs font-semibold uppercase tracking-wider mb-2">
+            <span>Serving Replicas</span>
+            <span id="metricReplicasBadge" class="text-[11px] font-semibold text-emerald-400">Healthy</span>
+          </div>
+          <div class="flex items-baseline gap-2">
+            <span id="metricReplicas" class="text-3xl font-extrabold text-white">2</span>
+            <span class="text-xs text-slate-400 font-medium">/ 2 desired</span>
+          </div>
+          <p class="text-xs text-slate-400 mt-2">Horizontal Pod Autoscaler (min: 2, max: 6)</p>
+        </div>
+
+      </div>
+
+      <!-- Architecture Status & Active Model Lineage -->
+      <div class="grid grid-cols-1 lg:grid-cols-2 gap-6">
+        
+        <!-- Active Production Model Card -->
+        <div class="bg-canvas-card border border-canvas-border rounded-2xl p-6 shadow-sm flex flex-col justify-between">
+          <div>
+            <div class="flex items-center justify-between mb-4">
+              <div class="flex items-center gap-2.5">
+                <div class="w-8 h-8 rounded-lg bg-brand-500/10 text-brand-400 flex items-center justify-center font-bold text-sm">
+                  ML
+                </div>
+                <div>
+                  <h3 class="text-base font-bold text-white">Active Production Model</h3>
+                  <p class="text-xs text-slate-400">MLflow Registered Champion Model</p>
+                </div>
+              </div>
+              <span class="px-2.5 py-1 text-xs font-mono font-bold rounded-lg bg-emerald-500/15 text-emerald-400 border border-emerald-500/30">
+                CHAMPION
+              </span>
             </div>
-            <span class="px-2 py-0.5 text-xs font-medium rounded bg-dark-bg border border-dark-border text-slate-300">Flow A</span>
+
+            <div class="space-y-3.5 text-xs">
+              <div class="flex justify-between py-2 border-b border-canvas-border">
+                <span class="text-slate-400 font-medium">Model Name &amp; Version</span>
+                <span class="font-mono font-bold text-white" id="infoModelName">loan-default (Version 4)</span>
+              </div>
+              <div class="flex justify-between py-2 border-b border-canvas-border">
+                <span class="text-slate-400 font-medium">Dataset Migration</span>
+                <span class="font-semibold text-brand-400">UCI Taiwan Default (30,000 Borrowers, 23 Features)</span>
+              </div>
+              <div class="flex justify-between py-2 border-b border-canvas-border">
+                <span class="text-slate-400 font-medium">Quality Gate Performance</span>
+                <span class="font-mono font-bold text-emerald-400">Validation AUC: 0.881 • Test AUC: 0.897</span>
+              </div>
+              <div class="flex justify-between py-2 border-b border-canvas-border">
+                <span class="text-slate-400 font-medium">Feature Store Service</span>
+                <span class="font-mono text-cyan-400">loan_default_v1 (Feast + Redis Online)</span>
+              </div>
+              <div class="flex justify-between py-2">
+                <span class="text-slate-400 font-medium">Prediction Logging</span>
+                <span class="font-semibold text-slate-300">Asynchronous buffer &rarr; PostgreSQL (prediction_log)</span>
+              </div>
+            </div>
           </div>
 
-          <!-- Customer Selection Buttons -->
-          <div class="space-y-3">
-            <label class="block text-xs font-semibold text-slate-300 uppercase tracking-wider">Select Sample Customer</label>
-            <div class="flex flex-wrap gap-2">
-              <button onclick="setCustomerId('1')" class="px-3 py-1.5 text-xs font-medium rounded-lg bg-dark-bg hover:bg-brand-600/20 border border-dark-border hover:border-brand-500/50 text-slate-300 transition">Customer #1 (Low Risk)</button>
-              <button onclick="setCustomerId('2')" class="px-3 py-1.5 text-xs font-medium rounded-lg bg-dark-bg hover:bg-brand-600/20 border border-dark-border hover:border-brand-500/50 text-slate-300 transition">Customer #2 (High Risk)</button>
-              <button onclick="setCustomerId('42')" class="px-3 py-1.5 text-xs font-medium rounded-lg bg-dark-bg hover:bg-brand-600/20 border border-dark-border hover:border-brand-500/50 text-slate-300 transition">Customer #42</button>
-              <button onclick="setCustomerId('100')" class="px-3 py-1.5 text-xs font-medium rounded-lg bg-dark-bg hover:bg-brand-600/20 border border-dark-border hover:border-brand-500/50 text-slate-300 transition">Customer #100</button>
+          <div class="mt-6 pt-4 border-t border-canvas-border flex items-center justify-between">
+            <span class="text-xs text-slate-400">Want to test scoring with this model?</span>
+            <button onclick="switchTab('scoring')" class="px-3.5 py-1.5 rounded-lg bg-brand-600 hover:bg-brand-500 text-white text-xs font-semibold transition flex items-center gap-1.5 shadow-sm">
+              <span>Open Loan Scorer</span>
+              <span>&rarr;</span>
+            </button>
+          </div>
+        </div>
+
+        <!-- Platform Subsystem Health Card -->
+        <div class="bg-canvas-card border border-canvas-border rounded-2xl p-6 shadow-sm flex flex-col justify-between">
+          <div>
+            <div class="flex items-center justify-between mb-4">
+              <div class="flex items-center gap-2.5">
+                <div class="w-8 h-8 rounded-lg bg-cyan-500/10 text-cyan-400 flex items-center justify-center font-bold text-sm">
+                  K8s
+                </div>
+                <div>
+                  <h3 class="text-base font-bold text-white">Subsystems &amp; Infrastructure</h3>
+                  <p class="text-xs text-slate-400">Live operational state across platform components</p>
+                </div>
+              </div>
+              <span class="text-xs font-mono text-slate-400">Local Kind Cluster</span>
             </div>
 
-            <div class="flex gap-2 pt-2">
-              <div class="relative flex-1">
-                <input id="inputCustomerId" type="text" value="1" placeholder="Enter Customer ID" 
-                  class="w-full px-4 py-2.5 rounded-xl bg-dark-bg border border-dark-border focus:border-brand-500 focus:ring-1 focus:ring-brand-500 text-sm text-white placeholder-dark-muted outline-none transition font-mono">
+            <div class="space-y-3 text-xs">
+              <div class="flex items-center justify-between p-2.5 rounded-xl bg-canvas-surface border border-canvas-border">
+                <div class="flex items-center gap-2">
+                  <span class="w-2 h-2 rounded-full bg-emerald-400"></span>
+                  <span class="font-semibold text-white">Kubernetes Nodes</span>
+                </div>
+                <span class="text-slate-300 font-mono">3 / 3 Ready (control-plane + 2 workers)</span>
               </div>
-              <button id="btnPredict" onclick="runPrediction()" class="px-5 py-2.5 rounded-xl bg-brand-600 hover:bg-brand-500 text-white font-semibold text-sm transition shadow-lg shadow-brand-600/25 flex items-center gap-2">
-                <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M14 5l7 7m0 0l-7 7m7-7H3"/></svg>
-                Score Loan
+              <div class="flex items-center justify-between p-2.5 rounded-xl bg-canvas-surface border border-canvas-border">
+                <div class="flex items-center gap-2">
+                  <span class="w-2 h-2 rounded-full bg-emerald-400"></span>
+                  <span class="font-semibold text-white">Feast Redis Online Store</span>
+                </div>
+                <span class="text-slate-300 font-mono">30,000 Borrowers Materialized (&lt;10ms)</span>
+              </div>
+              <div class="flex items-center justify-between p-2.5 rounded-xl bg-canvas-surface border border-canvas-border">
+                <div class="flex items-center gap-2">
+                  <span class="w-2 h-2 rounded-full bg-emerald-400"></span>
+                  <span class="font-semibold text-white">MLflow Tracking &amp; Registry</span>
+                </div>
+                <span class="text-slate-300 font-mono">Online (:5000) • S3 MinIO Artifacts</span>
+              </div>
+              <div class="flex items-center justify-between p-2.5 rounded-xl bg-canvas-surface border border-canvas-border">
+                <div class="flex items-center gap-2">
+                  <span class="w-2 h-2 rounded-full bg-emerald-400"></span>
+                  <span class="font-semibold text-white">Prometheus &amp; Grafana</span>
+                </div>
+                <span class="text-slate-300 font-mono">Scraping Serving Pods • Port 3000 Active</span>
+              </div>
+              <div class="flex items-center justify-between p-2.5 rounded-xl bg-canvas-surface border border-canvas-border">
+                <div class="flex items-center gap-2">
+                  <span class="w-2 h-2 rounded-full bg-emerald-400"></span>
+                  <span class="font-semibold text-white">Automated Remediator</span>
+                </div>
+                <span class="text-slate-300 font-mono">Listening for Alertmanager Webhooks</span>
+              </div>
+            </div>
+          </div>
+
+          <div class="mt-6 pt-4 border-t border-canvas-border flex items-center justify-between">
+            <span class="text-xs text-slate-400">Need to see pod details or test chaos?</span>
+            <button onclick="switchTab('chaos')" class="px-3.5 py-1.5 rounded-lg bg-canvas-surface hover:bg-canvas-cardHover border border-canvas-border text-slate-200 text-xs font-semibold transition flex items-center gap-1.5">
+              <span>View Chaos Lab</span>
+              <span>&rarr;</span>
+            </button>
+          </div>
+        </div>
+
+      </div>
+
+      <!-- Quick Links to Main Interactive Workspaces -->
+      <div class="grid grid-cols-1 md:grid-cols-3 gap-5">
+        
+        <div onclick="switchTab('scoring')" class="cursor-pointer bg-canvas-card hover:bg-canvas-cardHover border border-canvas-border hover:border-brand-500/50 rounded-2xl p-6 transition group">
+          <div class="w-10 h-10 rounded-xl bg-brand-500/10 text-brand-400 flex items-center justify-center text-lg mb-3 group-hover:scale-110 transition-transform">
+            💳
+          </div>
+          <h4 class="text-base font-bold text-white group-hover:text-brand-400 transition-colors">1. Borrower Risk Simulator</h4>
+          <p class="text-xs text-slate-400 mt-1">Select real borrowers from the UCI dataset, inspect demographics &amp; repayment codes, and run real-time inference.</p>
+        </div>
+
+        <div onclick="switchTab('chaos')" class="cursor-pointer bg-canvas-card hover:bg-canvas-cardHover border border-canvas-border hover:border-rose-500/50 rounded-2xl p-6 transition group">
+          <div class="w-10 h-10 rounded-xl bg-rose-500/10 text-rose-400 flex items-center justify-center text-lg mb-3 group-hover:scale-110 transition-transform">
+            ⚡
+          </div>
+          <h4 class="text-base font-bold text-white group-hover:text-rose-400 transition-colors">2. Live Pod Chaos &amp; Self-Healing</h4>
+          <p class="text-xs text-slate-400 mt-1">Kill serving replicas live with one click and watch Kubernetes PDB and ReplicaSet resurrect replacement pods in sub-8 seconds.</p>
+        </div>
+
+        <div onclick="switchTab('drift')" class="cursor-pointer bg-canvas-card hover:bg-canvas-cardHover border border-canvas-border hover:border-purple-500/50 rounded-2xl p-6 transition group">
+          <div class="w-10 h-10 rounded-xl bg-purple-500/10 text-purple-400 flex items-center justify-center text-lg mb-3 group-hover:scale-110 transition-transform">
+            📈
+          </div>
+          <h4 class="text-base font-bold text-white group-hover:text-purple-400 transition-colors">3. Statistical Drift &amp; Retraining</h4>
+          <p class="text-xs text-slate-400 mt-1">Inspect live PSI scores across all 23 features, trigger covariate drift, and watch the closed-loop autonomous retraining cycle.</p>
+        </div>
+
+      </div>
+
+    </div>
+
+    <!-- ================= PAGE 2: LOAN SCORER (INFERENCE) ================= -->
+    <div id="view-scoring" class="view-panel hidden space-y-8">
+      
+      <div class="pb-2 border-b border-canvas-border flex flex-col md:flex-row md:items-center justify-between gap-4">
+        <div>
+          <h1 class="text-2xl font-extrabold tracking-tight text-white flex items-center gap-2.5">
+            Borrower Credit Risk Assessment
+          </h1>
+          <p class="text-xs text-slate-400 mt-1">Real-time model scoring powered by Feast Redis feature store hydration and MLflow Champion Model Version 4</p>
+        </div>
+        <div class="flex items-center gap-2">
+          <span class="px-2.5 py-1 rounded-md bg-brand-500/10 border border-brand-500/30 text-brand-400 text-xs font-mono">
+            Endpoint: POST /predict
+          </span>
+        </div>
+      </div>
+
+      <div class="grid grid-cols-1 lg:grid-cols-12 gap-8">
+        
+        <!-- Left: Borrower Selector & Profile (7 cols) -->
+        <div class="lg:col-span-7 space-y-6">
+          
+          <!-- Borrower Selector Card -->
+          <div class="bg-canvas-card border border-canvas-border rounded-2xl p-6 shadow-sm">
+            <h3 class="text-sm font-bold text-white uppercase tracking-wider mb-3">1. Select Borrower Archetype</h3>
+            <p class="text-xs text-slate-400 mb-4">Click a representative borrower archetype from the UCI Taiwan dataset or choose a custom ID:</p>
+            
+            <div class="grid grid-cols-1 sm:grid-cols-3 gap-3 mb-5">
+              <button onclick="pickBorrower(1)" class="p-3.5 rounded-xl bg-canvas-surface hover:bg-canvas-cardHover border border-canvas-border hover:border-rose-500/40 text-left transition group">
+                <div class="flex items-center justify-between mb-1">
+                  <span class="font-bold text-sm text-white group-hover:text-rose-400">Borrower #1</span>
+                  <span class="text-[10px] font-bold px-1.5 py-0.5 rounded bg-rose-500/20 text-rose-400">High Risk</span>
+                </div>
+                <p class="text-[11px] text-slate-400">Age 24 • Pay Delay 6 mo • Low Limit</p>
+              </button>
+
+              <button onclick="pickBorrower(3)" class="p-3.5 rounded-xl bg-canvas-surface hover:bg-canvas-cardHover border border-canvas-border hover:border-emerald-500/40 text-left transition group">
+                <div class="flex items-center justify-between mb-1">
+                  <span class="font-bold text-sm text-white group-hover:text-emerald-400">Borrower #3</span>
+                  <span class="text-[10px] font-bold px-1.5 py-0.5 rounded bg-emerald-500/20 text-emerald-400">Approved</span>
+                </div>
+                <p class="text-[11px] text-slate-400">Age 34 • On-Time Pay • High Limit</p>
+              </button>
+
+              <button onclick="pickRandomBorrower()" class="p-3.5 rounded-xl bg-canvas-surface hover:bg-canvas-cardHover border border-canvas-border hover:border-brand-500/40 text-left transition group">
+                <div class="flex items-center justify-between mb-1">
+                  <span class="font-bold text-sm text-white group-hover:text-brand-400">Random Borrower</span>
+                  <span class="text-[10px] font-bold px-1.5 py-0.5 rounded bg-brand-500/20 text-brand-400">1 &ndash; 30,000</span>
+                </div>
+                <p class="text-[11px] text-slate-400">Draw random real borrower</p>
+              </button>
+            </div>
+
+            <!-- Custom ID Input and Trigger -->
+            <div class="flex gap-3">
+              <div class="relative flex-1">
+                <input id="inputCustomerId" type="number" min="1" max="30000" value="1" 
+                  class="w-full px-4 py-2.5 rounded-xl bg-canvas-surface border border-canvas-border focus:border-brand-500 focus:ring-1 focus:ring-brand-500 text-sm font-mono text-white outline-none transition" 
+                  placeholder="Enter Borrower ID (1 - 30000)">
+              </div>
+              <button id="btnScoreLoan" onclick="scoreCurrentBorrower()" class="px-6 py-2.5 rounded-xl bg-brand-600 hover:bg-brand-500 text-white text-xs font-bold transition shadow-lg shadow-brand-500/25 flex items-center gap-2">
+                <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 10V3L4 14h7v7l9-11h-7z"/></svg>
+                <span>Score Borrower</span>
               </button>
             </div>
           </div>
-        </div>
 
-        <!-- Prediction Result Display -->
-        <div id="predictResultBox" class="mt-5 p-4 rounded-xl bg-dark-bg border border-dark-border">
-          <div class="flex items-center justify-between mb-2">
-            <span class="text-xs font-semibold text-dark-muted uppercase">Prediction Output</span>
-            <span id="predictLatency" class="text-xs font-mono text-cyan-400">Latency: -- ms</span>
-          </div>
-
-          <div class="flex items-center justify-between mb-2">
-            <span id="predictRiskBadge" class="px-3 py-1 text-xs font-bold rounded-lg bg-slate-800 text-slate-400">Ready</span>
-            <div class="text-right">
-              <span class="text-xs text-dark-muted">Default Probability:</span>
-              <span id="predictProbability" class="text-lg font-bold text-white ml-1">0.00%</span>
-            </div>
-          </div>
-
-          <!-- Probability Bar -->
-          <div class="w-full bg-slate-800 rounded-full h-2.5 overflow-hidden">
-            <div id="predictBar" class="bg-brand-500 h-2.5 rounded-full transition-all duration-500" style="width: 0%"></div>
-          </div>
-          <div class="mt-2 text-[11px] text-dark-muted flex justify-between">
-            <span>Model: <span id="predictModelVer" class="text-slate-300">loan-default</span></span>
-            <span>Async Log: <span class="text-emerald-400">Enqueued</span></span>
-          </div>
-        </div>
-      </div>
-
-      <!-- Right Column: Statistical Drift PSI Gauges (7 cols) -->
-      <div class="lg:col-span-7 bg-dark-card border border-dark-border rounded-2xl p-6 shadow-sm flex flex-col justify-between">
-        <div>
-          <div class="flex items-center justify-between mb-4">
-            <div>
-              <h2 class="text-base font-bold text-white flex items-center gap-2">
-                <svg class="w-5 h-5 text-amber-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M7 12l3-3 3 3 4-4M8 21l4-4 4 4M3 4h18M4 4h16v12a1 1 0 01-1 1H5a1 1 0 01-1-1V4z"/></svg>
-                Statistical Feature Drift (Population Stability Index)
-              </h2>
-              <p class="text-xs text-dark-muted">Continuous 10-bin PSI evaluation vs. MLflow reference distribution</p>
-            </div>
-            <div class="flex items-center gap-2">
-              <span class="text-[11px] text-dark-muted">Threshold: <strong class="text-amber-400">0.20</strong></span>
-              <span class="px-2 py-0.5 text-xs font-medium rounded bg-dark-bg border border-dark-border text-slate-300">Flow C</span>
-            </div>
-          </div>
-
-          <!-- Feature PSI Bars Grid -->
-          <div id="feature_psi_grid" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-3">
+          <!-- Borrower Profile Details Card -->
+          <div class="bg-canvas-card border border-canvas-border rounded-2xl p-6 shadow-sm">
+            <h3 class="text-sm font-bold text-white uppercase tracking-wider mb-3">2. Hydrated Borrower Profile</h3>
+            <p class="text-xs text-slate-400 mb-4">Values stored in Feast offline Parquet and synchronized to Redis online key-value cache:</p>
             
-            <!-- Feature 1: pay_0 -->
-            <div class="p-3 rounded-xl bg-dark-bg border border-dark-border space-y-1.5">
-              <div class="flex justify-between text-xs">
-                <span class="font-medium text-slate-300">pay_0 (repayment delay)</span>
-                <span id="psi_pay_0" class="font-mono font-bold text-emerald-400">0.005</span>
-              </div>
-              <div class="w-full bg-slate-800 rounded-full h-2 overflow-hidden">
-                <div id="bar_pay_0" class="h-2 rounded-full bg-emerald-500 transition-all duration-500" style="width: 2.5%"></div>
-              </div>
+            <div id="profileLoading" class="hidden text-center py-6 text-xs text-slate-400 font-mono">
+              Fetching borrower features from Feast Redis...
             </div>
 
-            <!-- Feature 2: limit_bal -->
-            <div class="p-3 rounded-xl bg-dark-bg border border-dark-border space-y-1.5">
-              <div class="flex justify-between text-xs">
-                <span class="font-medium text-slate-300">limit_bal (credit limit)</span>
-                <span id="psi_limit_bal" class="font-mono font-bold text-emerald-400">0.008</span>
+            <div id="profileGrid" class="grid grid-cols-2 sm:grid-cols-4 gap-3 text-xs">
+              <div class="p-3 rounded-xl bg-canvas-surface border border-canvas-border">
+                <span class="text-slate-400 block text-[11px]">Credit Limit Balance</span>
+                <span id="profLimit" class="font-mono font-bold text-white text-sm">$11,250</span>
               </div>
-              <div class="w-full bg-slate-800 rounded-full h-2 overflow-hidden">
-                <div id="bar_limit_bal" class="h-2 rounded-full bg-emerald-500 transition-all duration-500" style="width: 4%"></div>
+              <div class="p-3 rounded-xl bg-canvas-surface border border-canvas-border">
+                <span class="text-slate-400 block text-[11px]">Age &amp; Gender</span>
+                <span id="profAgeSex" class="font-bold text-white text-sm">24 yrs • Female</span>
+              </div>
+              <div class="p-3 rounded-xl bg-canvas-surface border border-canvas-border">
+                <span class="text-slate-400 block text-[11px]">Education</span>
+                <span id="profEdu" class="font-bold text-white text-sm">University</span>
+              </div>
+              <div class="p-3 rounded-xl bg-canvas-surface border border-canvas-border">
+                <span class="text-slate-400 block text-[11px]">Marital Status</span>
+                <span id="profMarriage" class="font-bold text-white text-sm">Married</span>
+              </div>
+
+              <div class="p-3 rounded-xl bg-canvas-surface border border-canvas-border">
+                <span class="text-slate-400 block text-[11px]">Latest Delay (pay_0)</span>
+                <span id="profPay0" class="font-mono font-bold text-rose-400 text-sm">6 months delay</span>
+              </div>
+              <div class="p-3 rounded-xl bg-canvas-surface border border-canvas-border">
+                <span class="text-slate-400 block text-[11px]">Recent Bill (bill_amt1)</span>
+                <span id="profBill" class="font-mono font-bold text-white text-sm">$6,613</span>
+              </div>
+              <div class="p-3 rounded-xl bg-canvas-surface border border-canvas-border">
+                <span class="text-slate-400 block text-[11px]">Recent Paid (pay_amt1)</span>
+                <span id="profPaid" class="font-mono font-bold text-white text-sm">$0</span>
+              </div>
+              <div class="p-3 rounded-xl bg-canvas-surface border border-canvas-border">
+                <span class="text-slate-400 block text-[11px]">Total Tracked Features</span>
+                <span class="font-mono font-bold text-brand-400 text-sm">23 Features</span>
               </div>
             </div>
-
-            <!-- Feature 3: bill_amt1 -->
-            <div class="p-3 rounded-xl bg-dark-bg border border-dark-border space-y-1.5">
-              <div class="flex justify-between text-xs">
-                <span class="font-medium text-slate-300">bill_amt1 (bill statement)</span>
-                <span id="psi_bill_amt1" class="font-mono font-bold text-emerald-400">0.003</span>
-              </div>
-              <div class="w-full bg-slate-800 rounded-full h-2 overflow-hidden">
-                <div id="bar_bill_amt1" class="h-2 rounded-full bg-emerald-500 transition-all duration-500" style="width: 1.5%"></div>
-              </div>
-            </div>
-
-            <!-- Feature 4: pay_amt1 -->
-            <div class="p-3 rounded-xl bg-dark-bg border border-dark-border space-y-1.5">
-              <div class="flex justify-between text-xs">
-                <span class="font-medium text-slate-300">pay_amt1 (payment amount)</span>
-                <span id="psi_pay_amt1" class="font-mono font-bold text-emerald-400">0.004</span>
-              </div>
-              <div class="w-full bg-slate-800 rounded-full h-2 overflow-hidden">
-                <div id="bar_pay_amt1" class="h-2 rounded-full bg-emerald-500 transition-all duration-500" style="width: 2%"></div>
-              </div>
-            </div>
-
-            <!-- Feature 5: age -->
-            <div class="p-3 rounded-xl bg-dark-bg border border-dark-border space-y-1.5">
-              <div class="flex justify-between text-xs">
-                <span class="font-medium text-slate-300">age</span>
-                <span id="psi_age" class="font-mono font-bold text-emerald-400">0.002</span>
-              </div>
-              <div class="w-full bg-slate-800 rounded-full h-2 overflow-hidden">
-                <div id="bar_age" class="h-2 rounded-full bg-emerald-500 transition-all duration-500" style="width: 1%"></div>
-              </div>
-            </div>
-
-            <!-- Feature 6: education -->
-            <div class="p-3 rounded-xl bg-dark-bg border border-dark-border space-y-1.5">
-              <div class="flex justify-between text-xs">
-                <span class="font-medium text-slate-300">education</span>
-                <span id="psi_education" class="font-mono font-bold text-emerald-400">0.001</span>
-              </div>
-              <div class="w-full bg-slate-800 rounded-full h-2 overflow-hidden">
-                <div id="bar_education" class="h-2 rounded-full bg-emerald-500 transition-all duration-500" style="width: 1%"></div>
-              </div>
-            </div>
-
           </div>
+
         </div>
 
-        <div class="mt-4 pt-3 border-t border-dark-border flex items-center justify-between text-xs text-dark-muted">
-          <span>Drift Safeguards: <strong class="text-slate-300">2-Breach Debounce • 10m Cooldown • Active Job Lock</strong></span>
-          <span class="text-amber-400">PSI &gt; 0.20 triggers Retrain</span>
+        <!-- Right: Model Decision Output (5 cols) -->
+        <div class="lg:col-span-5 space-y-6">
+          
+          <div class="bg-canvas-card border border-canvas-border rounded-2xl p-6 shadow-sm flex flex-col justify-between">
+            <div>
+              <div class="flex items-center justify-between mb-4">
+                <h3 class="text-sm font-bold text-white uppercase tracking-wider">3. Risk Classification Output</h3>
+                <span id="scoringLatencyBadge" class="text-xs font-mono text-cyan-400">Latency: -- ms</span>
+              </div>
+
+              <!-- Main Decision Banner -->
+              <div id="decisionCard" class="p-5 rounded-2xl bg-canvas-surface border border-canvas-border text-center mb-6 transition-all">
+                <span id="decisionBadge" class="inline-block px-4 py-1.5 rounded-full text-xs font-extrabold uppercase tracking-wider bg-slate-800 text-slate-400 mb-2">
+                  Ready to Score
+                </span>
+                <h2 id="decisionTitle" class="text-xl font-extrabold text-white">Click "Score Borrower"</h2>
+                <p id="decisionDesc" class="text-xs text-slate-400 mt-1">Live point-in-time features will be pulled from Redis</p>
+              </div>
+
+              <!-- Probability Meter -->
+              <div class="space-y-2 mb-6">
+                <div class="flex justify-between items-baseline text-xs">
+                  <span class="text-slate-400 font-medium">Model Default Probability</span>
+                  <span id="probValue" class="text-xl font-bold font-mono text-white">0.0%</span>
+                </div>
+                <div class="w-full bg-slate-800 rounded-full h-3 overflow-hidden">
+                  <div id="probProgressBar" class="h-3 rounded-full bg-brand-500 transition-all duration-700" style="width: 0%"></div>
+                </div>
+                <div class="flex justify-between text-[11px] text-slate-500">
+                  <span>0% (Safe)</span>
+                  <span>50% (Threshold)</span>
+                  <span>100% (Certain Default)</span>
+                </div>
+              </div>
+
+              <!-- Lineage & Telemetry Spec -->
+              <div class="p-3.5 rounded-xl bg-canvas-surface border border-canvas-border space-y-2 text-xs">
+                <div class="flex justify-between">
+                  <span class="text-slate-400">Serving Version</span>
+                  <span id="scoringModelVer" class="font-mono font-semibold text-slate-200">loan-default (v4)</span>
+                </div>
+                <div class="flex justify-between">
+                  <span class="text-slate-400">Online Store</span>
+                  <span class="font-mono text-emerald-400">Redis &bull; 0x35 Encoded</span>
+                </div>
+                <div class="flex justify-between">
+                  <span class="text-slate-400">Audit Logging</span>
+                  <span class="font-medium text-cyan-400">PostgreSQL buffered</span>
+                </div>
+              </div>
+            </div>
+
+            <div class="mt-6 pt-4 border-t border-canvas-border text-center">
+              <span class="text-xs text-slate-400">Decision SLA: &lt;50ms end-to-end</span>
+            </div>
+          </div>
+
         </div>
+
       </div>
 
-    </section>
+    </div>
 
-    <!-- Row 3: Action Control Center Grid ("Run Everything") -->
-    <section class="space-y-4">
-      <div class="flex items-center justify-between">
+    <!-- ================= PAGE 3: CHAOS & SELF-HEALING LAB ================= -->
+    <div id="view-chaos" class="view-panel hidden space-y-8">
+      
+      <div class="pb-2 border-b border-canvas-border flex flex-col md:flex-row md:items-center justify-between gap-4">
         <div>
-          <h2 class="text-base font-bold text-white flex items-center gap-2">
-            <svg class="w-5 h-5 text-brand-500" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 6V4m0 2a2 2 0 100 4m0-4a2 2 0 110 4m-6 8a2 2 0 100-4m0 4a2 2 0 110-4m0 4v2m0-6V4m6 6v10m6-2a2 2 0 100-4m0 4a2 2 0 110-4m0 4v2m0-6V4"/></svg>
-            Command & Execution Center ("Run Everything")
-          </h2>
-          <p class="text-xs text-dark-muted">Trigger end-to-end chaos drills, drift retraining loops, and test suites with live streaming logs</p>
+          <h1 class="text-2xl font-extrabold tracking-tight text-white flex items-center gap-2.5">
+            ⚡ Live Chaos &amp; Self-Healing Lab
+          </h1>
+          <p class="text-xs text-slate-400 mt-1">Witness real-time Kubernetes pod crash recovery, PodDisruptionBudget protections, and automated horizontal scaling</p>
         </div>
         <div class="flex items-center gap-2">
-          <span id="execStatusPill" class="px-2.5 py-1 text-xs font-semibold rounded-full bg-slate-800 text-slate-300 border border-slate-700">Status: Idle</span>
+          <span class="px-2.5 py-1 rounded-md bg-emerald-500/10 border border-emerald-500/30 text-emerald-400 text-xs font-semibold">
+            PDB Active: minAvailable=1
+          </span>
         </div>
       </div>
 
-      <!-- Action Buttons Grid -->
-      <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-        
-        <!-- Action 1: Reset Demo -->
-        <div class="bg-dark-card border border-dark-border rounded-xl p-4 hover:border-brand-500/30 transition flex flex-col justify-between">
+      <!-- Live Chaos Banner (Populates dynamically when a pod is killed) -->
+      <div id="chaosBanner" class="hidden p-4 rounded-2xl bg-rose-500/15 border border-rose-500/40 text-rose-300 text-xs flex flex-col sm:flex-row items-center justify-between gap-3 shadow-lg">
+        <div class="flex items-center gap-3">
+          <span class="text-2xl animate-spin">💥</span>
           <div>
-            <div class="flex items-center justify-between mb-1.5">
-              <span class="text-sm font-bold text-white flex items-center gap-2">
-                <span class="w-2 h-2 rounded-full bg-emerald-400"></span>
-                Reset Demo Baseline
-              </span>
-              <span class="text-[10px] font-mono px-1.5 py-0.5 rounded bg-dark-bg text-dark-muted">make reset-demo</span>
-            </div>
-            <p class="text-xs text-dark-muted">Flushes Redis, seeds 10,000 baseline customers, restores v2 champion, and zeroes drift metrics.</p>
-          </div>
-          <button onclick="executeAction('reset_demo')" class="mt-4 w-full py-2 px-3 rounded-lg bg-emerald-600/20 hover:bg-emerald-600 text-emerald-400 hover:text-white font-medium text-xs border border-emerald-500/30 transition flex items-center justify-center gap-2">
-            <span>Restore Pristine Baseline</span>
-          </button>
-        </div>
-
-        <!-- Action 2: Traffic Surge -->
-        <div class="bg-dark-card border border-dark-border rounded-xl p-4 hover:border-brand-500/30 transition flex flex-col justify-between">
-          <div>
-            <div class="flex items-center justify-between mb-1.5">
-              <span class="text-sm font-bold text-white flex items-center gap-2">
-                <span class="w-2 h-2 rounded-full bg-cyan-400"></span>
-                Generate Traffic Burst
-              </span>
-              <span class="text-[10px] font-mono px-1.5 py-0.5 rounded bg-dark-bg text-dark-muted">traffic.py</span>
-            </div>
-            <p class="text-xs text-dark-muted">Generates continuous 15 RPS prediction traffic for 20 seconds to populate Prometheus and Postgres.</p>
-          </div>
-          <button onclick="executeAction('traffic_burst')" class="mt-4 w-full py-2 px-3 rounded-lg bg-cyan-600/20 hover:bg-cyan-600 text-cyan-400 hover:text-white font-medium text-xs border border-cyan-500/30 transition flex items-center justify-center gap-2">
-            <span>Fire 15 RPS Traffic</span>
-          </button>
-        </div>
-
-        <!-- Action 3: Inject Latency Chaos -->
-        <div class="bg-dark-card border border-dark-border rounded-xl p-4 hover:border-brand-500/30 transition flex flex-col justify-between">
-          <div>
-            <div class="flex items-center justify-between mb-1.5">
-              <span class="text-sm font-bold text-white flex items-center gap-2">
-                <span class="w-2 h-2 rounded-full bg-amber-400"></span>
-                Inject Latency Chaos (500ms)
-              </span>
-              <span class="text-[10px] font-mono px-1.5 py-0.5 rounded bg-dark-bg text-dark-muted">POST /debug/latency</span>
-            </div>
-            <p class="text-xs text-dark-muted">Artificially introduces 500ms delay into serving pods to trigger Prometheus HighP95Latency alert.</p>
-          </div>
-          <div class="grid grid-cols-2 gap-2 mt-4">
-            <button onclick="executeAction('chaos_latency_inject')" class="py-2 px-3 rounded-lg bg-amber-600/20 hover:bg-amber-600 text-amber-400 hover:text-white font-medium text-xs border border-amber-500/30 transition flex items-center justify-center">
-              <span>Inject 500ms</span>
-            </button>
-            <button onclick="executeAction('chaos_latency_clear')" class="py-2 px-3 rounded-lg bg-dark-bg hover:bg-slate-800 text-slate-300 font-medium text-xs border border-dark-border transition flex items-center justify-center">
-              <span>Clear (0ms)</span>
-            </button>
+            <p class="font-bold text-white text-sm" id="chaosBannerTitle">Replica Terminated!</p>
+            <p class="text-rose-200 mt-0.5" id="chaosBannerDesc">Kubernetes detected replica deficit. Surviving replica is absorbing 100% of traffic. Spawning replacement...</p>
           </div>
         </div>
-
-        <!-- Action 4: Infrastructure Remediation Drill -->
-        <div class="bg-dark-card border border-dark-border rounded-xl p-4 hover:border-brand-500/30 transition flex flex-col justify-between">
-          <div>
-            <div class="flex items-center justify-between mb-1.5">
-              <span class="text-sm font-bold text-white flex items-center gap-2">
-                <span class="w-2 h-2 rounded-full bg-indigo-400"></span>
-                Infra Alert Remediation Drill
-              </span>
-              <span class="text-[10px] font-mono px-1.5 py-0.5 rounded bg-dark-bg text-dark-muted">make demo-infra</span>
-            </div>
-            <p class="text-xs text-dark-muted">Full Flow B drill: Injects latency chaos $\rightarrow$ HighP95Latency fires $\rightarrow$ Remediator scales HPA 2 $\rightarrow$ 4 replicas.</p>
-          </div>
-          <button onclick="executeAction('demo_infra')" class="mt-4 w-full py-2 px-3 rounded-lg bg-indigo-600/20 hover:bg-indigo-600 text-indigo-400 hover:text-white font-medium text-xs border border-indigo-500/30 transition flex items-center justify-center gap-2">
-            <span>Run Infra Self-Healing</span>
-          </button>
-        </div>
-
-        <!-- Action 5: Simulate Feature Drift -->
-        <div class="bg-dark-card border border-dark-border rounded-xl p-4 hover:border-brand-500/30 transition flex flex-col justify-between">
-          <div>
-            <div class="flex items-center justify-between mb-1.5">
-              <span class="text-sm font-bold text-white flex items-center gap-2">
-                <span class="w-2 h-2 rounded-full bg-rose-400"></span>
-                Simulate Feature Drift
-              </span>
-              <span class="text-[10px] font-mono px-1.5 py-0.5 rounded bg-dark-bg text-dark-muted">simulate_drift.py</span>
-            </div>
-            <p class="text-xs text-dark-muted">Shifts repayment delays (pay_0), credit limit (limit_bal), and bill amounts (bill_amt1) in offline Parquet and re-materializes Redis.</p>
-          </div>
-          <button onclick="executeAction('simulate_drift')" class="mt-4 w-full py-2 px-3 rounded-lg bg-rose-600/20 hover:bg-rose-600 text-rose-400 hover:text-white font-medium text-xs border border-rose-500/30 transition flex items-center justify-center gap-2">
-            <span>Trigger Synthetic Drift</span>
-          </button>
-        </div>
-
-        <!-- Action 6: Full Closed-Loop Retrain Demo -->
-        <div class="bg-dark-card border border-dark-border rounded-xl p-4 hover:border-brand-500/30 transition flex flex-col justify-between ring-1 ring-brand-500/40">
-          <div>
-            <div class="flex items-center justify-between mb-1.5">
-              <span class="text-sm font-bold text-white flex items-center gap-2">
-                <span class="w-2 h-2 rounded-full bg-purple-400 animate-ping"></span>
-                Full Closed-Loop Model Demo
-              </span>
-              <span class="text-[10px] font-mono px-1.5 py-0.5 rounded bg-brand-500/20 text-brand-300">make demo-model</span>
-            </div>
-            <p class="text-xs text-dark-muted">Core Flow C presentation: Baseline traffic $\rightarrow$ Drift $\rightarrow$ K8s Retrain Job $\rightarrow$ Staging Gate $\rightarrow$ Prod Promotion.</p>
-          </div>
-          <button onclick="executeAction('demo_model')" class="mt-4 w-full py-2 px-3 rounded-lg bg-brand-600 hover:bg-brand-500 text-white font-semibold text-xs transition shadow-md shadow-brand-500/30 flex items-center justify-center gap-2">
-            <span>Run Complete Retrain Loop</span>
-          </button>
-        </div>
-
+        <span class="px-3 py-1 rounded-full bg-emerald-500/20 text-emerald-300 border border-emerald-500/40 text-xs font-bold whitespace-nowrap">
+          Zero-Downtime Serving Active
+        </span>
       </div>
 
-      <!-- Secondary Action Row -->
-      <div class="flex flex-wrap items-center gap-2 pt-1">
-        <button onclick="executeAction('chaos_pod_kill')" class="px-3 py-1.5 rounded-lg bg-dark-card hover:bg-dark-cardHover border border-dark-border text-xs text-slate-300 hover:text-white transition flex items-center gap-1.5">
-          <svg class="w-3.5 h-3.5 text-rose-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"/></svg>
-          Kill Serving Pod (chaos_pod.sh)
-        </button>
-        <button onclick="executeAction('run_gate')" class="px-3 py-1.5 rounded-lg bg-dark-card hover:bg-dark-cardHover border border-dark-border text-xs text-slate-300 hover:text-white transition flex items-center gap-1.5">
-          <svg class="w-3.5 h-3.5 text-cyan-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"/></svg>
-          Evaluate Model Release Gate (gate.py)
-        </button>
-        <button onclick="executeAction('feast_rematerialize')" class="px-3 py-1.5 rounded-lg bg-dark-card hover:bg-dark-cardHover border border-dark-border text-xs text-slate-300 hover:text-white transition flex items-center gap-1.5">
-          <svg class="w-3.5 h-3.5 text-amber-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15"/></svg>
-          Re-materialize Feast (make feast-rematerialize)
-        </button>
-        <button onclick="executeAction('e2e_tests')" class="px-3 py-1.5 rounded-lg bg-dark-card hover:bg-dark-cardHover border border-dark-border text-xs text-slate-300 hover:text-white transition flex items-center gap-1.5">
-          <svg class="w-3.5 h-3.5 text-emerald-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2"/></svg>
-          Run E2E Test Suite (make e2e)
-        </button>
-      </div>
-
-    </section>
-
-    <!-- Row 4: Live Streaming Terminal Console -->
-    <section class="bg-dark-card border border-dark-border rounded-2xl overflow-hidden shadow-lg">
-      <div class="px-5 py-3 bg-dark-bg border-b border-dark-border flex items-center justify-between">
-        <div class="flex items-center space-x-3">
-          <div class="flex space-x-1.5">
-            <div class="w-3 h-3 rounded-full bg-rose-500/80"></div>
-            <div class="w-3 h-3 rounded-full bg-amber-500/80"></div>
-            <div class="w-3 h-3 rounded-full bg-emerald-500/80"></div>
+      <!-- Section 1: Live Serving Pod Cards (Interactive Pod Killers) -->
+      <div>
+        <div class="flex items-center justify-between mb-4">
+          <div>
+            <h2 class="text-base font-bold text-white flex items-center gap-2">
+              <span>Interactive Serving Replicas</span>
+              <span class="text-xs font-normal text-slate-400">(Namespace: serving)</span>
+            </h2>
+            <p class="text-xs text-slate-400">Click &ldquo;Kill Replica&rdquo; on any live pod to watch Kubernetes self-heal in under 8 seconds:</p>
           </div>
-          <span class="text-xs font-mono text-slate-300">Live Execution Console & Process Stream</span>
-          <span id="activeCmdPill" class="hidden text-[11px] font-mono px-2 py-0.5 rounded bg-brand-500/20 text-brand-300 border border-brand-500/30"></span>
-        </div>
-        <div class="flex items-center space-x-2">
-          <button onclick="clearTerminal()" class="px-2.5 py-1 text-xs rounded bg-dark-card hover:bg-dark-cardHover border border-dark-border text-slate-400 hover:text-white transition">Clear</button>
-          <button onclick="copyTerminal()" class="px-2.5 py-1 text-xs rounded bg-dark-card hover:bg-dark-cardHover border border-dark-border text-slate-400 hover:text-white transition">Copy</button>
-        </div>
-      </div>
-      <div id="terminalOutput" class="p-5 font-mono text-xs text-slate-200 h-80 overflow-y-auto bg-[#07090e] whitespace-pre-wrap leading-relaxed select-text">
-<span class="text-dark-muted"># MLPlatform Control Plane Terminal initialized.</span>
-<span class="text-dark-muted"># Click any action button above to execute commands with live streaming output.</span>
-<span class="text-emerald-400">$ ready</span>
-      </div>
-    </section>
-
-    <!-- Row 5: Cluster Workloads Inspector -->
-    <section class="bg-dark-card border border-dark-border rounded-2xl p-6 shadow-sm space-y-4">
-      <div class="flex items-center justify-between">
-        <div>
-          <h2 class="text-base font-bold text-white flex items-center gap-2">
-            <svg class="w-5 h-5 text-indigo-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 6a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2H6a2 2 0 01-2-2V6zM14 6a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2h-2a2 2 0 01-2-2V6zM4 16a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2H6a2 2 0 01-2-2v-2zM14 16a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2h-2a2 2 0 01-2-2v-2z"/></svg>
-            Cluster Pod Workload Inspector
-          </h2>
-          <p class="text-xs text-dark-muted">Real-time status across serving, data, and observability namespaces</p>
-        </div>
-        <div class="flex items-center gap-2">
-          <button onclick="loadPods()" class="px-3 py-1.5 rounded-lg bg-dark-bg hover:bg-slate-800 border border-dark-border text-xs text-slate-300 transition flex items-center gap-1.5">
+          <button onclick="loadPods()" class="px-3 py-1.5 rounded-lg bg-canvas-card hover:bg-canvas-cardHover border border-canvas-border text-xs text-slate-300 transition flex items-center gap-1.5">
             <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15"/></svg>
-            Refresh Pods
+            Refresh Replicas
+          </button>
+        </div>
+
+        <!-- Serving Pods Grid (Populated dynamically) -->
+        <div id="servingPodsGrid" class="grid grid-cols-1 md:grid-cols-2 gap-5">
+          <div class="p-6 rounded-2xl bg-canvas-card border border-canvas-border text-center text-slate-400 text-xs">
+            Loading serving pods...
+          </div>
+        </div>
+      </div>
+
+      <!-- Section 2: Prove Zero-Downtime During Chaos -->
+      <div class="p-6 rounded-2xl bg-canvas-card border border-canvas-border shadow-sm flex flex-col md:flex-row items-center justify-between gap-4">
+        <div>
+          <h3 class="text-sm font-bold text-white flex items-center gap-2">
+            <span>🛡️ Prove Zero Dropped Requests</span>
+          </h3>
+          <p class="text-xs text-slate-400 mt-1">While a pod is terminating or booting up, fire a test prediction request to prove the service never answers 500 or drops traffic.</p>
+        </div>
+        <button onclick="quickTestInference()" class="px-5 py-2.5 rounded-xl bg-emerald-600 hover:bg-emerald-500 text-white text-xs font-bold transition shadow-lg shadow-emerald-600/25 flex items-center gap-2 whitespace-nowrap">
+          <span>⚡ Send Live Prediction</span>
+        </button>
+      </div>
+
+      <!-- Section 3: Automated Scenarios & Auto-Scaling Drills -->
+      <div>
+        <h2 class="text-base font-bold text-white mb-3">Automated Self-Healing Chaos Drills</h2>
+        <div class="grid grid-cols-1 md:grid-cols-2 gap-5">
+          
+          <!-- Scenario 1: Pod Kill Drill -->
+          <div class="p-5 rounded-2xl bg-canvas-card border border-canvas-border flex flex-col justify-between">
+            <div>
+              <div class="flex items-center justify-between mb-2">
+                <h4 class="text-sm font-bold text-white flex items-center gap-2">
+                  <span class="w-2 h-2 rounded-full bg-rose-400"></span>
+                  Pod Chaos Drill (chaos_pod.sh)
+                </h4>
+                <span class="text-[10px] font-mono px-2 py-0.5 rounded bg-canvas-surface text-slate-400">CLI Drill</span>
+              </div>
+              <p class="text-xs text-slate-400 leading-relaxed">
+                Sends sustained queries while deleting a pod mid-stream. Verifies that recovery takes under 10 seconds and 0 requests fail.
+              </p>
+            </div>
+            <button onclick="executeAction('chaos_pod_kill')" class="mt-4 w-full py-2.5 px-4 rounded-xl bg-rose-600/20 hover:bg-rose-600 text-rose-300 hover:text-white border border-rose-500/30 text-xs font-semibold transition flex items-center justify-center gap-2">
+              <span>Run Automated Pod Kill Drill</span>
+            </button>
+          </div>
+
+          <!-- Scenario 2: Latency Chaos & Auto-Scaler -->
+          <div class="p-5 rounded-2xl bg-canvas-card border border-canvas-border flex flex-col justify-between">
+            <div>
+              <div class="flex items-center justify-between mb-2">
+                <h4 class="text-sm font-bold text-white flex items-center gap-2">
+                  <span class="w-2 h-2 rounded-full bg-indigo-400"></span>
+                  Latency Alert &amp; HPA Scaling (make demo-infra)
+                </h4>
+                <span class="text-[10px] font-mono px-2 py-0.5 rounded bg-canvas-surface text-slate-400">Flow B Drill</span>
+              </div>
+              <p class="text-xs text-slate-400 leading-relaxed">
+                Injects 500ms delay &rarr; Prometheus detects HighP95Latency &rarr; Alertmanager triggers the in-cluster remediator &rarr; scales HPA floor from 2 to 4 pods!
+              </p>
+            </div>
+            <div class="grid grid-cols-2 gap-2 mt-4">
+              <button onclick="executeAction('demo_infra')" class="py-2.5 px-3 rounded-xl bg-indigo-600/20 hover:bg-indigo-600 text-indigo-300 hover:text-white border border-indigo-500/30 text-xs font-semibold transition flex items-center justify-center">
+                <span>Run Infra Drill</span>
+              </button>
+              <button onclick="executeAction('chaos_latency_clear')" class="py-2.5 px-3 rounded-xl bg-canvas-surface hover:bg-slate-800 text-slate-300 border border-canvas-border text-xs font-semibold transition flex items-center justify-center">
+                <span>Clear Latency</span>
+              </button>
+            </div>
+          </div>
+
+        </div>
+      </div>
+
+    </div>
+
+    <!-- ================= PAGE 4: DRIFT & RETRAINING ================= -->
+    <div id="view-drift" class="view-panel hidden space-y-8">
+      
+      <div class="pb-2 border-b border-canvas-border flex flex-col md:flex-row md:items-center justify-between gap-4">
+        <div>
+          <h1 class="text-2xl font-extrabold tracking-tight text-white flex items-center gap-2.5">
+            Statistical Drift Monitor &amp; Autonomous Retraining
+          </h1>
+          <p class="text-xs text-slate-400 mt-1">Population Stability Index (PSI) and Kolmogorov-Smirnov (KS) monitoring across the 23 UCI features</p>
+        </div>
+        <div class="flex items-center gap-2">
+          <span class="px-2.5 py-1 rounded-md bg-purple-500/10 border border-purple-500/30 text-purple-400 text-xs font-mono font-semibold">
+            Drift Threshold: PSI &gt; 0.25 (Min 2 Features)
+          </span>
+        </div>
+      </div>
+
+      <!-- Drift Status Hero -->
+      <div class="grid grid-cols-1 md:grid-cols-3 gap-5">
+        <div class="p-5 rounded-2xl bg-canvas-card border border-canvas-border">
+          <span class="text-xs text-slate-400 font-semibold uppercase tracking-wider block mb-1">System Drift State</span>
+          <span id="driftCardState" class="text-xl font-extrabold text-emerald-400 flex items-center gap-2">
+            <span class="w-2.5 h-2.5 rounded-full bg-emerald-400"></span>
+            NORMAL (0 DRIFTED)
+          </span>
+          <p class="text-xs text-slate-400 mt-2">Continuous evaluation across 1,000 window samples</p>
+        </div>
+
+        <div class="p-5 rounded-2xl bg-canvas-card border border-canvas-border">
+          <span class="text-xs text-slate-400 font-semibold uppercase tracking-wider block mb-1">Champion Model AUC</span>
+          <span class="text-xl font-extrabold text-white font-mono">0.897</span>
+          <p class="text-xs text-slate-400 mt-2">Candidate Quality Floor: 0.700</p>
+        </div>
+
+        <div class="p-5 rounded-2xl bg-canvas-card border border-canvas-border">
+          <span class="text-xs text-slate-400 font-semibold uppercase tracking-wider block mb-1">Discrete Feature Safeguard</span>
+          <span class="text-xl font-extrabold text-brand-400 font-mono">ACTIVE</span>
+          <p class="text-xs text-slate-400 mt-2">Sorted midpoint binning prevents false positive drift</p>
+        </div>
+      </div>
+
+      <!-- 23-Feature PSI Grid Organized in Logical Groups -->
+      <div class="space-y-6">
+        <div class="flex items-center justify-between">
+          <h2 class="text-base font-bold text-white">23-Feature Population Stability Matrix</h2>
+          <span class="text-xs text-slate-400 font-mono">Green: &lt;0.10 &bull; Amber: 0.10&ndash;0.20 &bull; Red: &gt;0.20</span>
+        </div>
+
+        <!-- Group A: Demographics & Limits -->
+        <div class="bg-canvas-card border border-canvas-border rounded-2xl p-5 shadow-sm space-y-3">
+          <h3 class="text-xs font-bold uppercase tracking-wider text-slate-300">Group 1: Limits &amp; Demographics</h3>
+          <div id="psi_group_demographics" class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-3"></div>
+        </div>
+
+        <!-- Group B: Repayment Delinquencies -->
+        <div class="bg-canvas-card border border-canvas-border rounded-2xl p-5 shadow-sm space-y-3">
+          <h3 class="text-xs font-bold uppercase tracking-wider text-slate-300">Group 2: Repayment History (pay_0 to pay_6)</h3>
+          <div id="psi_group_repayment" class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-6 gap-3"></div>
+        </div>
+
+        <!-- Group C: Billing Amounts -->
+        <div class="bg-canvas-card border border-canvas-border rounded-2xl p-5 shadow-sm space-y-3">
+          <h3 class="text-xs font-bold uppercase tracking-wider text-slate-300">Group 3: Monthly Billing Amounts (bill_amt1 to bill_amt6)</h3>
+          <div id="psi_group_bills" class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-6 gap-3"></div>
+        </div>
+
+        <!-- Group D: Payment Amounts -->
+        <div class="bg-canvas-card border border-canvas-border rounded-2xl p-5 shadow-sm space-y-3">
+          <h3 class="text-xs font-bold uppercase tracking-wider text-slate-300">Group 4: Monthly Payment Amounts (pay_amt1 to pay_amt6)</h3>
+          <div id="psi_group_payments" class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-6 gap-3"></div>
+        </div>
+      </div>
+
+      <!-- Retraining Trigger Actions -->
+      <div class="grid grid-cols-1 md:grid-cols-2 gap-5 pt-4">
+        
+        <div class="p-5 rounded-2xl bg-canvas-card border border-canvas-border flex flex-col justify-between">
+          <div>
+            <h4 class="text-sm font-bold text-white mb-1.5 flex items-center gap-2">
+              <span class="w-2 h-2 rounded-full bg-rose-400"></span>
+              Step 1: Inject Covariate Drift (simulate_drift.py)
+            </h4>
+            <p class="text-xs text-slate-400 leading-relaxed">
+              Shifts repayment codes (pay_0 +2), inflates bills (+30%), and depresses limits (-25%). Rewrites Feast online store to trigger drift detection.
+            </p>
+          </div>
+          <button onclick="executeAction('simulate_drift')" class="mt-4 w-full py-2.5 px-4 rounded-xl bg-rose-600/20 hover:bg-rose-600 text-rose-300 hover:text-white border border-rose-500/30 text-xs font-semibold transition">
+            Trigger Synthetic Drift Shock
+          </button>
+        </div>
+
+        <div class="p-5 rounded-2xl bg-canvas-card border border-canvas-border flex flex-col justify-between">
+          <div>
+            <h4 class="text-sm font-bold text-white mb-1.5 flex items-center gap-2">
+              <span class="w-2 h-2 rounded-full bg-purple-400 animate-ping"></span>
+              Step 2: Run Full Autonomous Closed-Loop (demo_model.sh)
+            </h4>
+            <p class="text-xs text-slate-400 leading-relaxed">
+              Watches drift fire &rarr; triggers K8s retrain Job &rarr; Feast point-in-time join &rarr; Quality Gate &rarr; Staging loadcheck &rarr; zero-downtime canary rollout!
+            </p>
+          </div>
+          <button onclick="executeAction('demo_model')" class="mt-4 w-full py-2.5 px-4 rounded-xl bg-brand-600 hover:bg-brand-500 text-white text-xs font-bold transition shadow-lg shadow-brand-500/25">
+            Launch Closed-Loop Retrain Loop
+          </button>
+        </div>
+
+      </div>
+
+    </div>
+
+    <!-- ================= PAGE 5: DRILLS & TERMINAL ================= -->
+    <div id="view-terminal" class="view-panel hidden space-y-6">
+      
+      <div class="pb-2 border-b border-canvas-border flex flex-col md:flex-row md:items-center justify-between gap-4">
+        <div>
+          <h1 class="text-2xl font-extrabold tracking-tight text-white flex items-center gap-2.5">
+            Live Execution Terminal &amp; Platform Drills
+          </h1>
+          <p class="text-xs text-slate-400 mt-1">Execute repeatable platform targets with real-time streaming output</p>
+        </div>
+        <div class="flex items-center gap-2">
+          <button onclick="clearTerminal()" class="px-3 py-1.5 rounded-lg bg-canvas-card hover:bg-canvas-cardHover border border-canvas-border text-xs text-slate-300 transition">
+            Clear Terminal
+          </button>
+          <button onclick="copyTerminal()" class="px-3 py-1.5 rounded-lg bg-canvas-card hover:bg-canvas-cardHover border border-canvas-border text-xs text-slate-300 transition">
+            Copy Logs
           </button>
         </div>
       </div>
 
-      <!-- Floating Chaos Banner -->
-      <div id="chaosBanner" class="hidden mb-4 p-3.5 rounded-xl bg-rose-500/20 border border-rose-500/40 text-rose-300 text-xs flex items-center justify-between animate-pulse shadow-lg"></div>
-
-      <!-- Pods Table -->
-      <div class="overflow-x-auto rounded-xl border border-dark-border">
-        <table class="w-full text-left text-xs">
-          <thead class="bg-dark-bg text-dark-muted uppercase font-semibold border-b border-dark-border">
-            <tr>
-              <th class="px-4 py-3">Namespace</th>
-              <th class="px-4 py-3">Pod Name</th>
-              <th class="px-4 py-3">Ready</th>
-              <th class="px-4 py-3">Status</th>
-              <th class="px-4 py-3">Restarts</th>
-              <th class="px-4 py-3">Age</th>
-              <th class="px-4 py-3 text-right">Actions</th>
-            </tr>
-          </thead>
-          <tbody id="podsTableBody" class="divide-y divide-dark-border text-slate-200">
-            <tr>
-              <td colspan="7" class="px-4 py-6 text-center text-dark-muted">Loading cluster workloads...</td>
-            </tr>
-          </tbody>
-        </table>
+      <!-- Quick Action Toolbar -->
+      <div class="flex flex-wrap gap-2.5 p-3 rounded-xl bg-canvas-surface border border-canvas-border text-xs">
+        <span class="text-slate-400 font-semibold self-center mr-1 text-[11px] uppercase">Quick Drills:</span>
+        <button onclick="executeAction('reset_demo')" class="px-3 py-1.5 rounded-lg bg-emerald-600/15 hover:bg-emerald-600/30 text-emerald-400 border border-emerald-500/30 font-medium transition">
+          Restore Pristine Baseline
+        </button>
+        <button onclick="executeAction('traffic_burst')" class="px-3 py-1.5 rounded-lg bg-cyan-600/15 hover:bg-cyan-600/30 text-cyan-400 border border-cyan-500/30 font-medium transition">
+          Fire 15 RPS Traffic Burst
+        </button>
+        <button onclick="executeAction('run_gate')" class="px-3 py-1.5 rounded-lg bg-brand-600/15 hover:bg-brand-600/30 text-brand-400 border border-brand-500/30 font-medium transition">
+          Run Release Quality Gate
+        </button>
+        <button onclick="executeAction('feast_rematerialize')" class="px-3 py-1.5 rounded-lg bg-indigo-600/15 hover:bg-indigo-600/30 text-indigo-400 border border-indigo-500/30 font-medium transition">
+          Rematerialize Feast Redis
+        </button>
+        <button onclick="executeAction('e2e_tests')" class="px-3 py-1.5 rounded-lg bg-purple-600/15 hover:bg-purple-600/30 text-purple-400 border border-purple-500/30 font-medium transition">
+          Run End-to-End Suite
+        </button>
       </div>
-    </section>
+
+      <!-- Terminal Output Container -->
+      <div class="rounded-2xl border border-canvas-border bg-[#070a12] shadow-2xl overflow-hidden">
+        <div class="bg-canvas-surface/90 px-4 py-2.5 border-b border-canvas-border flex items-center justify-between">
+          <div class="flex items-center gap-2">
+            <span class="w-3 h-3 rounded-full bg-rose-500/80 inline-block"></span>
+            <span class="w-3 h-3 rounded-full bg-amber-500/80 inline-block"></span>
+            <span class="w-3 h-3 rounded-full bg-emerald-500/80 inline-block"></span>
+            <span id="activeCmdPill" class="ml-2 font-mono text-xs text-slate-400 hidden"></span>
+          </div>
+          <span id="execStatusPill" class="text-xs font-mono text-slate-400">Idle &bull; Ready</span>
+        </div>
+        <pre id="terminalOutput" class="p-6 font-mono text-xs text-slate-200 overflow-y-auto max-h-[550px] leading-relaxed whitespace-pre-wrap"><span class="text-slate-500"># MLPlatform Execution Console Ready. Select an action or drill to stream real-time logs.</span></pre>
+      </div>
+
+    </div>
+
+    <!-- ================= PAGE 6: ECOSYSTEM PORTALS ================= -->
+    <div id="view-ecosystem" class="view-panel hidden space-y-8">
+      
+      <div class="pb-2 border-b border-canvas-border">
+        <h1 class="text-2xl font-extrabold tracking-tight text-white flex items-center gap-2.5">
+          Ecosystem &amp; Observability Portals
+        </h1>
+        <p class="text-xs text-slate-400 mt-1">Direct launchpad into pre-provisioned in-cluster dashboards and telemetry services</p>
+      </div>
+
+      <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+        
+        <!-- Grafana -->
+        <a href="http://localhost:3000" target="_blank" class="bg-canvas-card hover:bg-canvas-cardHover border border-canvas-border hover:border-amber-500/50 rounded-2xl p-6 transition flex flex-col justify-between group shadow-sm">
+          <div>
+            <div class="flex items-center justify-between mb-3">
+              <span class="text-2xl">📊</span>
+              <span class="text-xs font-mono px-2 py-0.5 rounded bg-amber-500/10 text-amber-400 border border-amber-500/20 font-bold">:3000</span>
+            </div>
+            <h3 class="text-base font-bold text-white group-hover:text-amber-400 transition-colors">Grafana Dashboards</h3>
+            <p class="text-xs text-slate-400 mt-2 leading-relaxed">
+              Pre-provisioned dashboards for ML Platform Health, Serving Performance (P95/error rates), and Statistical Drift Monitoring.
+            </p>
+          </div>
+          <div class="mt-6 pt-3 border-t border-canvas-border flex items-center justify-between text-xs text-amber-400 font-semibold">
+            <span>Open Grafana</span>
+            <span>&rarr;</span>
+          </div>
+        </a>
+
+        <!-- MLflow -->
+        <a href="http://localhost:5000" target="_blank" class="bg-canvas-card hover:bg-canvas-cardHover border border-canvas-border hover:border-cyan-500/50 rounded-2xl p-6 transition flex flex-col justify-between group shadow-sm">
+          <div>
+            <div class="flex items-center justify-between mb-3">
+              <span class="text-2xl">🧪</span>
+              <span class="text-xs font-mono px-2 py-0.5 rounded bg-cyan-500/10 text-cyan-400 border border-cyan-500/20 font-bold">:5000</span>
+            </div>
+            <h3 class="text-base font-bold text-white group-hover:text-cyan-400 transition-colors">MLflow Model Registry</h3>
+            <p class="text-xs text-slate-400 mt-2 leading-relaxed">
+              Track experiments, model runs, candidate vs champion version tags, ROC/AUC metrics, and S3 artifact lineage.
+            </p>
+          </div>
+          <div class="mt-6 pt-3 border-t border-canvas-border flex items-center justify-between text-xs text-cyan-400 font-semibold">
+            <span>Open MLflow</span>
+            <span>&rarr;</span>
+          </div>
+        </a>
+
+        <!-- Swagger -->
+        <a href="http://localhost:8080/docs" target="_blank" class="bg-canvas-card hover:bg-canvas-cardHover border border-canvas-border hover:border-emerald-500/50 rounded-2xl p-6 transition flex flex-col justify-between group shadow-sm">
+          <div>
+            <div class="flex items-center justify-between mb-3">
+              <span class="text-2xl">⚡</span>
+              <span class="text-xs font-mono px-2 py-0.5 rounded bg-emerald-500/10 text-emerald-400 border border-emerald-500/20 font-bold">:8080/docs</span>
+            </div>
+            <h3 class="text-base font-bold text-white group-hover:text-emerald-400 transition-colors">FastAPI Swagger UI</h3>
+            <p class="text-xs text-slate-400 mt-2 leading-relaxed">
+              Interactive OpenAPI documentation. Test <code class="text-slate-300">/predict</code>, <code class="text-slate-300">/model-info</code>, and readiness probes directly in browser.
+            </p>
+          </div>
+          <div class="mt-6 pt-3 border-t border-canvas-border flex items-center justify-between text-xs text-emerald-400 font-semibold">
+            <span>Open Swagger API</span>
+            <span>&rarr;</span>
+          </div>
+        </a>
+
+        <!-- MinIO -->
+        <a href="http://localhost:9001" target="_blank" class="bg-canvas-card hover:bg-canvas-cardHover border border-canvas-border hover:border-rose-500/50 rounded-2xl p-6 transition flex flex-col justify-between group shadow-sm">
+          <div>
+            <div class="flex items-center justify-between mb-3">
+              <span class="text-2xl">📦</span>
+              <span class="text-xs font-mono px-2 py-0.5 rounded bg-rose-500/10 text-rose-400 border border-rose-500/20 font-bold">:9001</span>
+            </div>
+            <h3 class="text-base font-bold text-white group-hover:text-rose-400 transition-colors">MinIO S3 Object Storage</h3>
+            <p class="text-xs text-slate-400 mt-2 leading-relaxed">
+              S3 bucket browser containing offline Feast parquet files (<code class="text-slate-300">feast-offline</code>) and MLflow model binaries.
+            </p>
+          </div>
+          <div class="mt-6 pt-3 border-t border-canvas-border flex items-center justify-between text-xs text-rose-400 font-semibold">
+            <span>Open MinIO Console</span>
+            <span>&rarr;</span>
+          </div>
+        </a>
+
+        <!-- Alertmanager -->
+        <a href="http://localhost:9093" target="_blank" class="bg-canvas-card hover:bg-canvas-cardHover border border-canvas-border hover:border-purple-500/50 rounded-2xl p-6 transition flex flex-col justify-between group shadow-sm">
+          <div>
+            <div class="flex items-center justify-between mb-3">
+              <span class="text-2xl">🚨</span>
+              <span class="text-xs font-mono px-2 py-0.5 rounded bg-purple-500/10 text-purple-400 border border-purple-500/20 font-bold">:9093</span>
+            </div>
+            <h3 class="text-base font-bold text-white group-hover:text-purple-400 transition-colors">Prometheus Alertmanager</h3>
+            <p class="text-xs text-slate-400 mt-2 leading-relaxed">
+              Inspect firing alerts, alert routing rules, and the webhook dispatching to the in-cluster auto-remediator.
+            </p>
+          </div>
+          <div class="mt-6 pt-3 border-t border-canvas-border flex items-center justify-between text-xs text-purple-400 font-semibold">
+            <span>Open Alertmanager</span>
+            <span>&rarr;</span>
+          </div>
+        </a>
+
+      </div>
+
+    </div>
 
   </main>
 
-  <!-- Log Viewer Modal -->
-  <div id="logModal" class="hidden fixed inset-0 z-50 bg-black/75 backdrop-blur-sm flex items-center justify-center p-6">
-    <div class="bg-dark-card border border-dark-border rounded-2xl w-full max-w-4xl max-h-[85vh] flex flex-col shadow-2xl">
-      <div class="px-6 py-4 border-b border-dark-border flex items-center justify-between">
+  <!-- ================= LOG VIEWER MODAL ================= -->
+  <div id="logModal" class="hidden fixed inset-0 z-50 bg-black/80 backdrop-blur-md flex items-center justify-center p-6">
+    <div class="bg-canvas-surface border border-canvas-border rounded-2xl w-full max-w-4xl max-h-[85vh] flex flex-col shadow-2xl">
+      <div class="px-6 py-4 border-b border-canvas-border flex items-center justify-between">
         <div>
           <h3 id="modalPodTitle" class="text-sm font-bold text-white font-mono">pod-name</h3>
-          <p class="text-xs text-dark-muted">Latest 150 log lines</p>
+          <p class="text-xs text-slate-400">Tail logs (most recent 150 lines)</p>
         </div>
-        <button onclick="closeLogModal()" class="text-dark-muted hover:text-white text-lg font-bold">&times;</button>
+        <button onclick="closeLogModal()" class="text-slate-400 hover:text-white text-lg font-bold">&times;</button>
       </div>
-      <div class="p-6 overflow-y-auto flex-1 bg-[#07090e]">
-        <pre id="modalLogContent" class="font-mono text-xs text-slate-200 whitespace-pre-wrap">Loading...</pre>
+      <div class="p-6 overflow-y-auto flex-1 bg-[#05080e]">
+        <pre id="modalLogContent" class="font-mono text-xs text-slate-200 whitespace-pre-wrap leading-relaxed">Loading...</pre>
       </div>
     </div>
   </div>
 
-  <!-- JavaScript Client Logic -->
+  <!-- ================= JAVASCRIPT CONTROLLER ================= -->
   <script>
     let activeEventSource = null;
+    let currentTab = 'overview';
 
-    // Initial load
+    // Group mapping for 23 UCI features
+    const FEATURE_GROUPS = {
+      demographics: ['limit_bal', 'sex', 'education', 'marriage', 'age'],
+      repayment: ['pay_0', 'pay_2', 'pay_3', 'pay_4', 'pay_5', 'pay_6'],
+      bills: ['bill_amt1', 'bill_amt2', 'bill_amt3', 'bill_amt4', 'bill_amt5', 'bill_amt6'],
+      payments: ['pay_amt1', 'pay_amt2', 'pay_amt3', 'pay_amt4', 'pay_amt5', 'pay_amt6']
+    };
+
+    // Navigation Tab Switching
+    function switchTab(tabId) {
+      currentTab = tabId;
+      window.location.hash = tabId;
+
+      document.querySelectorAll('.view-panel').forEach(el => el.classList.add('hidden'));
+      document.querySelectorAll('.tab-btn').forEach(el => el.classList.remove('active'));
+
+      const activeView = document.getElementById(`view-${tabId}`);
+      const activeBtn = document.getElementById(`tab-${tabId}`);
+      if (activeView) activeView.classList.remove('hidden');
+      if (activeBtn) activeBtn.classList.add('active');
+
+      if (tabId === 'scoring') loadCustomerProfile(document.getElementById('inputCustomerId').value || '1');
+      if (tabId === 'chaos') loadPods();
+    }
+
+    // Initialize on Page Load
     document.addEventListener('DOMContentLoaded', () => {
+      const initialTab = window.location.hash.replace('#', '') || 'overview';
+      switchTab(initialTab);
+
       refreshData();
       setInterval(pollMetrics, 2000);
       setInterval(pollStatus, 4000);
-      setInterval(loadPods, 1500);
+      setInterval(() => {
+        if (currentTab === 'chaos' || currentTab === 'overview') loadPods();
+      }, 2000);
     });
 
-    function setCustomerId(id) {
-      document.getElementById('inputCustomerId').value = id;
-      runPrediction();
-    }
+    window.addEventListener('hashchange', () => {
+      const hashTab = window.location.hash.replace('#', '') || 'overview';
+      if (hashTab !== currentTab) switchTab(hashTab);
+    });
 
+    // Refresh all state
     async function refreshData() {
       const icon = document.getElementById('refreshIcon');
       if (icon) icon.classList.add('animate-spin');
@@ -597,38 +1017,59 @@
       if (icon) icon.classList.remove('animate-spin');
     }
 
+    // Toast notifications
+    function showToast(title, message, icon = 'ℹ️') {
+      const toast = document.getElementById('toastNotification');
+      document.getElementById('toastTitle').innerText = title;
+      document.getElementById('toastMessage').innerText = message;
+      document.getElementById('toastIcon').innerText = icon;
+      toast.className = 'fixed bottom-6 right-6 z-50 max-w-md p-4 rounded-xl shadow-2xl transition-all duration-300 transform border flex items-center justify-between gap-3 bg-canvas-card border-brand-500/50';
+      toast.classList.remove('hidden');
+      setTimeout(hideToast, 6000);
+    }
+
+    function hideToast() {
+      document.getElementById('toastNotification').classList.add('hidden');
+    }
+
+    // Poll Cluster & Model Status
     async function pollStatus() {
       try {
         const res = await fetch('/api/status');
         if (!res.ok) return;
         const data = await res.json();
 
-        // Cluster status
-        const clusterBadge = document.getElementById('clusterBadge');
-        if (data.nodes_ready > 0) {
-          clusterBadge.innerHTML = `<span class="w-1.5 h-1.5 rounded-full bg-emerald-400 animate-ping"></span> Kind (${data.nodes_ready}/${data.nodes_total} Nodes Ready)`;
-          clusterBadge.className = 'px-2 py-0.5 text-xs font-semibold rounded-full bg-emerald-500/10 text-emerald-400 border border-emerald-500/20 flex items-center gap-1.5';
+        // Model version pill
+        if (data.serving_model) {
+          document.getElementById('navModelBadge').innerText = `v${data.serving_model.version} • UCI Taiwan`;
+          document.getElementById('infoModelName').innerText = `loan-default (Version ${data.serving_model.version})`;
+          document.getElementById('scoringModelVer').innerText = `loan-default (v${data.serving_model.version})`;
         }
 
         // Drift status
-        const driftBadge = document.getElementById('driftBadge');
+        const pill = document.getElementById('overviewDriftPill');
+        const driftCard = document.getElementById('driftCardState');
         if (data.drift_detected) {
-          driftBadge.innerHTML = `<span class="w-1.5 h-1.5 rounded-full bg-rose-400 animate-ping"></span> DRIFT DETECTED`;
-          driftBadge.className = 'px-2 py-0.5 text-xs font-bold rounded-full bg-rose-500/20 text-rose-400 border border-rose-500/40 animate-pulse';
+          pill.className = 'px-3 py-1 text-xs font-bold rounded-full bg-rose-500/20 text-rose-400 border border-rose-500/40 animate-pulse';
+          pill.innerHTML = `<span class="w-1.5 h-1.5 rounded-full bg-rose-400"></span> DRIFT DETECTED`;
+          if (driftCard) {
+            driftCard.className = 'text-xl font-extrabold text-rose-400 flex items-center gap-2 animate-pulse';
+            driftCard.innerHTML = `<span class="w-2.5 h-2.5 rounded-full bg-rose-400"></span> DRIFT ALERT ACTIVE`;
+          }
         } else {
-          driftBadge.innerHTML = `<span class="w-1.5 h-1.5 rounded-full bg-emerald-400"></span> Drift: Normal (0)`;
-          driftBadge.className = 'px-2 py-0.5 text-xs font-semibold rounded-full bg-emerald-500/10 text-emerald-400 border border-emerald-500/20 flex items-center gap-1.5';
-        }
-
-        // Active model
-        if (data.serving_model) {
-          document.getElementById('metricModelVer').innerText = 'v' + data.serving_model.version;
+          pill.className = 'px-3 py-1 text-xs font-semibold rounded-full bg-emerald-500/10 text-emerald-400 border border-emerald-500/20 flex items-center gap-1.5';
+          pill.innerHTML = `<span class="w-1.5 h-1.5 rounded-full bg-emerald-400"></span> Drift Status: Normal (0)`;
+          if (driftCard) {
+            driftCard.className = 'text-xl font-extrabold text-emerald-400 flex items-center gap-2';
+            driftCard.innerHTML = `<span class="w-2.5 h-2.5 rounded-full bg-emerald-400"></span> NORMAL (0 DRIFTED)`;
+          }
         }
       } catch (err) {
         console.error('Failed polling status:', err);
       }
     }
 
+    // Poll Golden Signals & PSI
     async function pollMetrics() {
       try {
         const res = await fetch('/api/metrics');
@@ -638,64 +1079,236 @@
         // Golden signals
         document.getElementById('metricRPS').innerText = data.rps.toFixed(1);
         document.getElementById('metricErrors').innerText = data.error_rate_pct.toFixed(1) + '%';
-        document.getElementById('metricP95').innerText = data.p95_latency_ms.toFixed(1);
-        document.getElementById('metricP50').innerText = data.p50_latency_ms.toFixed(1) + ' ms';
-        
+        document.getElementById('metricP95').innerText = data.p95_latency_ms !== null ? data.p95_latency_ms.toFixed(1) : '--';
+        document.getElementById('metricP50').innerText = data.p50_latency_ms !== null ? data.p50_latency_ms.toFixed(1) + ' ms' : '-- ms';
+
+        // Replicas badge
+        const badge = document.getElementById('metricReplicasBadge');
         if (data.replicas_available < data.replicas_desired) {
-          document.getElementById('metricReplicas').innerHTML = `${data.replicas_available} <span class="text-xs text-amber-400 font-bold animate-pulse">(${data.replicas_available}/${data.replicas_desired} Self-Healing...)</span>`;
+          badge.innerText = 'Self-Healing';
+          badge.className = 'text-[11px] font-bold text-amber-400 animate-pulse';
+          document.getElementById('metricReplicas').className = 'text-3xl font-extrabold text-amber-400';
         } else {
-          document.getElementById('metricReplicas').innerHTML = `${data.replicas_available} <span class="text-xs text-emerald-400 font-medium">(${data.replicas_available}/${data.replicas_desired} Healthy)</span>`;
+          badge.innerText = 'Healthy';
+          badge.className = 'text-[11px] font-semibold text-emerald-400';
+          document.getElementById('metricReplicas').className = 'text-3xl font-extrabold text-white';
         }
-        document.getElementById('metricAUC').innerText = 'AUC: ' + data.champion_auc.toFixed(3);
+        document.getElementById('metricReplicas').innerText = data.replicas_available;
 
-        // Feature PSI bars
+        // Render Grouped Feature PSI
         if (data.feature_psi) {
-          const grid = document.getElementById('feature_psi_grid');
-          for (const [feat, psi] of Object.entries(data.feature_psi)) {
-            let psiElem = document.getElementById(`psi_${feat}`);
-            let barElem = document.getElementById(`bar_${feat}`);
-            if (!psiElem && grid) {
-              const card = document.createElement('div');
-              card.className = 'p-3 rounded-xl bg-dark-bg border border-dark-border space-y-1.5';
-              card.innerHTML = `
-                <div class="flex justify-between text-xs">
-                  <span class="font-medium text-slate-300">${feat}</span>
-                  <span id="psi_${feat}" class="font-mono font-bold text-emerald-400">0.000</span>
-                </div>
-                <div class="w-full bg-slate-800 rounded-full h-2 overflow-hidden">
-                  <div id="bar_${feat}" class="h-2 rounded-full bg-emerald-500 transition-all duration-500" style="width: 2%"></div>
-                </div>
-              `;
-              grid.appendChild(card);
-              psiElem = document.getElementById(`psi_${feat}`);
-              barElem = document.getElementById(`bar_${feat}`);
-            }
-            if (psiElem && barElem) {
-              psiElem.innerText = psi.toFixed(3);
-              const pct = Math.min(Math.max((psi / 0.5) * 100, 1), 100);
-              barElem.style.width = pct + '%';
-
-              if (psi > 0.20) {
-                psiElem.className = 'font-mono font-bold text-rose-400';
-                barElem.className = 'h-2 rounded-full bg-rose-500 transition-all duration-500';
-              } else if (psi > 0.10) {
-                psiElem.className = 'font-mono font-bold text-amber-400';
-                barElem.className = 'h-2 rounded-full bg-amber-500 transition-all duration-500';
-              } else {
-                psiElem.className = 'font-mono font-bold text-emerald-400';
-                barElem.className = 'h-2 rounded-full bg-emerald-500 transition-all duration-500';
-              }
-            }
-          }
+          renderFeaturePsiGroups(data.feature_psi);
         }
       } catch (err) {
         console.error('Failed polling metrics:', err);
       }
     }
 
-    async function runPrediction() {
+    // Render 23 features into clean groups
+    function renderFeaturePsiGroups(psiData) {
+      for (const [groupName, features] of Object.entries(FEATURE_GROUPS)) {
+        const container = document.getElementById(`psi_group_${groupName}`);
+        if (!container) continue;
+
+        let html = '';
+        for (const feat of features) {
+          const psi = psiData[feat] !== undefined ? psiData[feat] : 0.0;
+          let barColor = 'bg-emerald-500';
+          let textColor = 'text-emerald-400';
+          let statusText = 'Stable';
+
+          if (psi > 0.20) {
+            barColor = 'bg-rose-500';
+            textColor = 'text-rose-400 font-bold';
+            statusText = 'Breach';
+          } else if (psi > 0.10) {
+            barColor = 'bg-amber-500';
+            textColor = 'text-amber-400 font-bold';
+            statusText = 'Elevated';
+          }
+
+          const pct = Math.min(Math.max((psi / 0.35) * 100, 2), 100);
+
+          html += `
+            <div class="p-3 rounded-xl bg-canvas-surface border border-canvas-border space-y-1.5">
+              <div class="flex justify-between items-center text-xs">
+                <span class="font-medium text-slate-300 font-mono">${feat}</span>
+                <span class="${textColor} font-mono">${psi.toFixed(3)}</span>
+              </div>
+              <div class="w-full bg-slate-800 rounded-full h-1.5 overflow-hidden">
+                <div class="h-1.5 rounded-full ${barColor} transition-all duration-500" style="width: ${pct}%"></div>
+              </div>
+              <div class="flex justify-between text-[10px] text-slate-500">
+                <span>Limit 0.25</span>
+                <span>${statusText}</span>
+              </div>
+            </div>
+          `;
+        }
+        container.innerHTML = html;
+      }
+    }
+
+    // Load serving pods & render interactive chaos cards
+    async function loadPods() {
+      const container = document.getElementById('servingPodsGrid');
+      if (!container) return;
+
+      try {
+        const res = await fetch('/api/pods');
+        if (!res.ok) return;
+        const pods = await res.json();
+
+        const servingPods = pods.filter(p => p.namespace === 'serving');
+        if (servingPods.length === 0) {
+          container.innerHTML = `<div class="p-6 col-span-2 rounded-2xl bg-canvas-card border border-canvas-border text-center text-slate-400 text-xs">No serving pods detected.</div>`;
+          return;
+        }
+
+        container.innerHTML = servingPods.map((p, idx) => {
+          let statusColor = 'bg-emerald-500/15 text-emerald-400 border-emerald-500/30';
+          let statusText = p.status;
+          let isHealthy = p.status === 'Running' && p.ready === '1/1';
+
+          if (p.status === 'Terminating') {
+            statusColor = 'bg-rose-500/25 text-rose-400 border-rose-500/50 animate-pulse font-bold';
+            statusText = '💥 Terminating';
+          } else if (p.status === 'ContainerCreating' || p.status === 'Pending') {
+            statusColor = 'bg-amber-500/25 text-amber-400 border-amber-500/50 animate-pulse font-bold';
+            statusText = '⚡ Self-Healing (Booting)';
+          }
+
+          return `
+            <div class="p-5 rounded-2xl bg-canvas-card border border-canvas-border flex flex-col justify-between shadow-sm relative overflow-hidden group hover:border-canvas-borderHover transition">
+              <div>
+                <div class="flex items-center justify-between mb-3">
+                  <div class="flex items-center gap-2">
+                    <span class="text-sm font-bold text-white font-mono">Replica #${idx + 1}</span>
+                    <span class="px-2 py-0.5 rounded text-[10px] font-mono border ${statusColor}">${statusText}</span>
+                  </div>
+                  <span class="text-xs font-mono text-slate-400">${p.age}</span>
+                </div>
+
+                <div class="space-y-1.5 text-xs text-slate-300 font-mono">
+                  <p class="truncate text-slate-400">Pod: <span class="text-white">${p.name}</span></p>
+                  <p class="text-slate-400">Ready Status: <span class="${isHealthy ? 'text-emerald-400' : 'text-amber-400'} font-bold">${p.ready}</span></p>
+                  <p class="text-slate-400">Restarts: <span class="${p.restarts > 0 ? 'text-amber-400 font-bold' : 'text-slate-300'}">${p.restarts}</span></p>
+                </div>
+              </div>
+
+              <div class="mt-5 pt-4 border-t border-canvas-border flex items-center justify-between gap-2">
+                <button onclick="viewPodLogs('${p.namespace}', '${p.name}')" class="px-3 py-1.5 rounded-lg bg-canvas-surface hover:bg-slate-800 border border-canvas-border text-xs text-slate-300 transition">
+                  Inspect Logs
+                </button>
+                ${isHealthy ? `
+                  <button onclick="killPod('${p.namespace}', '${p.name}')" class="px-3.5 py-1.5 rounded-lg bg-rose-600/20 hover:bg-rose-600 text-rose-300 hover:text-white border border-rose-500/30 text-xs font-bold transition flex items-center gap-1.5 shadow-sm">
+                    <span>💥</span> Kill Replica
+                  </button>
+                ` : `
+                  <span class="text-[11px] font-mono text-slate-500">Reconciling...</span>
+                `}
+              </div>
+            </div>
+          `;
+        }).join('');
+      } catch (err) {
+        console.error('Failed loading pods:', err);
+      }
+    }
+
+    // Kill specific pod & watch self-healing
+    async function killPod(ns, name) {
+      if (!confirm(`Trigger Pod Chaos:\n\nTerminate pod "${name}"?\n\nWatch Kubernetes immediately detect replica loss and self-heal in real time while inference remains uninterrupted.`)) return;
+
+      const banner = document.getElementById('chaosBanner');
+      if (banner) {
+        document.getElementById('chaosBannerTitle').innerText = `💥 Killed ${name}`;
+        document.getElementById('chaosBannerDesc').innerText = `Kubernetes ReplicaSet detected deficit. Replacement replica is spawning now while serving traffic continues...`;
+        banner.classList.remove('hidden');
+        setTimeout(() => banner.classList.add('hidden'), 9000);
+      }
+
+      showToast('Pod Terminated', `Deleted ${name}. Watch replacement pod boot up!`, '💥');
+
+      try {
+        await fetch(`/api/kill-pod/${ns}/${name}`, { method: 'POST' });
+        await loadPods();
+        await pollMetrics();
+      } catch (err) {
+        alert('Failed deleting pod: ' + err);
+      }
+    }
+
+    // Single prediction check from Chaos Lab
+    async function quickTestInference() {
+      showToast('Testing Serving', 'Sending test inference request to prove zero downtime...', '⚡');
+      try {
+        const res = await fetch('/api/predict', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ customer_id: '1' })
+        });
+        const data = await res.json();
+        if (data.status === 'success') {
+          showToast('Success (HTTP 200)', `Model answered in ${data.latency_ms} ms (${data.risk_level})! Zero downtime proven.`, '🛡️');
+        } else {
+          showToast('Error', data.message || 'Request failed', '❌');
+        }
+      } catch (e) {
+        showToast('Error', 'Connection failure: ' + e, '❌');
+      }
+    }
+
+    // Borrower Archetype Picker
+    function pickBorrower(id) {
+      document.getElementById('inputCustomerId').value = id;
+      loadCustomerProfile(id);
+      scoreCurrentBorrower();
+    }
+
+    function pickRandomBorrower() {
+      const randId = Math.floor(Math.random() * 30000) + 1;
+      document.getElementById('inputCustomerId').value = randId;
+      loadCustomerProfile(randId);
+      scoreCurrentBorrower();
+    }
+
+    // Fetch Borrower Profile from Backend
+    async function loadCustomerProfile(id) {
+      try {
+        const res = await fetch(`/api/customer-profile/${id}`);
+        if (!res.ok) return;
+        const data = await res.json();
+        if (data.status === 'success') {
+          document.getElementById('profLimit').innerText = '$' + data.limit_bal.toLocaleString();
+          document.getElementById('profAgeSex').innerText = `${data.age} yrs • ${data.sex}`;
+          document.getElementById('profEdu').innerText = data.education;
+          document.getElementById('profMarriage').innerText = data.marriage;
+          
+          const pay0Elem = document.getElementById('profPay0');
+          if (data.pay_0 > 0) {
+            pay0Elem.innerText = `${data.pay_0} months delay`;
+            pay0Elem.className = 'font-mono font-bold text-rose-400 text-sm';
+          } else if (data.pay_0 === 0) {
+            pay0Elem.innerText = 'On time (revolving)';
+            pay0Elem.className = 'font-mono font-bold text-emerald-400 text-sm';
+          } else {
+            pay0Elem.innerText = `Paid in full (${data.pay_0})`;
+            pay0Elem.className = 'font-mono font-bold text-emerald-400 text-sm';
+          }
+
+          document.getElementById('profBill').innerText = '$' + data.bill_amt1.toLocaleString();
+          document.getElementById('profPaid').innerText = '$' + data.pay_amt1.toLocaleString();
+        }
+      } catch (err) {
+        console.error('Failed loading customer profile:', err);
+      }
+    }
+
+    // Score Current Borrower
+    async function scoreCurrentBorrower() {
       const custId = document.getElementById('inputCustomerId').value.trim() || '1';
-      const btn = document.getElementById('btnPredict');
+      const btn = document.getElementById('btnScoreLoan');
       btn.disabled = true;
       btn.innerHTML = `<svg class="w-4 h-4 animate-spin" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15"/></svg> Scoring...`;
 
@@ -707,49 +1320,63 @@
         });
         const data = await res.json();
         btn.disabled = false;
-        btn.innerHTML = `<svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M14 5l7 7m0 0l-7 7m7-7H3"/></svg> Score Loan`;
+        btn.innerHTML = `<svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 10V3L4 14h7v7l9-11h-7z"/></svg> <span>Score Borrower</span>`;
 
         if (data.status === 'success') {
           const prob = (data.default_probability * 100).toFixed(1);
-          document.getElementById('predictProbability').innerText = prob + '%';
-          document.getElementById('predictLatency').innerText = `Latency: ${data.latency_ms} ms`;
-          document.getElementById('predictModelVer').innerText = `loan-default v${data.model_version}`;
-          document.getElementById('predictBar').style.width = prob + '%';
+          document.getElementById('probValue').innerText = prob + '%';
+          document.getElementById('probProgressBar').style.width = prob + '%';
+          document.getElementById('scoringLatencyBadge').innerText = `Latency: ${data.latency_ms} ms`;
 
-          const badge = document.getElementById('predictRiskBadge');
+          const card = document.getElementById('decisionCard');
+          const badge = document.getElementById('decisionBadge');
+          const title = document.getElementById('decisionTitle');
+          const desc = document.getElementById('decisionDesc');
+
           if (data.prediction === 1) {
-            badge.innerText = 'HIGH RISK (DEFAULT)';
-            badge.className = 'px-3 py-1 text-xs font-bold rounded-lg bg-rose-500/20 text-rose-400 border border-rose-500/40';
-            document.getElementById('predictBar').className = 'bg-rose-500 h-2.5 rounded-full transition-all duration-500';
+            card.className = 'p-5 rounded-2xl bg-rose-500/10 border border-rose-500/30 text-center mb-6 transition-all';
+            badge.className = 'inline-block px-4 py-1.5 rounded-full text-xs font-extrabold uppercase tracking-wider bg-rose-500/20 text-rose-400 border border-rose-500/40 mb-2';
+            badge.innerText = 'HIGH RISK';
+            title.innerText = '⚠️ Loan Default Predicted';
+            title.className = 'text-xl font-extrabold text-rose-400';
+            desc.innerText = `Borrower probability of default (${prob}%) exceeds safety threshold.`;
+            document.getElementById('probProgressBar').className = 'h-3 rounded-full bg-rose-500 transition-all duration-700';
           } else {
-            badge.innerText = 'LOW RISK (APPROVED)';
-            badge.className = 'px-3 py-1 text-xs font-bold rounded-lg bg-emerald-500/20 text-emerald-400 border border-emerald-500/40';
-            document.getElementById('predictBar').className = 'bg-emerald-500 h-2.5 rounded-full transition-all duration-500';
+            card.className = 'p-5 rounded-2xl bg-emerald-500/10 border border-emerald-500/30 text-center mb-6 transition-all';
+            badge.className = 'inline-block px-4 py-1.5 rounded-full text-xs font-extrabold uppercase tracking-wider bg-emerald-500/20 text-emerald-400 border border-emerald-500/40 mb-2';
+            badge.innerText = 'LOW RISK';
+            title.innerText = '🛡️ Loan Approved';
+            title.className = 'text-xl font-extrabold text-emerald-400';
+            desc.innerText = `Borrower profile demonstrates high creditworthiness (${prob}% default risk).`;
+            document.getElementById('probProgressBar').className = 'h-3 rounded-full bg-emerald-500 transition-all duration-700';
           }
         } else {
-          alert('Prediction failed: ' + (data.message || 'Unknown error'));
+          alert('Scoring failed: ' + (data.message || 'Unknown error'));
         }
       } catch (err) {
         btn.disabled = false;
-        btn.innerHTML = `Score Loan`;
+        btn.innerHTML = `Score Borrower`;
         alert('Error connecting to backend: ' + err);
       }
     }
 
+    // Streaming Action Execution (Console/Terminal)
     async function executeAction(actionName) {
       if (activeEventSource) {
-        if (!confirm('A task is already running. Terminate and start new action?')) return;
+        if (!confirm('A drill task is already running. Terminate and start new action?')) return;
         activeEventSource.close();
       }
+
+      switchTab('terminal');
 
       const term = document.getElementById('terminalOutput');
       const pill = document.getElementById('execStatusPill');
       const cmdPill = document.getElementById('activeCmdPill');
 
       pill.innerText = `Running: ${actionName}...`;
-      pill.className = 'px-2.5 py-1 text-xs font-semibold rounded-full bg-brand-500/20 text-brand-300 border border-brand-500/40 animate-pulse';
+      pill.className = 'text-xs font-mono text-brand-400 animate-pulse font-bold';
 
-      term.innerHTML += `\n<span class="text-brand-400 font-bold">▶ [${new Date().toLocaleTimeString()}] Triggering action: ${actionName}</span>\n`;
+      term.innerHTML += `\n<span class="text-brand-400 font-bold">&gt;&gt;&gt; [${new Date().toLocaleTimeString()}] Triggering platform drill: ${actionName}</span>\n`;
       term.scrollTop = term.scrollHeight;
 
       try {
@@ -764,7 +1391,6 @@
         cmdPill.innerText = `$ ${data.command}`;
         cmdPill.classList.remove('hidden');
 
-        // Connect SSE stream
         activeEventSource = new EventSource(`/api/stream/${data.execution_id}`);
 
         activeEventSource.onmessage = (event) => {
@@ -775,10 +1401,10 @@
               term.scrollTop = term.scrollHeight;
             } else if (msg.type === 'end') {
               const code = msg.exit_code;
-              term.innerHTML += `\n<span class="${code === 0 ? 'text-emerald-400' : 'text-rose-400'} font-bold">✔ Process exited with code ${code}</span>\n`;
+              term.innerHTML += `\n<span class="${code === 0 ? 'text-emerald-400' : 'text-rose-400'} font-bold">✔ Task finished with exit code ${code}</span>\n`;
               term.scrollTop = term.scrollHeight;
               pill.innerText = code === 0 ? 'Status: Success' : 'Status: Failed';
-              pill.className = code === 0 ? 'px-2.5 py-1 text-xs font-semibold rounded-full bg-emerald-500/20 text-emerald-300 border border-emerald-500/30' : 'px-2.5 py-1 text-xs font-semibold rounded-full bg-rose-500/20 text-rose-300 border border-rose-500/30';
+              pill.className = code === 0 ? 'text-xs font-mono text-emerald-400 font-bold' : 'text-xs font-mono text-rose-400 font-bold';
               activeEventSource.close();
               activeEventSource = null;
               pollMetrics();
@@ -792,110 +1418,28 @@
         activeEventSource.onerror = () => {
           activeEventSource.close();
           activeEventSource = null;
-          pill.innerText = 'Status: Stream Closed';
-          pill.className = 'px-2.5 py-1 text-xs font-semibold rounded-full bg-slate-800 text-slate-300 border border-slate-700';
+          pill.innerText = 'Stream Closed';
         };
 
       } catch (err) {
-        term.innerHTML += `<span class="text-rose-400">Error: ${err.message}</span>\n`;
+        term.innerHTML += `<span class="text-rose-400 font-bold">Error: ${err.message}</span>\n`;
         pill.innerText = 'Status: Error';
-        pill.className = 'px-2.5 py-1 text-xs font-semibold rounded-full bg-rose-500/20 text-rose-300 border border-rose-500/30';
       }
     }
 
     function clearTerminal() {
-      document.getElementById('terminalOutput').innerHTML = '<span class="text-dark-muted"># Console cleared.</span>\n';
+      document.getElementById('terminalOutput').innerHTML = '<span class="text-slate-500"># Console cleared. Ready for next drill command.</span>\n';
     }
 
     function copyTerminal() {
       const text = document.getElementById('terminalOutput').innerText;
       navigator.clipboard.writeText(text);
-      alert('Terminal contents copied to clipboard!');
-    }
-
-    async function loadPods() {
-      const tbody = document.getElementById('podsTableBody');
-      try {
-        const res = await fetch('/api/pods');
-        if (!res.ok) return;
-        const pods = await res.json();
-
-        if (pods.length === 0) {
-          tbody.innerHTML = `<tr><td colspan="7" class="px-4 py-4 text-center text-dark-muted">No pods found in platform namespaces.</td></tr>`;
-          return;
-        }
-
-        tbody.innerHTML = pods.map(p => {
-          let statusColor = 'bg-emerald-500/10 text-emerald-400 border-emerald-500/20';
-          let statusText = p.status;
-          if (p.status === 'Terminating') {
-            statusColor = 'bg-rose-500/25 text-rose-400 border-rose-500/50 animate-pulse font-bold';
-            statusText = '💥 Terminating';
-          } else if (p.status === 'ContainerCreating' || p.status === 'Pending') {
-            statusColor = 'bg-amber-500/25 text-amber-400 border-amber-500/50 animate-pulse font-bold';
-            statusText = '⚡ Self-Healing';
-          } else if (p.status !== 'Running' && p.status !== 'Completed') {
-            statusColor = 'bg-rose-500/10 text-rose-400 border-rose-500/20';
-          } else if (p.status === 'Completed') {
-            statusColor = 'bg-slate-500/10 text-slate-400 border-slate-500/20';
-          }
-
-          let nsBadge = 'bg-dark-bg text-slate-300 border-dark-border';
-          if (p.namespace === 'serving') nsBadge = 'bg-emerald-500/10 text-emerald-300 border-emerald-500/20';
-          if (p.namespace === 'data') nsBadge = 'bg-cyan-500/10 text-cyan-300 border-cyan-500/20';
-          if (p.namespace === 'observability') nsBadge = 'bg-purple-500/10 text-purple-300 border-purple-500/20';
-
-          return `
-            <tr class="hover:bg-dark-cardHover/50 transition">
-              <td class="px-4 py-3"><span class="px-2 py-0.5 rounded text-[11px] font-mono border ${nsBadge}">${p.namespace}</span></td>
-              <td class="px-4 py-3 font-mono font-medium text-white">${p.name}</td>
-              <td class="px-4 py-3 font-mono text-dark-muted">${p.ready}</td>
-              <td class="px-4 py-3"><span class="px-2 py-0.5 rounded-full text-[11px] font-semibold border ${statusColor}">${statusText}</span></td>
-              <td class="px-4 py-3 font-mono ${p.restarts > 0 ? 'text-amber-400 font-bold' : 'text-dark-muted'}">${p.restarts}</td>
-              <td class="px-4 py-3 text-dark-muted">${p.age}</td>
-              <td class="px-4 py-3 text-right">
-                <div class="flex items-center justify-end gap-1.5">
-                  ${p.namespace === 'serving' && p.status === 'Running' ? `
-                    <button onclick="killPod('${p.namespace}', '${p.name}')" 
-                      class="px-2 py-1 rounded bg-rose-500/10 hover:bg-rose-500/25 border border-rose-500/30 text-rose-400 hover:text-white text-[11px] font-semibold transition flex items-center gap-1 shadow-sm"
-                      title="Kill this serving replica to demonstrate self-healing">
-                      <span>💥</span> Kill Pod
-                    </button>
-                  ` : ''}
-                  <button onclick="viewPodLogs('${p.namespace}', '${p.name}')" class="px-2 py-1 rounded bg-dark-bg hover:bg-brand-600/20 border border-dark-border hover:border-brand-500/40 text-slate-300 hover:text-white text-[11px] font-medium transition">
-                    Logs
-                  </button>
-                </div>
-              </td>
-            </tr>
-          `;
-        }).join('');
-      } catch (err) {
-        console.error('Failed loading pods:', err);
-      }
-    }
-
-    async function killPod(ns, name) {
-      if (!confirm(`Trigger Pod Chaos:\nDelete pod "${name}" in ${ns}?\n\nWatch Kubernetes immediately detect replica loss and self-heal in real time while inference remains uninterrupted.`)) return;
-
-      const banner = document.getElementById('chaosBanner');
-      if (banner) {
-        banner.innerHTML = `<span>💥 <strong>Pod Deleted:</strong> <code class="font-mono text-white bg-slate-800 px-1.5 py-0.5 rounded">${name}</code> &mdash; Kubernetes is spawning a replacement replica now...</span><span class="text-xs font-semibold text-rose-400">Zero-Downtime Serving Active</span>`;
-        banner.classList.remove('hidden');
-        setTimeout(() => banner.classList.add('hidden'), 8000);
-      }
-      try {
-        await fetch(`/api/kill-pod/${ns}/${name}`, { method: 'POST' });
-        await loadPods();
-        await pollMetrics();
-      } catch (err) {
-        alert('Failed triggering pod deletion: ' + err);
-      }
+      showToast('Copied', 'Terminal output copied to clipboard!', '📋');
     }
 
     async function viewPodLogs(ns, name) {
       document.getElementById('modalPodTitle').innerText = `${ns} / ${name}`;
-      document.getElementById('modalLogContent').innerText = 'Loading logs...';
+      document.getElementById('modalLogContent').innerText = 'Loading logs from cluster...';
       document.getElementById('logModal').classList.remove('hidden');
 
       try {

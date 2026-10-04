@@ -16,6 +16,7 @@ from pathlib import Path
 from typing import Any
 
 import httpx
+import pandas as pd
 from fastapi import FastAPI, HTTPException
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import HTMLResponse, PlainTextResponse, StreamingResponse
@@ -451,6 +452,49 @@ async def execute_predict(req: PredictRequest) -> dict[str, Any]:
                 "message": f"Connection error: {exc}",
                 "latency_ms": round((time.perf_counter() - t0) * 1000, 2),
             }
+
+
+@app.get("/api/customer-profile/{customer_id}")
+async def get_customer_profile(customer_id: int) -> dict[str, Any]:
+    """Retrieve raw borrower profile from latest features."""
+    try:
+        parquet_path = Path("data/features_latest.parquet")
+        if not parquet_path.exists():
+            return {"status": "not_found", "message": "Dataset not found"}
+        df = pd.read_parquet(parquet_path, filters=[("customer_id", "==", customer_id)])
+        if df.empty:
+            return {
+                "status": "not_found",
+                "message": f"Customer {customer_id} not found",
+            }
+        row = df.iloc[0].to_dict()
+        education_map = {
+            1: "Graduate School",
+            2: "University",
+            3: "High School",
+            4: "Others",
+        }
+        marriage_map = {1: "Married", 2: "Single", 3: "Others"}
+        sex_map = {1: "Male", 2: "Female"}
+        return {
+            "status": "success",
+            "customer_id": customer_id,
+            "limit_bal": float(row.get("limit_bal", 0)),
+            "age": int(row.get("age", 0)),
+            "sex": sex_map.get(int(row.get("sex", 1)), "Other"),
+            "education": education_map.get(int(row.get("education", 2)), "University"),
+            "marriage": marriage_map.get(int(row.get("marriage", 2)), "Single"),
+            "pay_0": int(row.get("pay_0", 0)),
+            "bill_amt1": float(row.get("bill_amt1", 0)),
+            "pay_amt1": float(row.get("pay_amt1", 0)),
+            "features": {
+                k: float(v)
+                for k, v in row.items()
+                if k not in ("customer_id", "event_timestamp")
+            },
+        }
+    except Exception as exc:
+        return {"status": "error", "message": str(exc)}
 
 
 @app.post("/api/action")
