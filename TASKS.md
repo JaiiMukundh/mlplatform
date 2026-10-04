@@ -89,7 +89,7 @@ Checkboxes are changed only after the corresponding acceptance check has been ob
 - [x] P8.1 Implement and test drift math.
 - [x] P8.2 Implement the drift monitor.
 - [x] P8.3 Implement Kubernetes retrain triggering.
-- [ ] P8.4 Implement retraining and dispatch.
+- [x] P8.4 Implement retraining and dispatch.
 - [ ] P8.5 Export retraining metrics.
 - [ ] P8.6 Complete the ML health dashboard.
 - [ ] P8.7 Implement repeatable drift demos.

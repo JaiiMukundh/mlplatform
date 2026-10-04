@@ -9,8 +9,10 @@ readonly VERSION="${1:?model version required}"
 readonly IMAGE_TAG="${2:-dev}"
 readonly MLFLOW="${MLFLOW_TRACKING_URI:-http://localhost:5000}"
 readonly MODEL="${MODEL_NAME:-loan-default}"
-readonly STAGING_URL="http://localhost:8081"
-readonly PROD_URL="http://localhost:8080"
+# Overridable for in-cluster execution (retrain Job): the runner uses host
+# NodePorts, the cluster uses ClusterIP DNS names.
+readonly STAGING_URL="${STAGING_URL:-http://localhost:8081}"
+readonly PROD_URL="${PROD_URL:-http://localhost:8080}"
 
 alias_version() {
   curl -s "${MLFLOW}/api/2.0/mlflow/registered-models/get?name=${MODEL}" |
@@ -103,5 +105,5 @@ python3 scripts/loadcheck.py --url "${PROD_URL}" --total 100 --rps 10 ||
 
 echo "=== RELEASE COMPLETE ==="
 echo "model=${MODEL} version=${VERSION} previous_champion=${PREV_CHAMPION:-none}"
-echo "gate_report.json:"
-cat gate_report.json
+echo "${GATE_REPORT:-gate_report.json}:"
+cat "${GATE_REPORT:-gate_report.json}"

@@ -8,6 +8,8 @@ ENV PIP_DISABLE_PIP_VERSION_CHECK=1 \
 # Pinned training stack (P6.2/P6.4). Pandas resolves to 2.x via the feast
 # constraint; this image is isolated from the serving image (pandas 3).
 # psycopg is required for the Feast SQL registry (postgresql+psycopg://).
+# pydantic/pydantic-settings carry mlp_common.config + schemas (same pins as
+# the root package); the full root package cannot install here (pandas<3).
 RUN pip install \
       feast==0.66.0 \
       mlflow==3.16.1 \
@@ -17,6 +19,8 @@ RUN pip install \
       boto3==1.43.106 \
       redis==8.1.0 \
       s3fs==2026.9.0 \
+      pydantic==2.13.5 \
+      pydantic-settings==2.15.0 \
       "psycopg[binary]==3.3.6"
 
 RUN groupadd --system --gid 10001 mlplatform \

@@ -1,6 +1,8 @@
 #!/usr/bin/env bash
 # Recreate an idempotent Job and fail promptly with logs on terminal failure.
 set -Eeuo pipefail
+command -v kubectl >/dev/null || { echo "ERROR: kubectl not found" >&2; exit 1; }
+command -v jq >/dev/null || { echo "ERROR: jq not found" >&2; exit 1; }
 manifest="${1:?job manifest required}"
 namespace="${2:-data}"
 name="$(kubectl create --dry-run=client -f "$manifest" -o jsonpath='{.metadata.name}')"

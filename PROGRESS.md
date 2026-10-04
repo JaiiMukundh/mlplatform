@@ -394,3 +394,14 @@ Only observed command output is recorded here.
   retrain. A clean-room self-heal run is the next action.
 - Next action: finish P8.4 retraining and dispatch on a reset baseline plus a
   newly simulated drift snapshot.
+- P8.4 PASS (2026-10-04) — after `make reset-demo` aligned generated baseline
+  data through 2026-10-01 with champion v2, `simulate_drift --scenario both`
+  measured champion AUC 0.8562 -> 0.6714 (drop 0.1848). The automatic Job
+  `retrain-2-1791105711` registered MLflow v70 with `trigger=drift`,
+  `parent_champion=2`, test AUC 0.8349, and passed the shared gate, 2,000-request
+  staging load check (p95 17.5 ms, 0% errors), prod rollout, and 100-request
+  verification. `/model-info` reported v70 on prod; the next monitor cycles
+  reported `model_drift_detected=0` with PSI 0.0008–0.0122 across all six
+  features. The Job completed successfully and local dispatch used the same
+  release scripts as CI.
+- Next action: finish P8.5 retraining metrics/alert and P8.6 dashboard panels.

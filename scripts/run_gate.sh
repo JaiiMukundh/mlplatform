@@ -1,12 +1,13 @@
 #!/usr/bin/env bash
 # Score one candidate version through the release gate in-cluster.
 # Usage: VERSION=2 bash scripts/run_gate.sh
-# Prints the gate verdict and leaves gate_report.json in the working directory.
-# Exit 0 on PASS, 1 on REJECT (or Job failure).
+# Prints the gate verdict and leaves the JSON report at
+# ${GATE_REPORT_OUT:-gate_report.json}. Exit 0 on PASS, 1 on REJECT.
 set -Eeuo pipefail
 
 readonly VERSION="${VERSION:?candidate VERSION required (e.g. VERSION=2)}"
 readonly RENDERED="/tmp/gate-job.rendered.yaml"
+readonly REPORT_OUT="${GATE_REPORT_OUT:-gate_report.json}"
 
 sed -e "s/__CANDIDATE__/${VERSION}/" deploy/gate/gate-job.yaml >"${RENDERED}"
 LOGS="$(mktemp)"
@@ -19,6 +20,7 @@ else
 fi
 cat "${LOGS}"
 python3 - "${LOGS}" <<'EOF'
+import os
 import re
 import sys
 
@@ -29,7 +31,8 @@ report = re.search(
     r"GATE_REPORT_BEGIN\n(\{.*?\n\})\nGATE_REPORT_END", logs, re.DOTALL
 )
 if report:
-    open("gate_report.json", "w").write(report.group(1) + "\n")
-    print("gate_report.json written")
+    out = os.environ.get("GATE_REPORT_OUT", "gate_report.json")
+    open(out, "w").write(report.group(1) + "\n")
+    print(f"{out} written")
 EOF
 exit "${GATE_STATUS}"

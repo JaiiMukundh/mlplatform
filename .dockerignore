@@ -12,11 +12,22 @@ coverage.xml
 *.tfstate*
 docs
 deploy
+# The retrain image releases the model-api chart in-cluster (P8.4).
+!deploy/charts/model-api/
+!deploy/gate/
 infra
 tests
 scripts
 # The training image runs the release gate in-cluster (P7.1).
 !scripts/gate.py
+# The retrain image runs the same release scripts as the workflow (P8.4).
+!scripts/model_release_local.sh
+!scripts/deploy.sh
+!scripts/smoke.sh
+!scripts/loadcheck.py
+!scripts/run_gate.sh
+!scripts/run_job.sh
+!scripts/install_k8s_tools.py
 # Rendered Feast config contains the Postgres password: never bake it into an image.
 feature_repo/feature_store.yaml
 mlruns
