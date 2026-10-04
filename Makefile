@@ -136,3 +136,7 @@ aws-apply: ## [HUMAN] Apply AWS infrastructure (strictly human action under P9.6
 aws-destroy: ## [HUMAN] Destroy AWS infrastructure.
 	@tofu -chdir=infra/envs/aws destroy
 
+ui: ## Launch the Central Management and Demo Dashboard (http://localhost:8050).
+	@echo "Starting Central Management UI on http://localhost:8050 ..."
+	@uv run python -m ui.app
+
