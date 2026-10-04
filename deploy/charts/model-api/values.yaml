@@ -94,3 +94,6 @@ probes:
     path: /healthz
   readiness:
     path: /readyz
+
+networkPolicy:
+  enabled: true

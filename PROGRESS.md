@@ -441,5 +441,10 @@ Only observed command output is recorded here.
   Feast feature store definitions, MLflow model promotion (v1 -> v2), and 3/3 e2e
   test suites passing (`test_serving_contract`, `test_serving_survives_pod_deletion`,
   `test_model_self_healing_loop`).
-- Next action: implement P9.3 hardening checklist (non-root containers, resource
-  limits, NetworkPolicy, RBAC review, secrets scan).
+- P9.3 PASS (2026-10-04) — Hardening audit verified against live cluster: all 6 Dockerfiles
+  execute as non-root (`USER 10001:10001`) with clean hadolint runs; resource requests and
+  limits set on all services; NetworkPolicy default-deny and egress whitelist active in
+  serving namespace; RBAC least-privilege verified via `kubectl auth can-i` (remediator and
+  drift-monitor strictly scoped); and Gitleaks scan scanned 48 commits with 0 leaks found.
+  Documented in `docs/hardening.md`.
+- Next action: implement P9.4 failure modes matrix and experiment verification.
