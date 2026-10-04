@@ -484,4 +484,9 @@ Only observed command output is recorded here.
   alternatives considered matrix (Kind vs AWS, pinned versions vs floating aliases, MLflow artifact baseline vs
   rolling window, Alloy vs Promtail), enterprise security hardening (UID 10001, NetworkPolicy default-deny,
   RBAC least privilege), comprehensive financial cost breakdown ($0.00 local vs ~$0.27/hr AWS), and future roadmap.
-- Next action: implement P10.4 add the contributions template.
+- P10.4 PASS (2026-10-04) — Student contributions template established in `docs/contributions.md`:
+  defines ownership matrix and technical domains across the three students (Student 1: IaC, Kind, Kubernetes,
+  remediation; Student 2: model serving, Feast feature store, MLflow registry, parity; Student 3: statistical
+  drift monitoring, autonomous retraining loop, quality release gates, CI/CD); provides commit tracking
+  stubs and targeted viva defense questions for each student's specialization.
+- Next action: implement P10.5 write the demo runbook.

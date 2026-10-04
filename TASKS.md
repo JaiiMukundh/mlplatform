@@ -111,7 +111,7 @@ Checkboxes are changed only after the corresponding acceptance check has been ob
 - [x] P10.1 Document architecture.
 - [x] P10.2 Complete the runbook.
 - [x] P10.3 Write the technical design document.
-- [ ] P10.4 Add the contributions template.
+- [x] P10.4 Add the contributions template.
 - [ ] P10.5 Write the demo runbook.
 - [ ] P10.6 Complete the README.
 - [ ] P10.7 Add and update the human-provided viva guide.
