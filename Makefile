@@ -101,7 +101,7 @@ traffic: ## Generate prediction traffic.
 	@uv run python scripts/traffic.py --rps 10 --duration 30 --url http://localhost:8080
 
 demo-infra: ## Demonstrate Kubernetes and alert self-healing.
-	@echo "TODO(P5.7): demo-infra"
+	@bash scripts/chaos_alert.sh
 
 demo-model: ## Demonstrate drift-triggered retraining and release.
 	@bash scripts/demo_model.sh
@@ -114,3 +114,25 @@ tofu-local-apply: ## Apply the local OpenTofu stack.
 
 tofu-local-destroy: ## Destroy the local OpenTofu stack.
 	@tofu -chdir=infra/envs/local destroy -auto-approve
+
+aws-init: ## Initialize OpenTofu AWS configuration without remote state.
+	@tofu -chdir=infra/envs/aws init -backend=false
+
+aws-validate: ## Validate OpenTofu AWS configuration syntax.
+	@tofu -chdir=infra/envs/aws validate
+
+aws-plan: ## Run OpenTofu plan against AWS (requires AWS credentials; non-billable).
+	@tofu -chdir=infra/envs/aws plan
+
+aws-apply: ## [HUMAN] Apply AWS infrastructure (strictly human action under P9.6).
+	@echo "========================================================================"
+	@echo "STOP: AWS apply creates billable cloud resources."
+	@echo "Per AGENTS.md Rule 12 and P9.6, this step must be run by a HUMAN."
+	@echo "Follow the step-by-step checklist in docs/aws-port.md."
+	@echo "When ready, execute manually: tofu -chdir=infra/envs/aws apply"
+	@echo "========================================================================"
+	@exit 1
+
+aws-destroy: ## [HUMAN] Destroy AWS infrastructure.
+	@tofu -chdir=infra/envs/aws destroy
+

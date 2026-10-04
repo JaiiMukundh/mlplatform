@@ -97,3 +97,8 @@ probes:
 
 networkPolicy:
   enabled: true
+
+serviceAccount:
+  create: false
+  name: ""
+  annotations: {}

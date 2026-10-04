@@ -20,6 +20,9 @@ spec:
       labels:
         {{- include "model-api.selectorLabels" . | nindent 8 }}
     spec:
+      {{- if and .Values.serviceAccount (or .Values.serviceAccount.create .Values.serviceAccount.name) }}
+      serviceAccountName: {{ default (include "model-api.fullname" .) .Values.serviceAccount.name }}
+      {{- end }}
       securityContext:
         runAsNonRoot: true
         runAsUser: 10001

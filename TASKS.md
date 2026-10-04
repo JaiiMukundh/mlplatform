@@ -103,7 +103,7 @@ Checkboxes are changed only after the corresponding acceptance check has been ob
 - [x] P9.2 Prove a clean-room rebuild.
 - [x] P9.3 Complete hardening.
 - [x] P9.4 Document and test failure modes.
-- [ ] P9.5 Prepare the AWS port.
+- [x] P9.5 Prepare the AWS port.
 - [ ] P9.6 Execute the AWS port. (human)
 
 ## P10 — Documentation and Viva Pack

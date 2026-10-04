@@ -455,5 +455,12 @@ Only observed command output is recorded here.
   `make feast-rematerialize` restoring full feature cache within 14s; (3) MLflow down at
   startup kept unready pods from entering Service endpoints, preserving traffic for
   surviving replicas; (4) MinIO down proved runtime serving isolation with live predictions
-  continuing at 200 OK.
-- Next action: implement P9.5 AWS port preparation.
+- P9.5 PASS (2026-10-04) — AWS port preparation complete:
+  `make aws-init && make aws-validate` reported `Success! The configuration is valid`;
+  Helm values overlay `deploy/charts/model-api/values-aws.yaml` created with IRSA ServiceAccount
+  support, ECR repository mapping, and stripped endpoint overrides; `deploy/charts/model-api/templates/serviceaccount.yaml`
+  and `deployment.yaml` updated to render IRSA annotations; `Makefile` updated with `aws-init`,
+  `aws-validate`, `aws-plan`, `aws-apply` (safety blocked with human guardrail message), and
+  `aws-destroy`; comprehensive runbook compiled in `docs/aws-port.md` covering cost estimation
+  (~$0.27/hr), guardrails, OIDC CI/CD configuration, and teardown verification.
+- Next action: implement P10.1 architecture documentation.

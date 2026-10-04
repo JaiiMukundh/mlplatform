@@ -1,0 +1,59 @@
+# AWS Helm values overlay for model-api.
+# Applied with:
+#   helm upgrade --install model-api deploy/charts/model-api \
+#     -f deploy/charts/model-api/values.yaml \
+#     -f deploy/charts/model-api/values-aws.yaml \
+#     --namespace serving
+
+image:
+  # Overridden with ECR repository URL from OpenTofu output `ecr_repositories.model-api`
+  repository: "${AWS_ACCOUNT_ID}.dkr.ecr.${AWS_REGION}.amazonaws.com/mlp-model-api"
+  tag: "v1.0.0"
+  pullPolicy: IfNotPresent
+
+service:
+  # LoadBalancer provisions an AWS Network Load Balancer (or use NodePort to save AWS hourly LB cost)
+  type: LoadBalancer
+  port: 8080
+
+serviceAccount:
+  create: true
+  name: "model-api"
+  annotations:
+    # IRSA role created by infra/modules/iam: arn:aws:iam::<ACCOUNT_ID>:role/mlp-model-api
+    eks.amazonaws.com/role-arn: "arn:aws:iam://${AWS_ACCOUNT_ID}:role/mlp-model-api"
+
+env:
+  MODEL_NAME: loan-default
+  MODEL_SOURCE: mlflow
+  FEATURE_SOURCE: feast
+  FEATURE_SERVICE: loan_default_v1
+  MLFLOW_TRACKING_URI: http://mlflow.data.svc:5000
+  REDIS_URL: redis://redis.data.svc:6379/0
+  LOG_LEVEL: INFO
+  # NOTE: Local MinIO endpoint overrides (*_ENDPOINT_URL) are completely removed;
+  # AWS SDK automatically resolves real S3 endpoints and adopts IRSA web identity tokens.
+
+database:
+  # Points to RDS PostgreSQL instance provisioned by OpenTofu (module.db)
+  enabled: true
+  secretName: rds-app
+  secretKey: database-url
+
+modelFiles:
+  # File-based MinIO fallback disabled: MLflow artifact store uses S3 directly via IRSA
+  enabled: false
+
+resources:
+  requests:
+    cpu: 250m
+    memory: 512Mi
+  limits:
+    cpu: 1000m
+    memory: 1Gi
+
+autoscaling:
+  enabled: true
+  minReplicas: 2
+  maxReplicas: 10
+  targetCPUUtilizationPercentage: 70
