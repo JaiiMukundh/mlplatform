@@ -374,6 +374,35 @@ async def get_pod_logs(namespace: str, pod_name: str) -> PlainTextResponse:
         )
 
 
+@app.post("/api/kill-pod/{namespace}/{pod_name}")
+async def kill_pod(namespace: str, pod_name: str) -> dict[str, Any]:
+    """Delete a pod asynchronously to demonstrate real-time Kubernetes self-healing."""
+    if namespace not in ("serving", "staging", "data", "observability"):
+        raise HTTPException(status_code=400, detail="Invalid namespace")
+    try:
+        proc = await asyncio.create_subprocess_exec(
+            "kubectl",
+            "delete",
+            "pod",
+            pod_name,
+            "-n",
+            namespace,
+            "--now",
+            stdout=asyncio.subprocess.PIPE,
+            stderr=asyncio.subprocess.STDOUT,
+        )
+        stdout, _ = await proc.communicate()
+        out = stdout.decode("utf-8", errors="replace").strip()
+        return {
+            "status": "success" if proc.returncode == 0 else "error",
+            "pod": pod_name,
+            "namespace": namespace,
+            "output": out,
+        }
+    except Exception as exc:
+        return {"status": "error", "message": str(exc)}
+
+
 @app.post("/api/predict")
 async def execute_predict(req: PredictRequest) -> dict[str, Any]:
     """Execute live prediction via model-api for a customer ID."""

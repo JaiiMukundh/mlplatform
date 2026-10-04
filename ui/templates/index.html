@@ -529,6 +529,9 @@
         </div>
       </div>
 
+      <!-- Floating Chaos Banner -->
+      <div id="chaosBanner" class="hidden mb-4 p-3.5 rounded-xl bg-rose-500/20 border border-rose-500/40 text-rose-300 text-xs flex items-center justify-between animate-pulse shadow-lg"></div>
+
       <!-- Pods Table -->
       <div class="overflow-x-auto rounded-xl border border-dark-border">
         <table class="w-full text-left text-xs">
@@ -577,8 +580,9 @@
     // Initial load
     document.addEventListener('DOMContentLoaded', () => {
       refreshData();
-      setInterval(pollMetrics, 2500);
-      setInterval(pollStatus, 5000);
+      setInterval(pollMetrics, 2000);
+      setInterval(pollStatus, 4000);
+      setInterval(loadPods, 1500);
     });
 
     function setCustomerId(id) {
@@ -636,7 +640,12 @@
         document.getElementById('metricErrors').innerText = data.error_rate_pct.toFixed(1) + '%';
         document.getElementById('metricP95').innerText = data.p95_latency_ms.toFixed(1);
         document.getElementById('metricP50').innerText = data.p50_latency_ms.toFixed(1) + ' ms';
-        document.getElementById('metricReplicas').innerText = data.replicas_available;
+        
+        if (data.replicas_available < data.replicas_desired) {
+          document.getElementById('metricReplicas').innerHTML = `${data.replicas_available} <span class="text-xs text-amber-400 font-bold animate-pulse">(${data.replicas_available}/${data.replicas_desired} Self-Healing...)</span>`;
+        } else {
+          document.getElementById('metricReplicas').innerHTML = `${data.replicas_available} <span class="text-xs text-emerald-400 font-medium">(${data.replicas_available}/${data.replicas_desired} Healthy)</span>`;
+        }
         document.getElementById('metricAUC').innerText = 'AUC: ' + data.champion_auc.toFixed(3);
 
         // Feature PSI bars
@@ -818,7 +827,14 @@
 
         tbody.innerHTML = pods.map(p => {
           let statusColor = 'bg-emerald-500/10 text-emerald-400 border-emerald-500/20';
-          if (p.status !== 'Running' && p.status !== 'Completed') {
+          let statusText = p.status;
+          if (p.status === 'Terminating') {
+            statusColor = 'bg-rose-500/25 text-rose-400 border-rose-500/50 animate-pulse font-bold';
+            statusText = '💥 Terminating';
+          } else if (p.status === 'ContainerCreating' || p.status === 'Pending') {
+            statusColor = 'bg-amber-500/25 text-amber-400 border-amber-500/50 animate-pulse font-bold';
+            statusText = '⚡ Self-Healing';
+          } else if (p.status !== 'Running' && p.status !== 'Completed') {
             statusColor = 'bg-rose-500/10 text-rose-400 border-rose-500/20';
           } else if (p.status === 'Completed') {
             statusColor = 'bg-slate-500/10 text-slate-400 border-slate-500/20';
@@ -834,19 +850,46 @@
               <td class="px-4 py-3"><span class="px-2 py-0.5 rounded text-[11px] font-mono border ${nsBadge}">${p.namespace}</span></td>
               <td class="px-4 py-3 font-mono font-medium text-white">${p.name}</td>
               <td class="px-4 py-3 font-mono text-dark-muted">${p.ready}</td>
-              <td class="px-4 py-3"><span class="px-2 py-0.5 rounded-full text-[11px] font-semibold border ${statusColor}">${p.status}</span></td>
+              <td class="px-4 py-3"><span class="px-2 py-0.5 rounded-full text-[11px] font-semibold border ${statusColor}">${statusText}</span></td>
               <td class="px-4 py-3 font-mono ${p.restarts > 0 ? 'text-amber-400 font-bold' : 'text-dark-muted'}">${p.restarts}</td>
               <td class="px-4 py-3 text-dark-muted">${p.age}</td>
               <td class="px-4 py-3 text-right">
-                <button onclick="viewPodLogs('${p.namespace}', '${p.name}')" class="px-2 py-1 rounded bg-dark-bg hover:bg-brand-600/20 border border-dark-border hover:border-brand-500/40 text-slate-300 hover:text-white text-[11px] font-medium transition">
-                  Logs
-                </button>
+                <div class="flex items-center justify-end gap-1.5">
+                  ${p.namespace === 'serving' && p.status === 'Running' ? `
+                    <button onclick="killPod('${p.namespace}', '${p.name}')" 
+                      class="px-2 py-1 rounded bg-rose-500/10 hover:bg-rose-500/25 border border-rose-500/30 text-rose-400 hover:text-white text-[11px] font-semibold transition flex items-center gap-1 shadow-sm"
+                      title="Kill this serving replica to demonstrate self-healing">
+                      <span>💥</span> Kill Pod
+                    </button>
+                  ` : ''}
+                  <button onclick="viewPodLogs('${p.namespace}', '${p.name}')" class="px-2 py-1 rounded bg-dark-bg hover:bg-brand-600/20 border border-dark-border hover:border-brand-500/40 text-slate-300 hover:text-white text-[11px] font-medium transition">
+                    Logs
+                  </button>
+                </div>
               </td>
             </tr>
           `;
         }).join('');
       } catch (err) {
         console.error('Failed loading pods:', err);
+      }
+    }
+
+    async function killPod(ns, name) {
+      if (!confirm(`Trigger Pod Chaos:\nDelete pod "${name}" in ${ns}?\n\nWatch Kubernetes immediately detect replica loss and self-heal in real time while inference remains uninterrupted.`)) return;
+
+      const banner = document.getElementById('chaosBanner');
+      if (banner) {
+        banner.innerHTML = `<span>💥 <strong>Pod Deleted:</strong> <code class="font-mono text-white bg-slate-800 px-1.5 py-0.5 rounded">${name}</code> &mdash; Kubernetes is spawning a replacement replica now...</span><span class="text-xs font-semibold text-rose-400">Zero-Downtime Serving Active</span>`;
+        banner.classList.remove('hidden');
+        setTimeout(() => banner.classList.add('hidden'), 8000);
+      }
+      try {
+        await fetch(`/api/kill-pod/${ns}/${name}`, { method: 'POST' });
+        await loadPods();
+        await pollMetrics();
+      } catch (err) {
+        alert('Failed triggering pod deletion: ' + err);
       }
     }
 
