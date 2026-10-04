@@ -489,4 +489,10 @@ Only observed command output is recorded here.
   remediation; Student 2: model serving, Feast feature store, MLflow registry, parity; Student 3: statistical
   drift monitoring, autonomous retraining loop, quality release gates, CI/CD); provides commit tracking
   stubs and targeted viva defense questions for each student's specialization.
-- Next action: implement P10.5 write the demo runbook.
+- P10.5 PASS (2026-10-04) — Live demo runbook and run-of-show script completed in `docs/demo/DEMO.md`:
+  features an exact 10-minute minute-by-minute presentation plan covering pre-demo checklist (`make reset-demo`,
+  warm caches, 4-tab browser arrangement across Grafana, MLflow, and Swagger), Flow A single-point prediction
+  and metadata inspection, Flow B infrastructure latency chaos injection (`make demo-infra`) and automated
+  HPA floor remediation, Flow C closed-loop statistical drift detection (`make demo-model`) with automated
+  Feast point-in-time retraining and zero-downtime rolling update, and rapid live fallback diagnostic protocols.
+- Next action: implement P10.6 complete the README.
