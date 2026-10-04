@@ -44,7 +44,24 @@ performed by the remediator (`remediator/`, `scripts/chaos_alert.sh` drill).
 
 ## RetrainFailed
 
-- Symptom: a `retrain-*` Job failed in `mlops` (critical). Populated in P8.
+- Symptom: a `retrain-*` Job failed in `data` (critical).
 - Automated: none.
-- Human: `kubectl -n mlops logs job/<name>`; check MLflow/MinIO and Feast;
+- Human: `kubectl -n data logs job/<name>`; check MLflow/MinIO and Feast;
   re-trigger via the drift monitor after fixing the cause.
+
+## Clean-Room Disaster Recovery & Platform Rebuild (P9.2)
+
+To reconstruct the entire platform from zero state on a fresh host:
+
+```bash
+make down && make up && make deploy-all && make e2e
+```
+
+### Measured Timing & Milestones (2026-10-04)
+
+Total wall-clock duration: **18m 46s** (automated, zero human interventions).
+
+1. `make down` (~15s): OpenTofu destroys resources, deletes Kind cluster and local registry.
+2. `make up` (~9m 20s): OpenTofu provisions 3-node Kind cluster, builds & pushes bootstrap `mlflow:dev` image, deploys Postgres, MinIO, Redis, MLflow, metrics-server, and the kube-prometheus stack, Loki, Alloy, and dashboards.
+3. `make deploy-all` (~2m 10s): Builds & pushes all service images (`model-api`, `training`, `remediator`, `drift-monitor`, `retrain`), creates namespaces, deploys remediator, seeds Feast offline store, materializes Redis, trains baseline MLflow champion v1 & candidate v2, deploys `model-api`, deploys drift monitor, and resets demo baseline.
+4. `make e2e` (~8m 26s): Runs the full end-to-end test suite (`test_serving_survives_pod_deletion`, `test_model_self_healing_loop`, `test_serving_contract`). All 3 test suites PASS.

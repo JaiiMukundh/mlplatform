@@ -5,7 +5,7 @@ SHELL := /usr/bin/env bash
 	traffic demo-infra demo-model reset-demo tofu-local-apply tofu-local-destroy \
 	build-training publish-feast-data feast-apply feast-materialize feast-verify \
 	train-mlflow gate-candidate feast-rematerialize model-release-local \
-	deploy-monitor e2e
+	deploy-monitor e2e deploy-all
 
 help: ## Show the supported project commands.
 	@awk 'BEGIN {FS = ":.*## "; printf "MLPlatform targets:\n\n"} /^[a-zA-Z0-9_-]+:.*## / {printf "  %-22s %s\n", $$1, $$2}' $(MAKEFILE_LIST)
@@ -73,8 +73,12 @@ up: ## Build the complete local platform from scratch.
 	@tofu -chdir=infra/envs/local init
 	@tofu -chdir=infra/envs/local apply -auto-approve \
 		-target=module.registry -target=module.cluster
+	@bash scripts/push_bootstrap_images.sh
 	@tofu -chdir=infra/envs/local apply -auto-approve
 	@bash scripts/bootstrap-post.sh
+
+deploy-all: ## Deploy all workloads and seed baselines after cluster creation (P9.2).
+	@bash scripts/deploy_all.sh
 
 down: ## Destroy the local platform.
 	@tofu -chdir=infra/envs/local destroy -auto-approve || true

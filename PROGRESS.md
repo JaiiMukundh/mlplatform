@@ -434,5 +434,12 @@ Only observed command output is recorded here.
   budget; the model test ran the unattended synthetic drift demo and verified
   champion/model convergence with drift cleared. Focused reruns also passed:
   infra 1 passed in 12.10s and serving 1 passed in 0.07s.
-- Next action: implement P9.2 clean-room rebuild, then the P9 hardening and
-  failure-mode work.
+- P9.2 PASS (2026-10-04) — `make down && make up && make deploy-all && make e2e`
+  executed completely unattended without manual steps. Recorded in `docs/runbook.md`:
+  total measured duration 18m46s, clean rebuild of kind cluster, OpenTofu data and
+  observability infrastructure, bootstrap image pushing, all 6 microservice images,
+  Feast feature store definitions, MLflow model promotion (v1 -> v2), and 3/3 e2e
+  test suites passing (`test_serving_contract`, `test_serving_survives_pod_deletion`,
+  `test_model_self_healing_loop`).
+- Next action: implement P9.3 hardening checklist (non-root containers, resource
+  limits, NetworkPolicy, RBAC review, secrets scan).
