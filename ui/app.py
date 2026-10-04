@@ -353,6 +353,61 @@ async def get_pods() -> list[dict[str, Any]]:
                         "age": age_str,
                     }
                 )
+
+            # Enrich serving pods with real-time Prometheus RPS and traffic share %
+            serving_pods = [p for p in pods if p["namespace"] == "serving"]
+            if serving_pods:
+                pod_rps_map: dict[str, float] = {}
+                try:
+                    pod_query = (
+                        "sum(rate(http_requests_total"
+                        "{namespace='serving'}[1m])) by (pod)"
+                    )
+                    async with httpx.AsyncClient(timeout=1.0) as client:
+                        r = await client.get(
+                            "http://localhost:9090/api/v1/query",
+                            params={"query": pod_query},
+                        )
+                        if r.status_code == 200:
+                            for item in r.json().get("data", {}).get("result", []):
+                                pname = item.get("metric", {}).get("pod")
+                                val = float(item.get("value", [0, 0])[1])
+                                if pname:
+                                    pod_rps_map[pname] = round(val, 2)
+                except Exception:
+                    pass
+
+                healthy_serving = [
+                    p
+                    for p in serving_pods
+                    if p["status"] == "Running" and p["ready"] == "1/1"
+                ]
+                total_active_rps = sum(
+                    pod_rps_map.get(p["name"], 0.0) for p in healthy_serving
+                )
+
+                for p in serving_pods:
+                    is_healthy = p["status"] == "Running" and p["ready"] == "1/1"
+                    if not is_healthy:
+                        p["traffic_share_pct"] = 0.0
+                        p["traffic_rps"] = 0.0
+                    elif len(healthy_serving) == 1:
+                        p["traffic_share_pct"] = 100.0
+                        p["traffic_rps"] = max(
+                            pod_rps_map.get(p["name"], 0.0), total_active_rps
+                        )
+                    else:
+                        if total_active_rps > 0.05:
+                            p["traffic_rps"] = pod_rps_map.get(p["name"], 0.0)
+                            p["traffic_share_pct"] = round(
+                                (p["traffic_rps"] / total_active_rps) * 100, 1
+                            )
+                        else:
+                            p["traffic_rps"] = round(pod_rps_map.get(p["name"], 0.0), 2)
+                            p["traffic_share_pct"] = round(
+                                100.0 / len(healthy_serving), 1
+                            )
+
     except Exception as exc:
         logger.error("Failed to query pods: %s", exc)
 
@@ -409,6 +464,47 @@ async def kill_pod(namespace: str, pod_name: str) -> dict[str, Any]:
         }
     except Exception as exc:
         return {"status": "error", "message": str(exc)}
+
+
+class BurstTestRequest(BaseModel):
+    count: int = 10
+
+
+@app.post("/api/burst-test")
+async def execute_burst_test(
+    req: BurstTestRequest | None = None,
+) -> dict[str, Any]:
+    """Execute rapid concurrent prediction requests to verify zero dropped calls."""
+    actual_req = req or BurstTestRequest()
+    count = max(1, min(actual_req.count, 50))
+    t0 = time.perf_counter()
+    async with httpx.AsyncClient(timeout=4.0) as client:
+
+        async def single_call(cid: int):
+            try:
+                r = await client.post(
+                    "http://localhost:8080/predict", json={"customer_ids": [str(cid)]}
+                )
+                return r.status_code == 200
+            except Exception:
+                return False
+
+        tasks = [single_call((i % 30000) + 1) for i in range(count)]
+        results = await asyncio.gather(*tasks)
+
+    elapsed_ms = round((time.perf_counter() - t0) * 1000, 1)
+    success = sum(1 for ok in results if ok)
+    failed = count - success
+    return {
+        "status": "success",
+        "total": count,
+        "successful": success,
+        "failed": failed,
+        "success_rate_pct": round((success / count) * 100, 1),
+        "total_elapsed_ms": elapsed_ms,
+        "avg_latency_ms": round(elapsed_ms / count, 1) if count > 0 else 0,
+        "zero_downtime": failed == 0,
+    }
 
 
 @app.post("/api/predict")
