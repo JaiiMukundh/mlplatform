@@ -561,9 +561,10 @@ async def execute_predict(req: PredictRequest) -> dict[str, Any]:
     # Drifted mode / Live Cluster Serving
     async with httpx.AsyncClient(timeout=5.0) as client:
         try:
+            cid_int = int(req.customer_id)
             resp = await client.post(
                 "http://localhost:8080/predict",
-                json={"customer_ids": [str(req.customer_id)]},
+                json={"customer_ids": [cid_int]},
             )
             elapsed_ms = round((time.perf_counter() - t0) * 1000, 2)
             if resp.status_code == 200:
