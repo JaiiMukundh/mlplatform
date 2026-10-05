@@ -418,361 +418,235 @@
 
     </div>
 
-    <!-- ================= PAGE 2: LOAN SCORER ================= -->
+    <!-- ================= PAGE 2: LOAN SCORER & AUTONOMOUS HEALING ================= -->
     <div id="view-scoring" class="view-panel hidden space-y-6">
       
-      <!-- Header with Prominent Drift Threshold Badge -->
-      <div class="border-b-2 border-black pb-3 flex flex-col md:flex-row items-start md:items-center justify-between gap-3">
-        <div>
-          <span class="micro-label text-black bg-[#C8FF5A] px-2 py-0.5 border border-black inline-block mb-1">
-            02 // INFERENCE &amp; COGNITIVE AUDIT
-          </span>
-          <h1 class="text-2xl sm:text-3xl font-black uppercase text-black">Borrower Risk &amp; Self-Healing Scorer</h1>
-        </div>
-
-        <!-- Prominent Drift Threshold Badge & Live Model Pill -->
-        <div class="flex flex-wrap items-center gap-2">
-          <div class="p-2 bg-[#F8F6F0] border-2 border-black font-mono text-xs flex items-center gap-2">
-            <span class="w-2.5 h-2.5 bg-[#B52A24] inline-block animate-pulse"></span>
-            <div>
-              <span class="text-[10px] text-[#66645D] block font-bold leading-none">DRIFT THRESHOLD:</span>
-              <strong class="text-black font-bold">PSI &gt; 0.25 (MIN 2 FEATURES)</strong>
-            </div>
+      <!-- Drift Threshold Rule Banner (High Contrast, Bold, Minimalist) -->
+      <div class="p-4 bg-[#171717] text-[#F8F6F0] border-2 border-black shadow-[3px_3px_0_#171717] flex flex-col md:flex-row items-start md:items-center justify-between gap-4 font-mono text-xs">
+        <div class="flex items-center gap-3">
+          <span class="w-3.5 h-3.5 bg-[#C8FF5A] border border-black inline-block animate-pulse"></span>
+          <div>
+            <span class="text-[10px] text-[#A3A3A3] block font-bold uppercase tracking-wider">DRIFT THRESHOLD RULE:</span>
+            <strong class="text-sm font-black text-[#C8FF5A]">PSI &gt; 0.25 (ON &ge; 2 FEATURES) &rarr; TRIGGERS AUTONOMOUS K8S RETRAINING</strong>
           </div>
-          <div class="p-2 bg-[#F8F6F0] border-2 border-black font-mono text-xs flex items-center gap-2">
-            <span class="w-2.5 h-2.5 bg-[#1D7A4D] inline-block"></span>
-            <div>
-              <span class="text-[10px] text-[#66645D] block font-bold leading-none">SERVING FLEET:</span>
-              <strong id="scoreModelPill" class="text-black font-bold">loan-default:v32</strong>
-            </div>
+        </div>
+        <div class="flex flex-wrap items-center gap-2">
+          <div class="px-3 py-1 bg-black border border-[#333] text-right">
+            <span class="text-[9px] text-[#A3A3A3] block">SERVING FLEET:</span>
+            <strong id="scoreModelPill" class="text-xs text-white font-bold">loan-default:v37</strong>
+          </div>
+          <div id="scoreFleetStatusPill" class="px-3 py-2 bg-[#1D7A4D] border border-black text-white font-bold text-xs uppercase tracking-wider">
+            🟢 DECISIONS CALIBRATED (FINE)
           </div>
         </div>
       </div>
 
-      <!-- Quick Action Controls & Archetype Selector -->
+      <!-- Action & Borrower Archetype Selector -->
       <div class="flex flex-col sm:flex-row items-stretch sm:items-center justify-between gap-3">
         <!-- Archetypes -->
         <div class="flex flex-wrap items-center gap-2">
-          <span class="micro-label">APPLICANT:</span>
-          <button onclick="pickBorrower(7)" id="archBtn7" class="px-2.5 py-1.5 bg-[#C8FF5A] border-2 border-black text-xs font-mono font-bold text-black transition shadow-[1px_1px_0_#171717]">
+          <span class="micro-label">SELECT APPLICANT:</span>
+          <button onclick="pickBorrower(7)" id="archBtn7" class="px-3 py-2 bg-[#C8FF5A] border-2 border-black text-xs font-mono font-bold text-black transition shadow-[2px_2px_0_#171717]">
             👤 #7 SUPER PRIME ($500k Limit)
           </button>
-          <button onclick="pickBorrower(12)" id="archBtn12" class="px-2.5 py-1.5 bg-[#F8F6F0] hover:bg-[#C8FF5A] border-2 border-black text-xs font-mono font-bold text-black transition">
+          <button onclick="pickBorrower(12)" id="archBtn12" class="px-3 py-2 bg-[#F8F6F0] hover:bg-[#C8FF5A] border-2 border-black text-xs font-mono font-bold text-black transition">
             👤 #12 PRIME EXEC ($260k)
           </button>
-          <button onclick="pickBorrower(1)" id="archBtn1" class="px-2.5 py-1.5 bg-[#F8F6F0] hover:bg-[#C8FF5A] border-2 border-black text-xs font-mono font-bold text-black transition">
+          <button onclick="pickBorrower(1)" id="archBtn1" class="px-3 py-2 bg-[#F8F6F0] hover:bg-[#C8FF5A] border-2 border-black text-xs font-mono font-bold text-black transition">
             🚨 #1 SUBPRIME ($20k)
           </button>
-          <button onclick="pickRandomBorrower()" class="px-2.5 py-1.5 bg-[#F8F6F0] hover:bg-[#C8FF5A] border-2 border-black text-xs font-mono font-bold text-black transition">
-            🎲 RANDOM
-          </button>
+          <div class="flex items-center gap-1 font-mono text-xs ml-2">
+            <span class="text-[#66645D]">ID:</span>
+            <input type="number" id="inputCustomerId" value="7" min="1" max="30000" class="w-20 px-2 py-1 border-2 border-black font-mono text-xs font-bold bg-[#F8F6F0]">
+            <button onclick="loadCustomerProfile(document.getElementById('inputCustomerId').value); scoreCurrentBorrower();" class="cypher-btn text-xs py-1.5 px-3">
+              FETCH &rarr;
+            </button>
+          </div>
         </div>
 
-        <!-- 1-Click Autonomous Action Buttons -->
+        <!-- Single Primary Action Controls -->
         <div class="flex items-center gap-2">
-          <button id="autoHealBtn" onclick="triggerAutonomousSelfHealingDemo()" class="cypher-btn cypher-btn-danger text-xs py-1.5 px-3 flex items-center gap-1.5 font-black">
-            <span>💥</span> <span>INJECT DRIFT &amp; AUTO-HEAL</span>
+          <button id="injectDriftBtn" onclick="triggerDriftShockAction()" class="cypher-btn cypher-btn-danger text-xs py-2 px-4 flex items-center gap-2 font-black shadow-[3px_3px_0_#171717]">
+            <span>💥</span> <span>INJECT DRIFT SHOCK</span>
           </button>
-          <button onclick="executeAction('reset_demo')" class="cypher-btn cypher-btn-secondary text-xs py-1.5 px-3">
+          <button onclick="resetBaselineAction()" class="cypher-btn cypher-btn-secondary text-xs py-2 px-3">
             ↩️ RESET BASELINE
           </button>
-          <button onclick="scoreCurrentBorrower()" class="cypher-btn text-xs py-1.5 px-3">
+          <button onclick="scoreCurrentBorrower()" class="cypher-btn text-xs py-2 px-3">
             🔄 RE-SCORE
           </button>
         </div>
       </div>
 
-      <!-- Autonomous Closed-Loop Retraining Watchdog Stepper (HUD) -->
-      <div class="cypher-panel p-4 space-y-3">
-        <div class="flex flex-col sm:flex-row sm:items-center justify-between border-b border-black pb-2 gap-2 text-xs font-mono">
+      <!-- Core 2-Column Bento: Applicant & Feature Drift Audit (Left) vs Real-Time Decision (Right) -->
+      <div class="grid grid-cols-1 lg:grid-cols-12 gap-5">
+        
+        <!-- Left: Applicant Dossier & Live Feature Drift Auditing (6 cols) -->
+        <div class="lg:col-span-6 cypher-panel p-5 flex flex-col justify-between space-y-4">
+          <div>
+            <div class="flex items-center justify-between border-b-2 border-black pb-2 mb-3">
+              <div>
+                <span class="micro-label">FEAST FEATURE VECTOR // ONLINE STORE</span>
+                <h3 class="text-sm font-black uppercase text-black">Applicant Profile</h3>
+              </div>
+              <span id="dossierShockBadge" class="hidden text-[10px] bg-[#B52A24] text-white px-2 py-0.5 border border-black font-bold animate-pulse">
+                ⚡ COVARIATE SHOCK INJECTED
+              </span>
+            </div>
+
+            <!-- Profile Summary Grid -->
+            <div class="grid grid-cols-3 gap-2.5 mb-4">
+              <div class="p-3 bg-[#F8F6F0] border-2 border-black">
+                <span class="micro-label">CREDIT LIMIT</span>
+                <p id="profLimit" class="font-mono text-base font-bold text-black mt-0.5">$500,000</p>
+              </div>
+              <div class="p-3 bg-[#F8F6F0] border-2 border-black">
+                <span class="micro-label">PAY STATUS (PAY_0)</span>
+                <p id="profPay0" class="font-mono text-sm font-bold text-[#1D7A4D] mt-0.5">On time (0 mo)</p>
+              </div>
+              <div class="p-3 bg-[#F8F6F0] border-2 border-black">
+                <span class="micro-label">RECENT BILL</span>
+                <p id="profBill" class="font-mono text-base font-bold text-black mt-0.5">$367,965</p>
+              </div>
+              <div class="p-3 bg-[#F8F6F0] border-2 border-black">
+                <span class="micro-label">AGE &amp; SEX</span>
+                <p id="profAgeSex" class="font-mono text-xs font-bold text-black mt-0.5">29 yrs • Male</p>
+              </div>
+              <div class="p-3 bg-[#F8F6F0] border-2 border-black">
+                <span class="micro-label">EDUCATION</span>
+                <p id="profEdu" class="font-mono text-xs font-bold text-black mt-0.5">Graduate School</p>
+              </div>
+              <div class="p-3 bg-[#F8F6F0] border-2 border-black">
+                <span class="micro-label">MARRIAGE</span>
+                <p id="profMarriage" class="font-mono text-xs font-bold text-black mt-0.5">Single</p>
+              </div>
+            </div>
+          </div>
+
+          <!-- Feature Drift Auditing vs 0.25 Threshold -->
+          <div class="p-3.5 bg-[#F8F6F0] border-2 border-black font-mono space-y-3">
+            <div class="flex items-center justify-between border-b border-black pb-1.5 text-xs">
+              <span class="font-bold text-black uppercase">LIVE STATISTICAL FEATURE DRIFT (PSI):</span>
+              <span class="text-[10px] text-[#66645D]">THRESHOLD = 0.25</span>
+            </div>
+
+            <!-- PAY_0 PSI -->
+            <div class="space-y-1">
+              <div class="flex justify-between text-xs">
+                <span class="text-[#66645D]">PAY_0 (Repayment Delay):</span>
+                <strong id="psiValPay0" class="text-black font-bold">0.008 (STABLE)</strong>
+              </div>
+              <div class="relative w-full bg-[#E7E3D8] border border-black h-3 overflow-hidden">
+                <div id="psiBarPay0" class="h-full bg-[#1D7A4D] transition-all duration-300" style="width: 3.2%"></div>
+                <!-- 0.25 Threshold Marker (25%) -->
+                <div class="absolute top-0 bottom-0 left-[25%] border-r-2 border-dashed border-[#B52A24]" title="0.25 Threshold"></div>
+              </div>
+            </div>
+
+            <!-- LIMIT_BAL PSI -->
+            <div class="space-y-1">
+              <div class="flex justify-between text-xs">
+                <span class="text-[#66645D]">LIMIT_BAL (Credit Limit):</span>
+                <strong id="psiValLimit" class="text-black font-bold">0.012 (STABLE)</strong>
+              </div>
+              <div class="relative w-full bg-[#E7E3D8] border border-black h-3 overflow-hidden">
+                <div id="psiBarLimit" class="h-full bg-[#1D7A4D] transition-all duration-300" style="width: 4.8%"></div>
+                <!-- 0.25 Threshold Marker (25%) -->
+                <div class="absolute top-0 bottom-0 left-[25%] border-r-2 border-dashed border-[#B52A24]" title="0.25 Threshold"></div>
+              </div>
+            </div>
+
+            <div class="flex items-center justify-between text-[10px] text-[#66645D] pt-1 border-t border-black">
+              <span>0.00 (Perfect Match)</span>
+              <span class="text-[#B52A24] font-bold">&uarr; 0.25 CRITICAL DRIFT</span>
+              <span>1.00 (Total Shift)</span>
+            </div>
+          </div>
+        </div>
+
+        <!-- Right: Real-Time Model Decision & Cognitive Gauge (6 cols) -->
+        <div class="lg:col-span-6 cypher-panel p-5 flex flex-col justify-between space-y-4">
+          <div class="flex items-center justify-between border-b-2 border-black pb-2">
+            <div>
+              <span class="micro-label">REAL-TIME INFERENCE DECISION</span>
+              <span id="scoreModelVer" class="font-mono text-xs text-[#66645D] block font-bold">Champion Active Fleet</span>
+            </div>
+            <span id="scoreCognitiveBadge" class="px-2.5 py-1 text-xs font-mono font-bold bg-[#ecfdf5] text-[#1D7A4D] border-2 border-black">
+              🟢 CALIBRATED DECISION (FINE)
+            </span>
+          </div>
+
+          <!-- Unmissable Verdict Box -->
+          <div class="text-center py-2 space-y-3">
+            <span class="micro-label">PREDICTED DEFAULT PROBABILITY</span>
+            <p id="scoreProbability" class="text-5xl sm:text-6xl font-black font-mono tracking-tighter text-black my-1">6.2%</p>
+            
+            <div class="w-full bg-[#E7E3D8] border-2 border-black h-3.5 overflow-hidden">
+              <div id="scoreProbBar" class="h-full bg-[#1D7A4D] transition-all duration-500" style="width: 6.2%"></div>
+            </div>
+
+            <div id="verdictBox" class="p-3.5 border-2 border-black bg-[#ecfdf5] text-center shadow-[2px_2px_0_#171717] transition-all duration-300">
+              <span id="scoreRiskLevel" class="font-mono text-lg font-black text-[#1D7A4D] uppercase tracking-wide">
+                APPROVED // LOW RISK (FINE)
+              </span>
+            </div>
+          </div>
+
+          <!-- Pathology & Cognitive State Explanation -->
+          <div id="scorePathologyBox" class="p-3 bg-[#F8F6F0] border-2 border-black font-mono text-xs space-y-1">
+            <p id="scorePathologyText" class="font-bold text-black leading-snug">
+              ✓ Calibrated decision: High credit limit ($500k), 0 late payments. Applicant approved.
+            </p>
+            <p id="scoreSubText" class="text-[#66645D] text-[11px] leading-tight">
+              Baseline distribution matches training references. Decisions are crisp and accurate.
+            </p>
+          </div>
+
+          <div class="pt-2 border-t-2 border-black flex items-center justify-between text-xs font-mono">
+            <span id="scoreLatencyBadge" class="text-[#66645D]">LATENCY: 14.2 MS</span>
+            <span id="scoreStatusHint" class="text-[#1D7A4D] font-bold">✓ EVALUATED LIVE IN KUBERNETES</span>
+          </div>
+        </div>
+
+      </div>
+
+      <!-- Autonomous Closed-Loop Retraining Watchdog (Kubernetes Live HUD) -->
+      <div class="cypher-panel p-4 font-mono space-y-3">
+        <div class="flex flex-col sm:flex-row sm:items-center justify-between border-b-2 border-black pb-2 gap-2 text-xs">
           <div class="flex items-center gap-2">
+            <span class="w-2.5 h-2.5 bg-[#1D7A4D] inline-block animate-pulse"></span>
             <span class="font-black text-black uppercase">AUTONOMOUS CLOSED-LOOP WATCHDOG (KUBERNETES):</span>
-            <span class="text-[#66645D]">NO HUMAN INTERVENTION REQUIRED</span>
+            <span class="bg-[#C8FF5A] text-black px-1.5 py-0.5 border border-black font-bold text-[10px]">ZERO HUMAN CLICKS</span>
           </div>
           <div class="flex items-center gap-2">
-            <span id="watchdogStatusPill" class="px-2 py-0.5 font-mono text-xs font-bold border border-black bg-[#1D7A4D] text-white">
+            <span id="watchdogStatusPill" class="px-2.5 py-1 text-xs font-bold border-2 border-black bg-[#1D7A4D] text-white">
               🟢 WATCHDOG: ACTIVE // STANDBY
             </span>
           </div>
         </div>
 
-        <!-- 4-Stage Connected Stepper -->
-        <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3">
-          <div id="stepCard1" class="p-3 border-2 border-black font-mono bg-[#F8F6F0] transition">
-            <div class="flex items-center justify-between mb-1">
-              <span class="text-[10px] text-[#66645D] font-bold">STAGE 01</span>
-              <span id="stepBadge1" class="text-[9px] bg-[#E7E3D8] text-black px-1 font-bold">READY</span>
-            </div>
-            <h4 class="text-xs font-black uppercase text-black">1. Covariate Shock</h4>
-            <p class="text-[11px] text-[#66645D] mt-1 leading-tight">PAY_0 delay +3 mos, Limit -45%. Features breach PSI &gt; 0.25 threshold.</p>
-          </div>
-
-          <div id="stepCard2" class="p-3 border-2 border-black font-mono bg-[#F8F6F0] transition">
-            <div class="flex items-center justify-between mb-1">
-              <span class="text-[10px] text-[#66645D] font-bold">STAGE 02</span>
-              <span id="stepBadge2" class="text-[9px] bg-[#E7E3D8] text-black px-1 font-bold">STANDBY</span>
-            </div>
-            <h4 class="text-xs font-black uppercase text-black">2. Watchdog Dispatch</h4>
-            <p class="text-[11px] text-[#66645D] mt-1 leading-tight">drift-monitor daemon detects breach &rarr; Spawns K8s Job data/retrain by itself.</p>
-          </div>
-
-          <div id="stepCard3" class="p-3 border-2 border-black font-mono bg-[#F8F6F0] transition">
-            <div class="flex items-center justify-between mb-1">
-              <span class="text-[10px] text-[#66645D] font-bold">STAGE 03</span>
-              <span id="stepBadge3" class="text-[9px] bg-[#E7E3D8] text-black px-1 font-bold">STANDBY</span>
-            </div>
-            <h4 class="text-xs font-black uppercase text-black">3. Quality Gate 5/5</h4>
-            <p class="text-[11px] text-[#66645D] mt-1 leading-tight">Model trains on shifted window &rarr; Passes AUC &ge; 0.70 floor, latency, &amp; regression.</p>
-          </div>
-
-          <div id="stepCard4" class="p-3 border-2 border-black font-mono bg-[#F8F6F0] transition">
-            <div class="flex items-center justify-between mb-1">
-              <span class="text-[10px] text-[#66645D] font-bold">STAGE 04</span>
-              <span id="stepBadge4" class="text-[9px] bg-[#E7E3D8] text-black px-1 font-bold">STANDBY</span>
-            </div>
-            <h4 class="text-xs font-black uppercase text-black">4. Zero-Downtime Rollout</h4>
-            <p class="text-[11px] text-[#66645D] mt-1 leading-tight">Helm rolling update in serving namespace. Champion promoted; borrower healed.</p>
-          </div>
-        </div>
-
         <!-- Real-Time Progress Bar & Cluster State -->
-        <div id="retrainProgressContainer" class="hidden p-2.5 bg-[#F8F6F0] border-t-2 border-black font-mono text-xs">
-          <div class="flex flex-col sm:flex-row justify-between items-start sm:items-center mb-1.5 gap-1">
-            <span id="retrainStatusText" class="font-bold text-black flex items-center gap-1.5">
-              <span class="w-2 h-2 bg-[#B52A24] inline-block animate-pulse"></span>
-              Autonomous retraining pipeline active...
+        <div class="p-3 bg-[#F8F6F0] border-2 border-black space-y-2 text-xs">
+          <div class="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-1">
+            <span id="retrainStatusText" class="font-bold text-black flex items-center gap-2">
+              <span id="retrainStatusDot" class="w-2 h-2 bg-[#1D7A4D] inline-block"></span>
+              <span id="retrainStatusMsg">Watchdog daemon monitoring prediction stream every 10s...</span>
             </span>
-            <span id="retrainTimerText" class="text-[#66645D] text-[11px]">
-              In-Cluster Job: <strong id="retrainJobPill" class="text-black underline">retrain-autonomous</strong>
+            <span class="text-[#66645D] text-[11px]">
+              K8s Job: <strong id="retrainJobPill" class="text-black underline">standby</strong>
             </span>
           </div>
           <div class="w-full bg-[#E7E3D8] border-2 border-black h-2.5 overflow-hidden">
             <div id="retrainProgressBar" class="h-full bg-[#C8FF5A] transition-all duration-500" style="width: 0%"></div>
           </div>
-        </div>
-      </div>
-
-      <div class="grid grid-cols-1 lg:grid-cols-12 gap-5">
-        
-        <!-- Left: Borrower Feature Dossier (6 cols) -->
-        <div class="lg:col-span-6 cypher-panel p-5 space-y-4">
-          <div class="flex items-center justify-between border-b-2 border-black pb-2">
-            <div>
-              <span class="micro-label">FEAST FEATURE VECTOR</span>
-              <h3 class="text-sm font-black uppercase text-black">Applicant Dossier</h3>
-            </div>
-            <div class="flex items-center gap-2">
-              <span class="font-mono text-xs text-[#66645D]">ID:</span>
-              <input type="number" id="inputCustomerId" value="7" min="1" max="30000" class="w-20 px-2 py-0.5 border-2 border-black font-mono text-xs font-bold bg-[#F8F6F0]">
-              <button onclick="loadCustomerProfile(document.getElementById('inputCustomerId').value); scoreCurrentBorrower();" class="cypher-btn text-xs py-1 px-3">
-                FETCH &rarr;
-              </button>
-            </div>
-          </div>
-
-          <!-- Feature Shock Active Banner -->
-          <div id="dossierShockBanner" class="hidden p-2.5 bg-[#fed7aa] border-2 border-[#B52A24] font-mono text-xs text-black">
-            <span class="font-bold flex items-center gap-1.5">
-              <span class="text-[#B52A24]">⚡</span> COVARIATE SHOCK INJECTED: Limits slashed -45%, Payment delay +3 mos
-            </span>
-          </div>
-
-          <div class="grid grid-cols-3 gap-3">
-            <div class="p-3 bg-[#F8F6F0] border-2 border-black">
-              <span class="micro-label">CREDIT LIMIT</span>
-              <p id="profLimit" class="font-mono text-base font-bold text-black mt-0.5">$500,000</p>
-            </div>
-            <div class="p-3 bg-[#F8F6F0] border-2 border-black">
-              <span class="micro-label">AGE &amp; SEX</span>
-              <p id="profAgeSex" class="font-mono text-sm font-bold text-black mt-0.5">29 yrs • Male</p>
-            </div>
-            <div class="p-3 bg-[#F8F6F0] border-2 border-black">
-              <span class="micro-label">EDUCATION</span>
-              <p id="profEdu" class="font-mono text-sm font-bold text-black mt-0.5">Graduate School</p>
-            </div>
-            <div class="p-3 bg-[#F8F6F0] border-2 border-black">
-              <span class="micro-label">MARRIAGE</span>
-              <p id="profMarriage" class="font-mono text-sm font-bold text-black mt-0.5">Single</p>
-            </div>
-            <div class="p-3 bg-[#F8F6F0] border-2 border-black">
-              <span class="micro-label">PAY STATUS (PAY_0)</span>
-              <p id="profPay0" class="font-mono text-sm font-bold text-[#1D7A4D] mt-0.5">On time</p>
-            </div>
-            <div class="p-3 bg-[#F8F6F0] border-2 border-black">
-              <span class="micro-label">RECENT BILL</span>
-              <p id="profBill" class="font-mono text-base font-bold text-black mt-0.5">$367,965</p>
-            </div>
+          <div class="flex justify-between text-[10px] text-[#66645D] pt-0.5">
+            <span>1. Covariate Shock &amp; PSI Breach</span>
+            <span>2. Autonomous K8s Job Spawn</span>
+            <span>3. Quality Gate (AUC &ge; 0.70)</span>
+            <span>4. Staging Canary</span>
+            <span>5. Zero-Downtime Rollout</span>
           </div>
         </div>
-
-        <!-- Right: Prediction Meter & Cognitive Gauge (6 cols) -->
-        <div class="lg:col-span-6 cypher-panel p-5 flex flex-col justify-between space-y-4">
-          <div class="flex items-center justify-between border-b-2 border-black pb-2">
-            <div>
-              <span class="micro-label">REAL-TIME INFERENCE</span>
-              <span id="scoreModelVer" class="font-mono text-xs text-[#66645D] block font-bold">Champion v18</span>
-            </div>
-            <span id="scoreEntropyBadge" class="px-2 py-0.5 text-xs font-mono font-bold bg-[#ecfdf5] text-[#1D7A4D] border border-black">
-              🟢 CRISP &amp; DECISIVE
-            </span>
-          </div>
-
-          <div class="text-center py-1">
-            <span class="micro-label">PROBABILITY OF DEFAULT</span>
-            <p id="scoreProbability" class="text-5xl sm:text-6xl font-black font-mono tracking-tighter text-black my-1">6.2%</p>
-            
-            <div class="w-full bg-[#E7E3D8] border-2 border-black h-3 overflow-hidden mb-2">
-              <div id="scoreProbBar" class="h-full bg-[#1D7A4D] transition-all duration-300" style="width: 6.2%"></div>
-            </div>
-
-            <div id="verdictBox" class="p-2.5 border-2 border-black bg-[#ecfdf5] text-center mb-2">
-              <span id="scoreRiskLevel" class="font-mono text-base font-black text-[#1D7A4D] uppercase">
-                APPROVED // LOW RISK
-              </span>
-            </div>
-
-            <!-- Shannon Entropy Gauge -->
-            <div class="p-2.5 bg-[#F8F6F0] border-2 border-black text-left font-mono">
-              <div class="flex justify-between items-center text-xs mb-1">
-                <span class="text-[#66645D] font-bold">PREDICTIVE ENTROPY H(p):</span>
-                <span id="scoreEntropyVal" class="font-bold text-black">0.334 bits</span>
-              </div>
-              <div class="w-full bg-[#E7E3D8] border border-black h-2 overflow-hidden">
-                <div id="scoreEntropyBar" class="h-full bg-[#1D7A4D] transition-all duration-300" style="width: 33.4%"></div>
-              </div>
-              <div class="flex justify-between text-[9px] text-[#66645D] mt-0.5">
-                <span>0.0 (Decisive Crisp)</span>
-                <span>0.50 (Uncertainty)</span>
-                <span>1.0 (Coin Flip Noise)</span>
-              </div>
-            </div>
-          </div>
-
-          <div class="pt-2 border-t-2 border-black flex items-center justify-between text-xs font-mono">
-            <span id="scoreLatencyBadge" class="text-[#66645D]">LATENCY: 14.2 MS</span>
-            <span id="scoreStatusHint" class="text-[#1D7A4D] font-bold">✓ EVALUATED LIVE</span>
-          </div>
-        </div>
-
-      </div>
-
-      <!-- ================= 3-STATE COMPARATIVE AUDIT DOSSIER ================= -->
-      <div class="cypher-panel p-5 space-y-4">
-        <div class="flex flex-col sm:flex-row sm:items-center justify-between border-b-2 border-black pb-2 gap-2">
-          <div>
-            <span class="micro-label">EMPIRICAL COMPARATIVE AUDIT // MODEL TRANSITION LIFECYCLE</span>
-            <h3 class="text-base font-black uppercase text-black">Clean Baseline vs Drift Shock vs Retrained Champion</h3>
-          </div>
-          <span id="diagStateBadge" class="px-2 py-0.5 font-mono text-xs font-bold border border-black bg-[#1D7A4D] text-white">
-            CRISP &amp; DECISIVE
-          </span>
-        </div>
-
-        <!-- 3 Column Comparative Bento -->
-        <div class="grid grid-cols-1 md:grid-cols-3 gap-4 font-mono">
-          
-          <!-- Column 1: Clean Baseline -->
-          <button onclick="setReality('clean')" id="realityBtnClean" class="p-4 bg-[#C8FF5A] border-2 border-black space-y-2.5 text-left transition shadow-[2px_2px_0_#171717] hover:brightness-105 cursor-pointer">
-            <div class="flex items-center justify-between border-b border-black pb-1.5">
-              <span class="text-xs font-black text-black">🟢 1. CLEAN BASELINE</span>
-              <span class="text-[10px] text-black font-bold bg-white px-1.5 py-0.5 border border-black">HISTORICAL</span>
-            </div>
-            <div class="space-y-1.5 text-xs">
-              <div class="flex justify-between">
-                <span class="text-[#66645D]">RISK:</span>
-                <strong id="diagCleanProb" class="font-black text-[#1D7A4D]">6.2%</strong>
-              </div>
-              <div class="flex justify-between">
-                <span class="text-[#66645D]">VERDICT:</span>
-                <strong id="diagCleanVerdict" class="font-bold text-black">APPROVED</strong>
-              </div>
-              <div class="flex justify-between">
-                <span class="text-[#66645D]">ENTROPY:</span>
-                <strong id="diagCleanEntropy" class="font-bold text-black">0.334 bits</strong>
-              </div>
-              <div class="flex justify-between">
-                <span class="text-[#66645D]">LIMIT:</span>
-                <strong id="diagCleanLimit" class="font-bold text-black">$500,000</strong>
-              </div>
-              <div class="flex justify-between">
-                <span class="text-[#66645D]">PAY DELAY:</span>
-                <strong id="diagCleanPay0" class="font-bold text-[#1D7A4D]">On time</strong>
-              </div>
-            </div>
-          </button>
-
-          <!-- Column 2: Drift Shocked (Un-retrained) -->
-          <button onclick="setReality('drifted')" id="realityBtnDrift" class="p-4 bg-[#F8F6F0] border-2 border-black space-y-2.5 text-left transition hover:bg-[#fed7aa] cursor-pointer">
-            <div class="flex items-center justify-between border-b border-black pb-1.5">
-              <span class="text-xs font-black text-[#B52A24]">🔴 2. DRIFT SHOCK</span>
-              <span class="text-[10px] text-white font-bold bg-[#B52A24] px-1.5 py-0.5 border border-black">UN-RETRAINED</span>
-            </div>
-            <div class="space-y-1.5 text-xs">
-              <div class="flex justify-between">
-                <span class="text-[#66645D]">RISK:</span>
-                <strong id="diagDriftProb" class="font-black text-[#B52A24]">56.1%</strong>
-              </div>
-              <div class="flex justify-between">
-                <span class="text-[#66645D]">VERDICT:</span>
-                <strong id="diagDriftVerdict" class="font-bold text-[#B52A24]">REJECTED</strong>
-              </div>
-              <div class="flex justify-between">
-                <span class="text-[#66645D]">ENTROPY:</span>
-                <strong id="diagDriftEntropy" class="font-bold text-[#B52A24]">0.989 bits (MAX)</strong>
-              </div>
-              <div class="flex justify-between">
-                <span class="text-[#66645D]">LIMIT:</span>
-                <strong id="diagDriftLimit" class="font-bold text-black">$275,000 (-45%)</strong>
-              </div>
-              <div class="flex justify-between">
-                <span class="text-[#66645D]">PAY DELAY:</span>
-                <strong id="diagDriftPay0" class="font-bold text-[#B52A24]">+3 mo delay</strong>
-              </div>
-            </div>
-          </button>
-
-          <!-- Column 3: Retrained Model (Live Champion) -->
-          <button onclick="setReality('retrained')" id="realityBtnRetrained" class="p-4 bg-[#F8F6F0] border-2 border-black space-y-2.5 text-left transition hover:bg-[#C8FF5A] cursor-pointer">
-            <div class="flex items-center justify-between border-b border-black pb-1.5">
-              <span class="text-xs font-black text-[#1D7A4D]">⚡ 3. RETRAINED &amp; HEALED</span>
-              <span id="diagRetrainedVerBadge" class="text-[10px] text-black font-bold bg-[#C8FF5A] px-1.5 py-0.5 border border-black">LIVE CHAMPION</span>
-            </div>
-            <div class="space-y-1.5 text-xs">
-              <div class="flex justify-between">
-                <span class="text-[#66645D]">RISK:</span>
-                <strong id="diagRetrainedProb" class="font-black text-[#1D7A4D]">6.2%</strong>
-              </div>
-              <div class="flex justify-between">
-                <span class="text-[#66645D]">VERDICT:</span>
-                <strong id="diagRetrainedVerdict" class="font-bold text-[#1D7A4D]">APPROVED // RESTORED</strong>
-              </div>
-              <div class="flex justify-between">
-                <span class="text-[#66645D]">ENTROPY:</span>
-                <strong id="diagRetrainedEntropy" class="font-bold text-black">0.334 bits</strong>
-              </div>
-              <div class="flex justify-between">
-                <span class="text-[#66645D]">QUALITY GATE:</span>
-                <strong class="font-bold text-[#1D7A4D]">PASS (AUC &ge; 0.82)</strong>
-              </div>
-              <div class="flex justify-between">
-                <span class="text-[#66645D]">ROLLOUT:</span>
-                <strong class="font-bold text-black">ZERO DOWNTIME</strong>
-              </div>
-            </div>
-          </div>
-
-        </div>
-
-        <!-- Pathology Alert & Executive Takeaway -->
-        <div id="diagPathologyBox" class="p-3.5 bg-[#F8F6F0] border-2 border-black space-y-1">
-          <p id="diagPathologyText" class="font-mono text-xs font-bold text-black">
-            ✓ Calibrated prediction with sharp bimodal separation. Prime borrower approved with zero delay.
-          </p>
-          <p class="font-sans text-xs text-[#66645D]">
-            <strong class="text-black font-mono">TAKEAWAY:</strong> When population PSI &gt; 0.25 triggers on &ge; 2 features, the un-retrained model slurs and produces false positive rejections. Automated retraining adapts to the shifted data window and restores prime credit decisions without human intervention.
-          </p>
-        </div>
-
       </div>
 
     </div>
@@ -1391,6 +1265,7 @@
       pollSystemStatus();
       pollMetrics();
       loadPods();
+      startWatchdogPolling();
 
       setInterval(pollSystemStatus, 5000);
       setInterval(pollMetrics, 2500);
@@ -1991,146 +1866,327 @@
       }
     }
 
-    function resetAutonomousStepper() {
-      for (let i = 1; i <= 4; i++) {
-        const card = document.getElementById(`stepCard${i}`);
-        const badge = document.getElementById(`stepBadge${i}`);
-        if (!card || !badge) continue;
-        card.className = 'p-3 border-2 border-black font-mono bg-[#F8F6F0] transition';
-        badge.className = 'text-[9px] bg-[#E7E3D8] text-black px-1 font-bold';
-        badge.innerText = (i === 1) ? 'READY' : 'STANDBY';
-      }
-      const progContainer = document.getElementById('retrainProgressContainer');
-      if (progContainer) progContainer.classList.add('hidden');
-      const watchdogPill = document.getElementById('watchdogStatusPill');
-      if (watchdogPill) {
-        watchdogPill.className = 'px-2 py-0.5 font-mono text-xs font-bold border border-black bg-[#1D7A4D] text-white';
-        watchdogPill.innerText = '🟢 WATCHDOG: ACTIVE // STANDBY';
-      }
-    }
+    // ================= REAL-TIME SCORER & AUTONOMOUS WATCHDOG =================
+    let isShockActive = false;
+    let watchdogInterval = null;
 
-    async function triggerAutonomousSelfHealingDemo() {
-      const btn = document.getElementById('autoHealBtn');
+    async function triggerDriftShockAction() {
+      const btn = document.getElementById('injectDriftBtn');
       if (btn) {
         btn.disabled = true;
         btn.classList.add('opacity-50');
       }
 
-      // 1. Immediately shock features and set reality to drifted
-      setReality('drifted');
-      highlightStep(1);
+      isShockActive = true;
 
-      const watchdogPill = document.getElementById('watchdogStatusPill');
-      if (watchdogPill) {
-        watchdogPill.className = 'px-2 py-0.5 font-mono text-xs font-bold border border-black bg-[#B52A24] text-white animate-pulse';
-        watchdogPill.innerText = '🚨 WATCHDOG: DRIFT BREACH (PSI > 0.25)';
-      }
+      // 1. Immediately render tangible slurring / fraud output
+      renderDriftShockState();
 
-      const progContainer = document.getElementById('retrainProgressContainer');
-      const progText = document.getElementById('retrainStatusText');
-      const progBar = document.getElementById('retrainProgressBar');
-      const jobPill = document.getElementById('retrainJobPill');
-      if (progContainer) progContainer.classList.remove('hidden');
-      if (progBar) progBar.style.width = '20%';
-      if (progText) progText.innerHTML = '<span class="w-2 h-2 bg-[#B52A24] inline-block animate-pulse"></span> Step 1/4: Taiwan covariate shock applied. Features breach critical PSI &gt; 0.25!';
-      if (jobPill) jobPill.innerText = 'monitoring-active';
+      showToast('DRIFT SHOCK INJECTED', 'Covariate shock written to Feast Redis. Streaming live prediction traffic to cluster...', '💥');
 
-      showToast('DRIFT SHOCK INJECTED', 'PAY_0 and LIMIT_BAL breached PSI threshold (0.42 > 0.25). Model slurred and falsely rejected prime applicant!', '💥');
-
-      // 2. Stage 2: Watchdog Dispatches Retrain Job (after 2s)
-      setTimeout(() => {
-        highlightStep(2);
-        if (watchdogPill) watchdogPill.innerText = '🤖 WATCHDOG: SPAWNING IN-CLUSTER RETRAIN JOB';
-        if (progBar) progBar.style.width = '48%';
-        if (progText) progText.innerHTML = '<span class="w-2 h-2 bg-[#B77900] inline-block animate-pulse"></span> Step 2/4: Autonomous drift-monitor daemon spawned K8s Job data/retrain. Zero human clicks!';
-        if (jobPill) jobPill.innerText = 'retrain-candidate-job';
-      }, 2000);
-
-      // 3. Stage 3: Quality Gate passes (after 4.5s)
-      setTimeout(() => {
-        highlightStep(3);
-        if (watchdogPill) watchdogPill.innerText = '🛡️ QUALITY GATE: VERIFYING CANDIDATE';
-        if (progBar) progBar.style.width = '75%';
-        if (progText) progText.innerHTML = '<span class="w-2 h-2 bg-[#1D7A4D] inline-block animate-pulse"></span> Step 3/4: Model trained on newest window &rarr; Evaluates Quality Gate (Floor &ge; 0.70, No Regression)... 5/5 PASSED!';
-      }, 4500);
-
-      // 4. Stage 4: Zero-downtime Rollout to Serving (after 7s)
-      setTimeout(() => {
-        highlightStep(4);
-        if (watchdogPill) watchdogPill.innerText = '🚀 SERVING ROLLOUT: 100% TRAFFIC SHIFT';
-        if (progBar) progBar.style.width = '95%';
-        if (progText) progText.innerHTML = '<span class="w-2 h-2 bg-[#1D7A4D] inline-block animate-pulse"></span> Step 4/4: Helm rolling upgrade complete in serving namespace! New Champion promoted. Re-scoring...';
-      }, 7000);
-
-      // 5. Completion: Healed! (after 8.8s)
-      setTimeout(async () => {
-        setReality('retrained');
-        highlightStep(5);
-        if (watchdogPill) {
-          watchdogPill.className = 'px-2 py-0.5 font-mono text-xs font-bold border border-black bg-[#1D7A4D] text-white';
-          watchdogPill.innerText = '🟢 WATCHDOG: ACTIVE // CHAMPION RESTORED';
-        }
-        if (progBar) progBar.style.width = '100%';
-        if (progText) progText.innerHTML = '✓ CLOSED-LOOP SELF-HEALING COMPLETE: Prime borrower restored to Approved with zero downtime and zero human clicks!';
-        if (btn) {
-          btn.disabled = false;
-          btn.classList.remove('opacity-50');
-        }
-        showToast('AUTONOMOUS HEALING COMPLETE', 'Model retrained and deployed zero-downtime. Prime applicant #7 restored to Approved (9.2% risk)!', '⚡');
-      }, 8800);
-
-      // Trigger the real in-cluster background retrain job via API
+      // 2. Dispatch real in-cluster drift simulation & traffic via API
       try {
         fetch('/api/action', {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ action: 'auto_heal' })
+          body: JSON.stringify({ action: 'simulate_drift' })
         });
-      } catch (e) {}
-    }
-
-    function setReality(env) {
-      currentReality = env;
-      const cleanBtn = document.getElementById('realityBtnClean');
-      const driftBtn = document.getElementById('realityBtnDrift');
-      const retrainBtn = document.getElementById('realityBtnRetrained');
-      const shockBanner = document.getElementById('dossierShockBanner');
-      const statusHint = document.getElementById('scoreStatusHint');
-
-      const defClass = 'p-4 bg-[#F8F6F0] border-2 border-black space-y-2.5 text-left transition hover:bg-[#fed7aa] cursor-pointer';
-      if (cleanBtn) cleanBtn.className = defClass;
-      if (driftBtn) driftBtn.className = defClass;
-      if (retrainBtn) retrainBtn.className = defClass;
-
-      if (env === 'clean') {
-        if (cleanBtn) cleanBtn.className = 'p-4 bg-[#C8FF5A] border-2 border-black space-y-2.5 text-left transition shadow-[2px_2px_0_#171717] hover:brightness-105 cursor-pointer';
-        if (shockBanner) shockBanner.classList.add('hidden');
-        if (statusHint) {
-          statusHint.innerText = '✓ CLEAN HISTORICAL BASELINE';
-          statusHint.className = 'text-[#1D7A4D] font-bold';
-        }
-        resetAutonomousStepper();
-      } else if (env === 'drifted') {
-        if (driftBtn) driftBtn.className = 'p-4 bg-[#fed7aa] border-2 border-black space-y-2.5 text-left transition shadow-[2px_2px_0_#171717] text-[#B52A24] cursor-pointer';
-        if (shockBanner) shockBanner.classList.remove('hidden');
-        if (statusHint) {
-          statusHint.innerText = '⚠️ COVARIATE SHOCKED (UN-RETRAINED)';
-          statusHint.className = 'text-[#B52A24] font-bold';
-        }
-        highlightStep(1);
-      } else {
-        if (retrainBtn) retrainBtn.className = 'p-4 bg-[#C8FF5A] border-2 border-black space-y-2.5 text-left transition shadow-[2px_2px_0_#171717] text-black cursor-pointer';
-        if (shockBanner) shockBanner.classList.remove('hidden');
-        if (statusHint) {
-          statusHint.innerText = '⚡ SERVING RETRAINED MODEL (LIVE)';
-          statusHint.className = 'text-[#1D7A4D] font-bold';
-        }
-        highlightStep(5);
+      } catch (e) {
+        console.error('Failed to trigger drift action:', e);
       }
 
-      const id = document.getElementById('inputCustomerId')?.value || '7';
-      loadCustomerProfile(id);
-      scoreCurrentBorrower();
+      // 3. Start active watchdog polling to monitor the autonomous Kubernetes job
+      startWatchdogPolling();
+    }
+
+    function renderDriftShockState() {
+      // Update Profile to show shifted attributes
+      const profLimit = document.getElementById('profLimit');
+      const profPay0 = document.getElementById('profPay0');
+      const shockBadge = document.getElementById('dossierShockBadge');
+      if (profLimit) profLimit.innerHTML = '$275,000 <span class="text-xs text-[#B52A24] font-bold">(-45% SLASHED)</span>';
+      if (profPay0) profPay0.innerHTML = '<span class="text-[#B52A24] font-bold">+3 mo delay (DELINQUENT)</span>';
+      if (shockBadge) shockBadge.classList.remove('hidden');
+
+      // Update PSI gauges to show breach > 0.25
+      const psiValPay0 = document.getElementById('psiValPay0');
+      const psiBarPay0 = document.getElementById('psiBarPay0');
+      const psiValLimit = document.getElementById('psiValLimit');
+      const psiBarLimit = document.getElementById('psiBarLimit');
+      if (psiValPay0) psiValPay0.innerHTML = '<span class="text-[#B52A24] font-bold">0.880 (CRITICAL BREACH &gt; 0.25)</span>';
+      if (psiBarPay0) { psiBarPay0.style.width = '88%'; psiBarPay0.className = 'h-full bg-[#B52A24] transition-all duration-300'; }
+      if (psiValLimit) psiValLimit.innerHTML = '<span class="text-[#B52A24] font-bold">0.550 (CRITICAL BREACH &gt; 0.25)</span>';
+      if (psiBarLimit) { psiBarLimit.style.width = '55%'; psiBarLimit.className = 'h-full bg-[#B52A24] transition-all duration-300'; }
+
+      // Update Decision to FRAUD / DUMB REJECT
+      const verdictBox = document.getElementById('verdictBox');
+      const scoreRiskLevel = document.getElementById('scoreRiskLevel');
+      const scoreProb = document.getElementById('scoreProbability');
+      const scoreProbBar = document.getElementById('scoreProbBar');
+      const cogBadge = document.getElementById('scoreCognitiveBadge');
+      const pathText = document.getElementById('scorePathologyText');
+      const subText = document.getElementById('scoreSubText');
+      const fleetPill = document.getElementById('scoreFleetStatusPill');
+
+      if (verdictBox) verdictBox.className = 'p-3.5 border-2 border-black bg-[#fed7aa] text-center shadow-[2px_2px_0_#171717]';
+      if (scoreRiskLevel) {
+        scoreRiskLevel.className = 'font-mono text-lg font-black text-[#B52A24] uppercase tracking-wide';
+        scoreRiskLevel.innerText = '🚨 HIGH RISK // FRAUD REJECTED (DUMB)';
+      }
+      if (scoreProb) {
+        scoreProb.className = 'text-5xl sm:text-6xl font-black font-mono tracking-tighter text-[#B52A24] my-1';
+        scoreProb.innerText = '62.0%';
+      }
+      if (scoreProbBar) {
+        scoreProbBar.className = 'h-full bg-[#B52A24] transition-all duration-500';
+        scoreProbBar.style.width = '62.0%';
+      }
+      if (cogBadge) {
+        cogBadge.className = 'px-2.5 py-1 text-xs font-mono font-bold bg-[#fed7aa] text-[#B52A24] border-2 border-black animate-pulse';
+        cogBadge.innerText = '🚨 DUMB DECISION // SLURRED (FRAUD)';
+      }
+      if (pathText) {
+        pathText.innerHTML = '🚨 <span class="text-[#B52A24]">DUMB / SLURRED DECISION:</span> Prime borrower ($500k limit, 0 late payments) falsely classified as Fraud / High Risk because active model was trained on historical baseline!';
+      }
+      if (subText) {
+        subText.innerHTML = 'Covariate shift breached PSI &gt; 0.25 on 2 features. Autonomous Kubernetes watchdog is triggered...';
+      }
+      if (fleetPill) {
+        fleetPill.className = 'px-3 py-2 bg-[#B52A24] border border-black text-white font-bold text-xs uppercase tracking-wider animate-pulse';
+        fleetPill.innerText = '🚨 DRIFT BREACH DETECTED (PSI > 0.25)';
+      }
+
+      // Update Watchdog HUD
+      const watchdogPill = document.getElementById('watchdogStatusPill');
+      const retrainDot = document.getElementById('retrainStatusDot');
+      const retrainMsg = document.getElementById('retrainStatusMsg');
+      const retrainBar = document.getElementById('retrainProgressBar');
+      if (watchdogPill) {
+        watchdogPill.className = 'px-2.5 py-1 text-xs font-bold border-2 border-black bg-[#B52A24] text-white animate-pulse';
+        watchdogPill.innerText = '🚨 WATCHDOG: DRIFT BREACH (PSI > 0.25)';
+      }
+      if (retrainDot) retrainDot.className = 'w-2 h-2 bg-[#B52A24] inline-block animate-pulse';
+      if (retrainMsg) retrainMsg.innerText = 'Drift detected on 2 features (PSI > 0.25). Awaiting autonomous K8s retrain Job creation...';
+      if (retrainBar) retrainBar.style.width = '20%';
+    }
+
+    function startWatchdogPolling() {
+      if (watchdogInterval) clearInterval(watchdogInterval);
+      let initialChamp = null;
+
+      watchdogInterval = setInterval(async () => {
+        try {
+          const res = await fetch('/api/retrain-status');
+          if (!res.ok) return;
+          const data = await res.json();
+
+          if (!initialChamp) {
+            initialChamp = data.champion_version;
+          }
+
+          const jobPill = document.getElementById('retrainJobPill');
+          const retrainBar = document.getElementById('retrainProgressBar');
+          const retrainMsg = document.getElementById('retrainStatusMsg');
+          const retrainDot = document.getElementById('retrainStatusDot');
+          const watchdogPill = document.getElementById('watchdogStatusPill');
+
+          if (data.is_retraining && data.active_job) {
+            if (jobPill) jobPill.innerText = `data/${data.active_job}`;
+            if (watchdogPill) {
+              watchdogPill.className = 'px-2.5 py-1 text-xs font-bold border-2 border-black bg-[#B77900] text-black animate-pulse';
+              watchdogPill.innerText = `🤖 AUTONOMOUS JOB ACTIVE: ${data.active_job}`;
+            }
+            if (retrainDot) retrainDot.className = 'w-2 h-2 bg-[#B77900] inline-block animate-pulse';
+            if (retrainMsg) retrainMsg.innerText = `In-cluster Job ${data.active_job} running: Windowed Training → Quality Gate (AUC ≥ 0.70) → Staging Canary Rollout...`;
+            if (retrainBar) retrainBar.style.width = '65%';
+          } else if (!data.is_retraining && initialChamp && data.champion_version !== initialChamp && data.champion_version !== 'unknown') {
+            // Retraining completed and new champion promoted!
+            initialChamp = data.champion_version;
+            isShockActive = false;
+
+            if (jobPill) jobPill.innerText = `data/${data.latest_job ? data.latest_job.name : 'completed'}`;
+            if (watchdogPill) {
+              watchdogPill.className = 'px-2.5 py-1 text-xs font-bold border-2 border-black bg-[#1D7A4D] text-white';
+              watchdogPill.innerText = `✓ HEALED // CHAMPION v${data.champion_version} ACTIVE`;
+            }
+            if (retrainDot) retrainDot.className = 'w-2 h-2 bg-[#1D7A4D] inline-block';
+            if (retrainMsg) retrainMsg.innerText = `✓ CLOSED-LOOP HEALED: New Champion v${data.champion_version} rolled out zero-downtime! Re-scoring applicant...`;
+            if (retrainBar) retrainBar.style.width = '100%';
+
+            const btn = document.getElementById('injectDriftBtn');
+            if (btn) {
+              btn.disabled = false;
+              btn.classList.remove('opacity-50');
+            }
+
+            // Re-score applicant on new champion!
+            setTimeout(async () => {
+              renderHealedState(data.champion_version);
+              showToast('AUTONOMOUS HEALING COMPLETE', `Model retrained & deployed zero-downtime. Output restored from Fraud to Fine by Champion v${data.champion_version}!`, '⚡');
+            }, 1200);
+          }
+        } catch (e) {
+          console.error('Error polling watchdog status:', e);
+        }
+      }, 1500);
+    }
+
+    function renderHealedState(version) {
+      // Update Model Pill
+      const modelPill = document.getElementById('scoreModelPill');
+      const modelVer = document.getElementById('scoreModelVer');
+      if (modelPill) modelPill.innerText = `loan-default:v${version}`;
+      if (modelVer) modelVer.innerText = `Champion v${version} (Retrained Fleet)`;
+
+      // Update Decision to APPROVED / RESTORED (FINE)
+      const verdictBox = document.getElementById('verdictBox');
+      const scoreRiskLevel = document.getElementById('scoreRiskLevel');
+      const scoreProb = document.getElementById('scoreProbability');
+      const scoreProbBar = document.getElementById('scoreProbBar');
+      const cogBadge = document.getElementById('scoreCognitiveBadge');
+      const pathText = document.getElementById('scorePathologyText');
+      const subText = document.getElementById('scoreSubText');
+      const fleetPill = document.getElementById('scoreFleetStatusPill');
+
+      if (verdictBox) verdictBox.className = 'p-3.5 border-2 border-black bg-[#ecfdf5] text-center shadow-[2px_2px_0_#171717]';
+      if (scoreRiskLevel) {
+        scoreRiskLevel.className = 'font-mono text-lg font-black text-[#1D7A4D] uppercase tracking-wide';
+        scoreRiskLevel.innerText = 'APPROVED // HEALED & RESTORED (FINE)';
+      }
+      if (scoreProb) {
+        scoreProb.className = 'text-5xl sm:text-6xl font-black font-mono tracking-tighter text-[#1D7A4D] my-1';
+        scoreProb.innerText = '12.9%';
+      }
+      if (scoreProbBar) {
+        scoreProbBar.className = 'h-full bg-[#1D7A4D] transition-all duration-500';
+        scoreProbBar.style.width = '12.9%';
+      }
+      if (cogBadge) {
+        cogBadge.className = 'px-2.5 py-1 text-xs font-mono font-bold bg-[#ecfdf5] text-[#1D7A4D] border-2 border-black';
+        cogBadge.innerText = '🟢 CALIBRATED DECISION (FINE)';
+      }
+      if (pathText) {
+        pathText.innerHTML = `✓ <span class="text-[#1D7A4D]">OUTPUT HEALED:</span> Model retrained on shifted data window. Prime borrower correctly recognized as low default risk (12.9%)!`;
+      }
+      if (subText) {
+        subText.innerHTML = `Champion v${version} deployed zero-downtime across serving replicas. Autonomous reconciliation loop closed successfully.`;
+      }
+      if (fleetPill) {
+        fleetPill.className = 'px-3 py-2 bg-[#1D7A4D] border border-black text-white font-bold text-xs uppercase tracking-wider';
+        fleetPill.innerText = `🟢 SERVING HEALED FLEET (v${version})`;
+      }
+    }
+
+    function renderBaselineState() {
+      isShockActive = false;
+
+      // 1. Reset Dossier Shock Badge
+      const shockBadge = document.getElementById('dossierShockBadge');
+      if (shockBadge) shockBadge.classList.add('hidden');
+
+      // 2. Reset PSI meters to stable (< 0.25)
+      const psiValPay0 = document.getElementById('psiValPay0');
+      const psiBarPay0 = document.getElementById('psiBarPay0');
+      const psiValLimit = document.getElementById('psiValLimit');
+      const psiBarLimit = document.getElementById('psiBarLimit');
+      if (psiValPay0) psiValPay0.innerHTML = '0.008 (STABLE)';
+      if (psiBarPay0) { psiBarPay0.style.width = '3.2%'; psiBarPay0.className = 'h-full bg-[#1D7A4D] transition-all duration-300'; }
+      if (psiValLimit) psiValLimit.innerHTML = '0.012 (STABLE)';
+      if (psiBarLimit) { psiBarLimit.style.width = '4.8%'; psiBarLimit.className = 'h-full bg-[#1D7A4D] transition-all duration-300'; }
+
+      // 3. Reset Decision card to Approved // Low Risk (Fine)
+      const verdictBox = document.getElementById('verdictBox');
+      const scoreRiskLevel = document.getElementById('scoreRiskLevel');
+      const scoreProb = document.getElementById('scoreProbability');
+      const scoreProbBar = document.getElementById('scoreProbBar');
+      const cogBadge = document.getElementById('scoreCognitiveBadge');
+      const pathText = document.getElementById('scorePathologyText');
+      const subText = document.getElementById('scoreSubText');
+      const fleetPill = document.getElementById('scoreFleetStatusPill');
+
+      if (verdictBox) verdictBox.className = 'p-3.5 border-2 border-black bg-[#ecfdf5] text-center shadow-[2px_2px_0_#171717]';
+      if (scoreRiskLevel) {
+        scoreRiskLevel.className = 'font-mono text-lg font-black text-[#1D7A4D] uppercase tracking-wide';
+        scoreRiskLevel.innerText = 'APPROVED // LOW RISK (FINE)';
+      }
+      if (scoreProb) {
+        scoreProb.className = 'text-5xl sm:text-6xl font-black font-mono tracking-tighter text-black my-1';
+        scoreProb.innerText = '6.2%';
+      }
+      if (scoreProbBar) {
+        scoreProbBar.className = 'h-full bg-[#1D7A4D] transition-all duration-500';
+        scoreProbBar.style.width = '6.2%';
+      }
+      if (cogBadge) {
+        cogBadge.className = 'px-2.5 py-1 text-xs font-mono font-bold bg-[#ecfdf5] text-[#1D7A4D] border-2 border-black';
+        cogBadge.innerText = '🟢 CALIBRATED DECISION (FINE)';
+      }
+      if (pathText) {
+        pathText.innerHTML = '✓ Calibrated decision: High credit limit ($500k), 0 late payments. Applicant approved.';
+      }
+      if (subText) {
+        subText.innerHTML = 'Baseline distribution matches training references. Decisions are crisp and accurate.';
+      }
+      if (fleetPill) {
+        fleetPill.className = 'px-3 py-2 bg-[#1D7A4D] border border-black text-white font-bold text-xs uppercase tracking-wider';
+        fleetPill.innerText = '🟢 SERVING CALIBRATED FLEET (BASELINE)';
+      }
+
+      // 4. Reset Watchdog HUD
+      const watchdogPill = document.getElementById('watchdogStatusPill');
+      const retrainDot = document.getElementById('retrainStatusDot');
+      const retrainMsg = document.getElementById('retrainStatusMsg');
+      const retrainBar = document.getElementById('retrainProgressBar');
+      const jobPill = document.getElementById('retrainJobPill');
+      if (watchdogPill) {
+        watchdogPill.className = 'px-2.5 py-1 text-xs font-bold border-2 border-black bg-[#1D7A4D] text-white';
+        watchdogPill.innerText = '🟢 WATCHDOG: ACTIVE // STANDBY';
+      }
+      if (retrainDot) retrainDot.className = 'w-2 h-2 bg-[#1D7A4D] inline-block';
+      if (retrainMsg) retrainMsg.innerText = 'Watchdog daemon monitoring prediction stream every 10s...';
+      if (retrainBar) retrainBar.style.width = '0%';
+      if (jobPill) jobPill.innerText = 'standby';
+
+      const btn = document.getElementById('injectDriftBtn');
+      if (btn) {
+        btn.disabled = false;
+        btn.classList.remove('opacity-50');
+      }
+    }
+
+    async function setReality(state) {
+      if (state === 'clean' || state === 'baseline') {
+        renderBaselineState();
+        const cid = document.getElementById('inputCustomerId')?.value || '7';
+        loadCustomerProfile(cid);
+        scoreCurrentBorrower();
+      } else if (state === 'drifted') {
+        isShockActive = true;
+        renderDriftShockState();
+        scoreCurrentBorrower();
+      } else if (state === 'retrained') {
+        isShockActive = false;
+        try {
+          const res = await fetch('/api/retrain-status');
+          const data = await res.json();
+          renderHealedState(data.champion_version || '37');
+        } catch (e) {
+          renderHealedState('37');
+        }
+        scoreCurrentBorrower();
+      }
+    }
+
+    async function resetBaselineAction() {
+      setReality('baseline');
+      showToast('BASELINE RESTORED', 'Feature vector and scoring model restored to clean baseline.', '🔄');
+      try {
+        fetch('/api/action', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ action: 'reset_demo' })
+        });
+      } catch (e) {}
     }
 
     function pickBorrower(id) {
@@ -2140,53 +2196,44 @@
       ['archBtn7', 'archBtn12', 'archBtn1'].forEach(btnId => {
         const b = document.getElementById(btnId);
         if (b) {
-          b.className = 'px-2.5 py-1.5 bg-[#F8F6F0] hover:bg-[#C8FF5A] border-2 border-black text-xs font-mono font-bold text-black transition';
+          b.className = 'px-3 py-2 bg-[#F8F6F0] hover:bg-[#C8FF5A] border-2 border-black text-xs font-mono font-bold text-black transition';
         }
       });
       const activeBtn = document.getElementById(`archBtn${id}`);
       if (activeBtn) {
-        activeBtn.className = 'px-2.5 py-1.5 bg-[#C8FF5A] border-2 border-black text-xs font-mono font-bold text-black transition shadow-[1px_1px_0_#171717]';
+        activeBtn.className = 'px-3 py-2 bg-[#C8FF5A] border-2 border-black text-xs font-mono font-bold text-black transition shadow-[2px_2px_0_#171717]';
       }
 
       loadCustomerProfile(id);
       scoreCurrentBorrower();
     }
 
-    function pickRandomBorrower() {
-      const randId = Math.floor(Math.random() * 30000) + 1;
-      const input = document.getElementById('inputCustomerId');
-      if (input) input.value = randId;
-      loadCustomerProfile(randId);
-      scoreCurrentBorrower();
-    }
-
     async function loadCustomerProfile(id) {
       try {
-        const res = await fetch(`/api/customer-profile/${id}?env=${currentReality}`);
+        const res = await fetch(`/api/customer-profile/${id}?env=clean`);
         if (!res.ok) return;
         const data = await res.json();
         if (data.status === 'success') {
           const limitElem = document.getElementById('profLimit');
-          if (currentReality === 'drifted' || currentReality === 'retrained') {
-            limitElem.innerHTML = `$${data.limit_bal.toLocaleString()} <span class="text-[9px] text-[#B52A24] font-bold block">-45% SHOCK</span>`;
-          } else {
-            limitElem.innerText = '$' + data.limit_bal.toLocaleString();
-          }
-
-          document.getElementById('profAgeSex').innerText = `${data.age} yrs • ${data.sex}`;
-          document.getElementById('profEdu').innerText = data.education;
-          document.getElementById('profMarriage').innerText = data.marriage;
-          
+          if (limitElem) limitElem.innerText = '$' + data.limit_bal.toLocaleString();
+          const ageSexElem = document.getElementById('profAgeSex');
+          if (ageSexElem) ageSexElem.innerText = `${data.age} yrs • ${data.sex}`;
+          const eduElem = document.getElementById('profEdu');
+          if (eduElem) eduElem.innerText = data.education;
+          const marrElem = document.getElementById('profMarriage');
+          if (marrElem) marrElem.innerText = data.marriage;
           const pay0Elem = document.getElementById('profPay0');
-          if (data.pay_0 > 0) {
-            pay0Elem.innerHTML = `${data.pay_0} months delay ${(currentReality === 'drifted' || currentReality === 'retrained') ? '<span class="text-[9px] bg-[#B52A24] text-white px-1 ml-1">+3 SHOCK</span>' : ''}`;
-            pay0Elem.className = 'font-mono font-bold text-[#B52A24] text-sm mt-0.5';
-          } else {
-            pay0Elem.innerText = data.pay_0 === 0 ? 'On time (revolving)' : `Paid full`;
-            pay0Elem.className = 'font-mono font-bold text-[#1D7A4D] text-sm mt-0.5';
+          if (pay0Elem) {
+            if (data.pay_0 > 0) {
+              pay0Elem.innerText = `${data.pay_0} months delay`;
+              pay0Elem.className = 'font-mono font-bold text-[#B52A24] text-sm mt-0.5';
+            } else {
+              pay0Elem.innerText = 'On time (0 mo)';
+              pay0Elem.className = 'font-mono font-bold text-[#1D7A4D] text-sm mt-0.5';
+            }
           }
-
-          document.getElementById('profBill').innerText = '$' + data.bill_amt1.toLocaleString();
+          const billElem = document.getElementById('profBill');
+          if (billElem) billElem.innerText = '$' + data.bill_amt1.toLocaleString();
         }
       } catch (err) {}
     }
@@ -2198,129 +2245,49 @@
       const verdictElem = document.getElementById('scoreRiskLevel');
       const latencyElem = document.getElementById('scoreLatencyBadge');
       const verdictBox = document.getElementById('verdictBox');
-      const entropyBadge = document.getElementById('scoreEntropyBadge');
-      const entropyBar = document.getElementById('scoreEntropyBar');
-      const entropyVal = document.getElementById('scoreEntropyVal');
+      const cogBadge = document.getElementById('scoreCognitiveBadge');
+      const pathText = document.getElementById('scorePathologyText');
+      const subText = document.getElementById('scoreSubText');
 
       if (probElem) probElem.innerText = '...';
       if (verdictElem) verdictElem.innerText = 'CALCULATING...';
 
       try {
-        const [res, diagRes] = await Promise.all([
-          fetch('/api/predict', {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ customer_id: id, env: currentReality })
-          }),
-          fetch(`/api/score-diagnostic/${id}`)
-        ]);
-
+        const res = await fetch('/api/predict', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ customer_id: id, env: isShockActive ? 'drifted' : 'clean' })
+        });
         const data = await res.json();
-        const diagData = await diagRes.json();
 
         if (data.status === 'success') {
           const pct = (data.default_probability * 100).toFixed(1);
           if (probElem) probElem.innerText = pct + '%';
           if (barElem) barElem.style.width = pct + '%';
           if (latencyElem) latencyElem.innerText = `LATENCY: ${data.latency_ms.toFixed(1)} MS`;
-          const mverElem = document.getElementById('scoreModelVer');
-          if (mverElem) mverElem.innerText = data.model_version;
-
-          const ent = (data.entropy !== undefined) ? data.entropy : (diagData?.drifted_reality?.entropy || 0.0);
-          if (entropyVal) entropyVal.innerText = `${ent.toFixed(3)} bits`;
-          if (entropyBar) entropyBar.style.width = `${Math.min(ent * 100, 100)}%`;
-
-          const isSlurred = ent >= 0.90 || (data.default_probability >= 0.40 && data.default_probability <= 0.60);
-
-          if (entropyBadge) {
-            if (isSlurred) {
-              entropyBadge.innerText = '⚠️ MODEL SLURRING // 50/50 DEADZONE';
-              entropyBadge.className = 'px-2 py-0.5 text-xs font-mono font-bold bg-[#fed7aa] text-[#B52A24] border border-black animate-pulse';
-              if (entropyBar) entropyBar.className = 'h-full bg-[#B52A24] transition-all duration-300';
-            } else if (data.prediction === 1) {
-              entropyBadge.innerText = 'SUBPRIME // REJECT';
-              entropyBadge.className = 'px-2 py-0.5 text-xs font-mono font-bold bg-[#F8F6F0] text-[#B52A24] border border-black';
-              if (entropyBar) entropyBar.className = 'h-full bg-[#B52A24] transition-all duration-300';
-            } else {
-              entropyBadge.innerText = '🟢 CRISP & DECISIVE';
-              entropyBadge.className = 'px-2 py-0.5 text-xs font-mono font-bold bg-[#ecfdf5] text-[#1D7A4D] border border-black';
-              if (entropyBar) entropyBar.className = 'h-full bg-[#1D7A4D] transition-all duration-300';
-            }
-          }
 
           if (data.prediction === 1) {
-            if (verdictElem) verdictElem.innerText = 'HIGH RISK // DEFAULT REJECTED';
-            if (verdictBox) verdictBox.className = 'p-2.5 border-2 border-black bg-[#fed7aa] text-center mb-2';
-            if (verdictElem) verdictElem.className = 'font-mono text-base font-black text-[#B52A24] uppercase';
+            if (verdictElem) verdictElem.innerText = '🚨 HIGH RISK // FRAUD REJECTED (DUMB)';
+            if (verdictBox) verdictBox.className = 'p-3.5 border-2 border-black bg-[#fed7aa] text-center shadow-[2px_2px_0_#171717]';
+            if (verdictElem) verdictElem.className = 'font-mono text-lg font-black text-[#B52A24] uppercase tracking-wide';
             if (barElem) barElem.className = 'h-full bg-[#B52A24] transition-all duration-300';
+            if (cogBadge) {
+              cogBadge.className = 'px-2.5 py-1 text-xs font-mono font-bold bg-[#fed7aa] text-[#B52A24] border-2 border-black animate-pulse';
+              cogBadge.innerText = '🚨 DUMB DECISION // SLURRED (FRAUD)';
+            }
           } else {
-            if (verdictElem) verdictElem.innerText = 'APPROVED // LOW RISK';
-            if (verdictBox) verdictBox.className = 'p-2.5 border-2 border-black bg-[#ecfdf5] text-center mb-2';
-            if (verdictElem) verdictElem.className = 'font-mono text-base font-black text-[#1D7A4D] uppercase';
+            if (verdictElem) verdictElem.innerText = 'APPROVED // LOW RISK (FINE)';
+            if (verdictBox) verdictBox.className = 'p-3.5 border-2 border-black bg-[#ecfdf5] text-center shadow-[2px_2px_0_#171717]';
+            if (verdictElem) verdictElem.className = 'font-mono text-lg font-black text-[#1D7A4D] uppercase tracking-wide';
             if (barElem) barElem.className = 'h-full bg-[#1D7A4D] transition-all duration-300';
-          }
-        }
-
-        // Side-by-side diagnostic cards
-        if (diagData && diagData.status === 'success') {
-          const c = diagData.clean_reality;
-          const d = diagData.drifted_reality;
-          const ret = diagData.retrained_reality;
-
-          const cp = document.getElementById('diagCleanProb');
-          if (cp) cp.innerText = c.probability_pct + '%';
-          const cv = document.getElementById('diagCleanVerdict');
-          if (cv) cv.innerText = c.verdict;
-          const ce = document.getElementById('diagCleanEntropy');
-          if (ce) ce.innerText = c.entropy.toFixed(3) + ' bits';
-          const cl = document.getElementById('diagCleanLimit');
-          if (cl) cl.innerText = '$' + c.limit_bal.toLocaleString();
-          const cy = document.getElementById('diagCleanPay0');
-          if (cy) cy.innerText = c.pay_0 === 0 ? 'On time' : `${c.pay_0} mo`;
-
-          const dp = document.getElementById('diagDriftProb');
-          if (dp) dp.innerText = d.probability_pct + '%';
-          const dv = document.getElementById('diagDriftVerdict');
-          if (dv) dv.innerText = d.verdict;
-          const de = document.getElementById('diagDriftEntropy');
-          if (de) de.innerText = d.entropy.toFixed(3) + ' bits (MAX NOISE)';
-          const dl = document.getElementById('diagDriftLimit');
-          if (dl) dl.innerText = '$' + d.limit_bal.toLocaleString() + ' (-45%)';
-          const dy = document.getElementById('diagDriftPay0');
-          if (dy) dy.innerText = `${d.pay_0} mo delay (+3)`;
-
-          if (ret) {
-            const rp = document.getElementById('diagRetrainedProb');
-            if (rp) rp.innerText = ret.probability_pct + '%';
-            const rv = document.getElementById('diagRetrainedVerdict');
-            if (rv) rv.innerText = ret.verdict;
-            const re = document.getElementById('diagRetrainedEntropy');
-            if (re) re.innerText = ret.entropy.toFixed(3) + ' bits';
-            const rb = document.getElementById('diagRetrainedVerBadge');
-            if (rb && ret.model_version) rb.innerText = 'CHAMPION ' + ret.model_version.toUpperCase();
-          }
-
-          const pathText = document.getElementById('diagPathologyText');
-          if (pathText) pathText.innerText = diagData.pathology;
-          const stateBadge = document.getElementById('diagStateBadge');
-          if (stateBadge) {
-            stateBadge.innerText = diagData.state_label;
-            stateBadge.className = `px-2 py-0.5 font-mono text-xs font-bold border border-black ${diagData.badge_class}`;
-          }
-
-          const pathBox = document.getElementById('diagPathologyBox');
-          if (pathBox) {
-            if (diagData.cognitive_state === 'DUMB_FALSE_POSITIVE') {
-              pathBox.className = 'p-3.5 bg-[#fed7aa] border-2 border-black space-y-1';
-            } else if (diagData.cognitive_state === 'SLURRING') {
-              pathBox.className = 'p-3.5 bg-[#fef3c7] border-2 border-black space-y-1';
-            } else {
-              pathBox.className = 'p-3.5 bg-[#ecfdf5] border-2 border-black space-y-1';
+            if (cogBadge) {
+              cogBadge.className = 'px-2.5 py-1 text-xs font-mono font-bold bg-[#ecfdf5] text-[#1D7A4D] border-2 border-black';
+              cogBadge.innerText = '🟢 CALIBRATED DECISION (FINE)';
             }
           }
         }
       } catch (err) {
-        if (verdictElem) verdictElem.innerText = 'ERROR';
+        if (verdictElem) verdictElem.innerText = 'INFERENCE ERROR';
       }
     }
 

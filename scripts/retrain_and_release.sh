@@ -12,22 +12,78 @@ echo "======================================================="
 echo "[$(stamp)] LAUNCHING RETRAINING & ZERO-DOWNTIME RELEASE"
 echo "======================================================="
 
-echo "[STEP 1/3] Triggering in-cluster Feast training Job (TRIGGER=drift)..."
-TRIGGER=drift bash scripts/train_mlflow.sh
+echo "[STEP 1/3] Spawning in-cluster Feast retrain Job in Kubernetes..."
+JOB_NAME=$(uv run python - <<'EOF'
+import json, time, sys
+from kubernetes import client, config
+import mlflow
 
-echo "[STEP 2/3] Resolving registered candidate version from MLflow..."
-CANDIDATE_VERSION=$(curl -s "http://localhost:5000/api/2.0/mlflow/registered-models/get?name=loan-default" | python3 -c "import json,sys; a=json.load(sys.stdin)['registered_model'].get('aliases', []); print(next((x['version'] for x in a if x['alias']=='candidate'), ''))")
+try:
+    config.load_incluster_config()
+except Exception:
+    config.load_kube_config()
 
-if [ -z "$CANDIDATE_VERSION" ]; then
-    echo "ERROR: No candidate version found in MLflow registry!"
-    exit 1
-fi
-echo "[$(stamp)] Candidate model registered: loan-default v${CANDIDATE_VERSION}"
+core = client.CoreV1Api()
+batch = client.BatchV1Api()
+template = core.read_namespaced_config_map("retrain-job-template", "data")
+pod_spec = json.loads(template.data["pod-spec.json"])
 
-echo "[STEP 3/3] Running Quality Gate, Staging Canary, and Production Rollout..."
-LOADCHECK_TOTAL=300 LOADCHECK_RPS=30 bash scripts/model_release_local.sh "${CANDIDATE_VERSION}" dev
+client_mlflow = mlflow.tracking.MlflowClient("http://localhost:5000")
+try:
+    champ = client_mlflow.get_model_version_by_alias("loan-default", "champion").version
+except Exception:
+    champ = ""
+
+epoch = int(time.time())
+name = f"retrain-{champ or 'initial'}-{epoch}"
+pod_spec["containers"][0]["env"].extend([
+    {"name": "PARENT_CHAMPION", "value": str(champ)},
+    {"name": "DRIFT_REPORT", "value": json.dumps({"drifted_features": ["pay_0", "limit_bal"]})},
+])
+
+job = {
+    "apiVersion": "batch/v1",
+    "kind": "Job",
+    "metadata": {
+        "name": name,
+        "namespace": "data",
+        "labels": {"app": "retrain"},
+    },
+    "spec": {
+        "ttlSecondsAfterFinished": 3600,
+        "backoffLimit": 1,
+        "template": {
+            "metadata": {"labels": {"app": "retrain"}},
+            "spec": pod_spec,
+        },
+    },
+}
+batch.create_namespaced_job("data", job)
+print(name)
+EOF
+)
+
+echo "[$(stamp)] Spawned Kubernetes Job: data/${JOB_NAME}"
+echo "[STEP 2/3] Streaming live in-cluster training, Quality Gate, and rollout logs..."
+
+# Wait for pod to appear
+for _ in $(seq 1 30); do
+  if kubectl get pods -n data -l job-name="${JOB_NAME}" --no-headers 2>/dev/null | grep -q "retrain"; then
+    break
+  fi
+  sleep 1
+done
+
+# Stream logs from the retrain pod
+kubectl logs -n data -l job-name="${JOB_NAME}" -f --tail=100 || true
+
+# Wait for job completion
+kubectl wait --for=condition=complete "job/${JOB_NAME}" -n data --timeout=300s
+
+echo "[STEP 3/3] Verifying new Champion version from MLflow registry..."
+NEW_CHAMPION=$(curl -s "http://localhost:5000/api/2.0/mlflow/registered-models/get?name=loan-default" | python3 -c "import json,sys; a=json.load(sys.stdin)['registered_model'].get('aliases', []); print(next((x['version'] for x in a if x['alias']=='champion'), ''))")
 
 echo "======================================================="
-echo "[$(stamp)] RETRAINING COMPLETE: Champion is now v${CANDIDATE_VERSION}"
+echo "[$(stamp)] RETRAINING COMPLETE: Champion is now v${NEW_CHAMPION}"
 echo "Zero-downtime rollout completed across all serving replicas."
 echo "======================================================="

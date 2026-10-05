@@ -32,6 +32,8 @@ data:
             {"name": "AWS_EC2_METADATA_DISABLED", "value": "true"},
             {"name": "MPLCONFIGDIR", "value": "/tmp"},
             {"name": "HOME", "value": "/tmp"},
+            {"name": "LOADCHECK_TOTAL", "value": "300"},
+            {"name": "LOADCHECK_RPS", "value": "30"},
             {"name": "GATE_REPORT_OUT", "value": "/tmp/gate_report.json"},
             {"name": "GATE_REPORT", "value": "/tmp/gate_report.json"},
             {"name": "POSTGRES_USER", "valueFrom": {"secretKeyRef": {"name": "postgres-auth", "key": "username"}}},

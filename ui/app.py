@@ -80,12 +80,12 @@ ACTION_COMMANDS: dict[str, str] = {
     "chaos_pod_kill": "bash scripts/chaos_pod.sh",
     "demo_infra": "bash scripts/chaos_alert.sh",
     "simulate_drift": (
-        "uv run python scripts/simulate_drift.py --scenario both && "
-        "uv run python scripts/traffic.py --rps 30 --duration 10 --url http://localhost:8080"
+        "uv run python scripts/simulate_drift.py --scenario covariate && "
+        "uv run python scripts/traffic.py --rps 30 --duration 12 --url http://localhost:8080"
     ),
     "auto_heal": (
-        "uv run python scripts/simulate_drift.py --scenario both && "
-        "bash scripts/retrain_and_release.sh"
+        "uv run python scripts/simulate_drift.py --scenario covariate && "
+        "uv run python scripts/traffic.py --rps 30 --duration 12 --url http://localhost:8080"
     ),
     "demo_model": "bash scripts/retrain_and_release.sh",
     "manual_retrain": "bash scripts/retrain_and_release.sh",
@@ -1044,7 +1044,10 @@ async def stream_action_output(target: str):
                     break
                 line_text = line.decode("utf-8", errors="replace").rstrip("\r\n")
                 if line_text:
-                    yield f"data: {line_text}\n\n"
+                    for subline in line_text.replace("\r", "\n").splitlines():
+                        subline_clean = subline.strip("\r")
+                        if subline_clean:
+                            yield f"data: {subline_clean}\n\n"
 
             exit_code = await process.wait()
             if job:

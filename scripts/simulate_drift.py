@@ -51,8 +51,10 @@ def concept_labels(features: pd.DataFrame, *, seed: int = 11) -> pd.DataFrame:
     """Generate labels for new rows under the drifted concept."""
     rng = np.random.default_rng(seed)
     signal = (
-        -(features["pay_0"] * 1.0)
-        + (features["limit_bal"] / 40000.0)
+        (features["pay_0"] * 0.8)
+        - (features["limit_bal"] / 60000.0)
+        + (features["bill_amt1"] / 50000.0)
+        - (features["pay_amt1"] / 20000.0)
         + rng.normal(0, 1.0, len(features))
     )
     threshold = float(np.percentile(signal, (1 - TARGET_POSITIVE_RATE) * 100))
