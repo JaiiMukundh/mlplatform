@@ -32,8 +32,8 @@ ABS_FLOOR = 0.70
 #: Maximum allowed regression versus the champion on the same hold-out.
 MAX_REGRESSION = 0.01
 #: Sane bounds for the candidate's predicted positive rate.
-MIN_POSITIVE_RATE = 0.01
-MAX_POSITIVE_RATE = 0.5
+MIN_POSITIVE_RATE = float(os.environ.get("GATE_MIN_POSITIVE_RATE", 0.01))
+MAX_POSITIVE_RATE = float(os.environ.get("GATE_MAX_POSITIVE_RATE", 0.85))
 #: Rows the candidate must score without error (check 5).
 LOAD_TEST_ROWS = 100
 

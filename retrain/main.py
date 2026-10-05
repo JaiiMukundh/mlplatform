@@ -51,7 +51,13 @@ def download_labels(endpoint: str, destination: Path) -> Path:
     import pyarrow.fs
     import pyarrow.parquet
 
-    filesystem = pyarrow.fs.S3FileSystem(endpoint_override=endpoint, region="us-east-1")
+    filesystem = pyarrow.fs.S3FileSystem(
+        access_key=os.environ.get("AWS_ACCESS_KEY_ID"),
+        secret_key=os.environ.get("AWS_SECRET_ACCESS_KEY"),
+        endpoint_override=endpoint,
+        scheme="http",
+        region="us-east-1",
+    )
     table = pyarrow.parquet.read_table(
         "feast-offline/labels.parquet", filesystem=filesystem
     )

@@ -80,10 +80,15 @@ ACTION_COMMANDS: dict[str, str] = {
     "chaos_pod_kill": "bash scripts/chaos_pod.sh",
     "demo_infra": "bash scripts/chaos_alert.sh",
     "simulate_drift": (
-        "uv run python scripts/simulate_drift.py --scenario covariate && "
-        "uv run python scripts/traffic.py --rps 30 --duration 20 --url http://localhost:8080"
+        "uv run python scripts/simulate_drift.py --scenario both && "
+        "uv run python scripts/traffic.py --rps 30 --duration 10 --url http://localhost:8080"
+    ),
+    "auto_heal": (
+        "uv run python scripts/simulate_drift.py --scenario both && "
+        "bash scripts/retrain_and_release.sh"
     ),
     "demo_model": "bash scripts/retrain_and_release.sh",
+    "manual_retrain": "bash scripts/retrain_and_release.sh",
     "demo_model_full": "bash scripts/demo_model.sh",
     "run_gate": "bash scripts/run_gate.sh",
     "feast_rematerialize": "make feast-rematerialize",
@@ -877,6 +882,105 @@ async def get_score_diagnostic(customer_id: int) -> dict[str, Any]:
     except Exception as exc:
         logger.exception("Failed score diagnostic: %s", exc)
         return {"status": "error", "message": str(exc)}
+
+
+@app.get("/api/retrain-status")
+async def get_retrain_status() -> dict[str, Any]:
+    """Inspect in-cluster retraining jobs, MLflow aliases, and serving rollout."""
+    status: dict[str, Any] = {
+        "is_retraining": False,
+        "active_job": None,
+        "latest_job": None,
+        "champion_version": "unknown",
+        "candidate_version": "none",
+        "serving_version": "unknown",
+        "drift_threshold": {
+            "metric": "PSI",
+            "critical_threshold": 0.25,
+            "rule": (
+                "PSI > 0.25 on >= 2 features triggers automated in-cluster Retrain Job"
+            ),
+        },
+    }
+
+    # 1. K8s Jobs in data namespace
+    try:
+        proc = await asyncio.create_subprocess_exec(
+            "kubectl",
+            "get",
+            "jobs",
+            "-n",
+            "data",
+            "-o",
+            "json",
+            stdout=asyncio.subprocess.PIPE,
+            stderr=asyncio.subprocess.DEVNULL,
+        )
+        stdout, _ = await proc.communicate()
+        if proc.returncode == 0:
+            data = json.loads(stdout.decode())
+            items = data.get("items", [])
+            retrain_jobs = [
+                j for j in items if "retrain" in j.get("metadata", {}).get("name", "")
+            ]
+            if retrain_jobs:
+                retrain_jobs.sort(
+                    key=lambda x: x.get("metadata", {}).get("creationTimestamp", ""),
+                    reverse=True,
+                )
+                latest = retrain_jobs[0]
+                name = latest.get("metadata", {}).get("name", "")
+                j_status = latest.get("status", {})
+                active = j_status.get("active", 0) > 0
+                succeeded = j_status.get("succeeded", 0) > 0
+                failed = j_status.get("failed", 0) > 0
+                if active:
+                    state_str = "RUNNING"
+                elif succeeded:
+                    state_str = "COMPLETED"
+                elif failed:
+                    state_str = "FAILED"
+                else:
+                    state_str = "PENDING"
+                status["latest_job"] = {
+                    "name": name,
+                    "state": state_str,
+                    "active": active,
+                    "succeeded": succeeded,
+                    "created_at": latest.get("metadata", {}).get("creationTimestamp"),
+                }
+                if active:
+                    status["is_retraining"] = True
+                    status["active_job"] = name
+    except Exception as e:
+        logger.debug("Error checking retrain jobs: %s", e)
+
+    # 2. MLflow Aliases
+    try:
+        async with httpx.AsyncClient(timeout=1.5) as client:
+            r = await client.get(
+                "http://localhost:5000/api/2.0/mlflow/registered-models/get?name=loan-default"
+            )
+            if r.status_code == 200:
+                aliases = r.json().get("registered_model", {}).get("aliases", [])
+                for a in aliases:
+                    if a.get("alias") == "champion":
+                        status["champion_version"] = a.get("version")
+                    elif a.get("alias") == "candidate":
+                        status["candidate_version"] = a.get("version")
+    except Exception as e:
+        logger.debug("Error checking MLflow: %s", e)
+
+    # 3. Live Serving Version
+    try:
+        async with httpx.AsyncClient(timeout=1.5) as client:
+            r = await client.get("http://localhost:8080/model-info")
+            if r.status_code == 200:
+                status["serving_version"] = r.json().get("version", "unknown")
+    except Exception as e:
+        logger.debug("Error checking serving model: %s", e)
+
+    return status
 
 
 @app.post("/api/action")
