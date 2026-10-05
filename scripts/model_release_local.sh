@@ -61,7 +61,7 @@ if ! scripts/deploy.sh model-api-staging staging "${IMAGE_TAG}" \
 fi
 
 echo "--- step 3: staging loadcheck ---"
-if ! python3 scripts/loadcheck.py --url "${STAGING_URL}" --total 2000 --rps 20; then
+if ! python3 scripts/loadcheck.py --url "${STAGING_URL}" --total "${LOADCHECK_TOTAL:-2000}" --rps "${LOADCHECK_RPS:-20}"; then
   helm rollback model-api-staging -n staging || true
   reject_version "staging loadcheck failed"
 fi

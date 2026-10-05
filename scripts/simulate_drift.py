@@ -82,6 +82,14 @@ def main() -> int:
     # Incremental materialization only covers (cursor, now]: a future-dated
     # snapshot would never reach the online store, so cap the new timestamp
     # at the current time (weekly cadence when the data is stale).
+    # If features already contains drifted snapshots, reset back to the 4 baseline
+    # snapshots so rerun is always idempotent and advances past the data window.
+    unique_ts = sorted(features[TIMESTAMP_COLUMN].unique())
+    if len(unique_ts) > 4:
+        baseline_cutoff = unique_ts[3]
+        features = features[features[TIMESTAMP_COLUMN] <= baseline_cutoff]
+        labels = labels[labels[TIMESTAMP_COLUMN] <= baseline_cutoff]
+
     max_timestamp = pd.Timestamp(features[TIMESTAMP_COLUMN].max())
     now = pd.Timestamp.now(tz="UTC")
     new_timestamp = min(max_timestamp + pd.Timedelta(days=7), now)
