@@ -531,4 +531,8 @@ Only observed command output is recorded here.
     - Made 3-state comparative audit bento cards interactive, enabling manual inspection of Clean, Drifted, and Retrained states anytime.
     - Added `/api/retrain-status` endpoint tracking live K8s jobs, MLflow aliases, and serving version.
 - Next action: UI server running on port 8050. Ready for executive presentation.
-
+- CLOSED-LOOP REFINEMENT & HUMAN EXPLANATION GUIDE PASS (2026-10-06) —
+  - Tuned staging canary loadcheck (LOADCHECK_TOTAL: 300, LOADCHECK_RPS: 30) for brisk 10s staging validation.
+  - Granted networkpolicies RBAC to retrain serviceaccount in data namespace.
+  - Verified end-to-end autonomous retraining execution: K8s job `retrain-63-1791257247` trained `v64`, passed all 5 Quality Gate tests, passed staging loadcheck (300 requests, 0% errors), promoted champion alias to 64, rolled out zero-downtime to 2 serving pods (`model-api-b4cc54b-qsmcd` and `sxckt`), and restored Borrower #7 from 68.4% false-rejection down to 8.56% (Approved).
+  - Authored comprehensive, analogy-driven plain-English explanation document in `ML_PLATFORM_EXPLAINED_FOR_HUMANS.md` explaining all 13 system components via the 5-star restaurant analogy, demystifying MLflow's true role (passive vault vs active services), explaining PSI via shoe sizes, and mapping the 5 operational safeguards preventing redundant retrains.
