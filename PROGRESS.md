@@ -536,3 +536,15 @@ Only observed command output is recorded here.
   - Granted networkpolicies RBAC to retrain serviceaccount in data namespace.
   - Verified end-to-end autonomous retraining execution: K8s job `retrain-63-1791257247` trained `v64`, passed all 5 Quality Gate tests, passed staging loadcheck (300 requests, 0% errors), promoted champion alias to 64, rolled out zero-downtime to 2 serving pods (`model-api-b4cc54b-qsmcd` and `sxckt`), and restored Borrower #7 from 68.4% false-rejection down to 8.56% (Approved).
   - Authored comprehensive, analogy-driven plain-English explanation document in `ML_PLATFORM_EXPLAINED_FOR_HUMANS.md` explaining all 13 system components via the 5-star restaurant analogy, demystifying MLflow's true role (passive vault vs active services), explaining PSI via shoe sizes, and mapping the 5 operational safeguards preventing redundant retrains.
+- 3-BUCKET PHYSICAL ARCHITECTURE & RESTART PASS (2026-10-06) —
+  - Reorganized sprawling mono-repo into 3 crystal-clear architectural buckets:
+    - `core/`: ML application logic (`model_api/`, `drift_monitor/`, `ml/`, `mlp_common/`, `retrain/`, `remediator/`, `feature_repo/`, `requirements/`).
+    - `infra/`: Cloud, K8s, Docker (`deploy/`, `docker/`, `envs/`, `modules/`, `charts/`).
+    - `ops/`: UI dashboard, automation scripts, documentation (`ui/`, `scripts/`, `docs/`).
+  - Archived obsolete scripts to `ops/scripts/archive/` and old sprint docs to `ops/docs/archive/`.
+  - Authored `CODEBASE_MAP.md` as the ultimate 3-bucket survival guide and viva defense cheat sheet.
+  - Adapted `pyproject.toml` Hatchling wheel sources (`"core" = ""`), Dockerfiles, Makefile, and scripts.
+  - Verified quality gates: `make lint` passed 100% across 96 files; `make test` passed 83 tests with 84.29% coverage (vs 80% gate).
+  - Restarted Kind cluster and rehydrated Feast Redis store (30,000 customer feature vectors).
+  - Verified live scoring: `model-api` running Champion version 64 on 2 pinned replicas; customer #7 scores at 8.56% default risk.
+  - Launched UI Server on http://localhost:8050 with all metrics and services (Prometheus, MLflow, MinIO, Model-API) returning 200 OK.
