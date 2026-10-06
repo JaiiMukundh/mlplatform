@@ -20,7 +20,6 @@ from pathlib import Path
 import numpy as np
 import pandas as pd
 import pytest
-
 from mlp_common.schemas import MODEL_FEATURES
 from model_api.providers.feast_features import (
     FeastFeatureSource,

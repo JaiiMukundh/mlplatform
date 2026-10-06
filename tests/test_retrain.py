@@ -7,7 +7,6 @@ from pathlib import Path
 
 import pandas as pd
 import pytest
-
 from ml.data.generate import generate_dataset, write_dataset
 from ml.data.schemas import TIMESTAMP_COLUMN
 from retrain import dispatch as dispatch_module

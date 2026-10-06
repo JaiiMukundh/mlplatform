@@ -1,9 +1,8 @@
 """Tests for shared service configuration."""
 
 import pytest
-from pydantic import ValidationError
-
 from mlp_common.config import ServiceSettings
+from pydantic import ValidationError
 
 
 def test_settings_load_case_insensitive_environment(

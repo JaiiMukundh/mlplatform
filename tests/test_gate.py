@@ -10,7 +10,6 @@ import numpy as np
 sys.path.insert(0, str(Path(__file__).resolve().parents[1] / "scripts"))
 
 from gate import ABS_FLOOR, evaluate_gate
-
 from ml.data.schemas import FEATURE_COLUMNS
 
 

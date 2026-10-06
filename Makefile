@@ -11,10 +11,10 @@ help: ## Show the supported project commands.
 	@awk 'BEGIN {FS = ":.*## "; printf "MLPlatform targets:\n\n"} /^[a-zA-Z0-9_-]+:.*## / {printf "  %-22s %s\n", $$1, $$2}' $(MAKEFILE_LIST)
 
 bootstrap: ## Verify the laptop prerequisites and record their versions.
-	@bash scripts/bootstrap.sh
+	@bash ops/scripts/bootstrap.sh
 
 preflight: ## Verify host kernel limits required by kind.
-	@bash scripts/check_host.sh
+	@bash ops/scripts/archive/check_host.sh
 
 lint: ## Lint all implemented Python code.
 	@uv run ruff check .
@@ -28,57 +28,57 @@ test: ## Run the unit test suite and coverage gate.
 	@uv run pytest --cov=mlp_common --cov=model_api --cov-report=term-missing
 
 build: ## Build local service images.
-	@hadolint docker/model_api.Dockerfile
-	@docker build --file docker/model_api.Dockerfile \
+	@hadolint infra/docker/model_api.Dockerfile
+	@docker build --file infra/docker/model_api.Dockerfile \
 		--tag localhost:5001/model-api:dev .
 
 build-training: ## Build and push the training/Feast image.
-	@hadolint docker/training.Dockerfile
-	@docker build --file docker/training.Dockerfile \
+	@hadolint infra/docker/training.Dockerfile
+	@docker build --file infra/docker/training.Dockerfile \
 		--tag localhost:5001/training:dev .
 	@docker push localhost:5001/training:dev
 
 publish-feast-data: ## Publish Parquet data to the MinIO feast-offline bucket.
-	@bash scripts/publish_feast_data.sh
+	@bash ops/scripts/publish_feast_data.sh
 
 feast-apply: build-training publish-feast-data ## Apply the Feast definitions (in-cluster Job).
-	@bash scripts/run_job.sh deploy/feast/apply-job.yaml
+	@bash ops/scripts/run_job.sh infra/deploy/feast/apply-job.yaml
 
 feast-materialize: feast-apply ## Materialize Feast features into the Redis online store.
-	@bash scripts/run_job.sh deploy/feast/materialize-job.yaml
+	@bash ops/scripts/run_job.sh infra/deploy/feast/materialize-job.yaml
 
 feast-rematerialize: ## Rewrite the full feature window (recovery after a Redis wipe).
-	@bash scripts/run_job.sh deploy/feast/rematerialize-job.yaml
+	@bash ops/scripts/run_job.sh infra/deploy/feast/rematerialize-job.yaml
 
 feast-verify: ## Verify the Feast offline and online stores match (P6.3).
-	@bash scripts/run_job.sh deploy/feast/verify-job.yaml
+	@bash ops/scripts/run_job.sh infra/deploy/feast/verify-job.yaml
 
 train-mlflow: build-training ## Train via Feast and register in MLflow (P6.4).
-	@bash scripts/train_mlflow.sh
+	@bash ops/scripts/train_mlflow.sh
 
 gate-candidate: build-training ## Score a candidate version (VERSION=N) in-cluster (P7.1).
-	@VERSION="${VERSION:?set VERSION=N}" bash scripts/run_gate.sh
+	@VERSION="${VERSION:?set VERSION=N}" bash ops/scripts/run_gate.sh
 
 model-release-local: ## Release a candidate to prod (VERSION=N, TAG=dev) (P7.3).
-	@bash scripts/model_release_local.sh "${VERSION:?set VERSION=N}" "${TAG:-dev}"
+	@bash ops/scripts/model_release_local.sh "${VERSION:?set VERSION=N}" "${TAG:-dev}"
 
 deploy-monitor: ## Build and deploy the drift monitor and retrain platform (P8).
-	@bash scripts/deploy_monitor.sh
+	@bash ops/scripts/deploy_monitor.sh
 
 e2e: ## Run the local serving and self-healing end-to-end tests.
 	@MLP_RUN_E2E=1 MLP_E2E_RUN_DEMO=1 uv run pytest tests/e2e -q
 
 up: ## Build the complete local platform from scratch.
-	@bash scripts/check_host.sh
+	@bash ops/scripts/archive/check_host.sh
 	@tofu -chdir=infra/envs/local init
 	@tofu -chdir=infra/envs/local apply -auto-approve \
 		-target=module.registry -target=module.cluster
-	@bash scripts/push_bootstrap_images.sh
+	@bash ops/scripts/archive/push_bootstrap_images.sh
 	@tofu -chdir=infra/envs/local apply -auto-approve
-	@bash scripts/bootstrap-post.sh
+	@bash ops/scripts/bootstrap-post.sh
 
 deploy-all: ## Deploy all workloads and seed baselines after cluster creation (P9.2).
-	@bash scripts/deploy_all.sh
+	@bash ops/scripts/deploy_all.sh
 
 down: ## Destroy the local platform.
 	@tofu -chdir=infra/envs/local destroy -auto-approve || true
@@ -86,10 +86,10 @@ down: ## Destroy the local platform.
 	@docker rm -f kind-registry || true
 
 deploy: ## Deploy model-api to the local cluster.
-	@bash scripts/deploy.sh model-api serving dev
+	@bash ops/scripts/deploy.sh model-api serving dev
 
 forward: ## Open local port-forwards when NodePorts are unavailable.
-	@bash scripts/forward.sh
+	@bash ops/scripts/forward.sh
 
 seed-data: ## Generate deterministic synthetic model data.
 	@uv run python -m ml.data.generate --out data --seed 42
@@ -98,16 +98,16 @@ train: ## Train and evaluate a model locally.
 	@uv run python -m ml.train --mode file --data-dir data --artifacts-dir artifacts
 
 traffic: ## Generate prediction traffic.
-	@uv run python scripts/traffic.py --rps 10 --duration 30 --url http://localhost:8080
+	@uv run python ops/scripts/traffic.py --rps 10 --duration 30 --url http://localhost:8080
 
 demo-infra: ## Demonstrate Kubernetes and alert self-healing.
-	@bash scripts/chaos_alert.sh
+	@bash ops/scripts/chaos_alert.sh
 
 demo-model: ## Demonstrate drift-triggered retraining and release.
-	@bash scripts/demo_model.sh
+	@bash ops/scripts/retrain_and_release.sh
 
 reset-demo: ## Restore the repeatable demo baseline.
-	@uv run python scripts/reset_demo.py
+	@uv run python ops/scripts/reset_demo.py
 
 tofu-local-apply: ## Apply the local OpenTofu stack.
 	@tofu -chdir=infra/envs/local apply -auto-approve
@@ -128,7 +128,7 @@ aws-apply: ## [HUMAN] Apply AWS infrastructure (strictly human action under P9.6
 	@echo "========================================================================"
 	@echo "STOP: AWS apply creates billable cloud resources."
 	@echo "Per AGENTS.md Rule 12 and P9.6, this step must be run by a HUMAN."
-	@echo "Follow the step-by-step checklist in docs/aws-port.md."
+	@echo "Follow the step-by-step checklist in ops/docs/archive/aws-port.md."
 	@echo "When ready, execute manually: tofu -chdir=infra/envs/aws apply"
 	@echo "========================================================================"
 	@exit 1
@@ -138,5 +138,4 @@ aws-destroy: ## [HUMAN] Destroy AWS infrastructure.
 
 ui: ## Launch the Central Management and Demo Dashboard (http://localhost:8050).
 	@echo "Starting Central Management UI on http://localhost:8050 ..."
-	@uv run python -m ui.app
-
+	@uv run python -m ops.ui.app

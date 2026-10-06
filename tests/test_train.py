@@ -6,7 +6,6 @@ from pathlib import Path
 
 import joblib
 import pandas as pd
-
 from ml.data.generate import generate_dataset, write_dataset
 from ml.data.schemas import ENTITY_COLUMN, FEATURE_COLUMNS, TIMESTAMP_COLUMN
 from ml.train import (

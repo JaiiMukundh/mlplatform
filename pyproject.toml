@@ -43,25 +43,28 @@ package = true
 
 [tool.hatch.build.targets.wheel]
 packages = [
-  "mlp_common",
-  "ml",
-  "model_api",
-  "drift_monitor",
-  "retrain",
-  "remediator",
+  "core/mlp_common",
+  "core/ml",
+  "core/model_api",
+  "core/drift_monitor",
+  "core/retrain",
+  "core/remediator",
 ]
+
+[tool.hatch.build.targets.wheel.sources]
+"core" = ""
 
 [tool.ruff]
 target-version = "py311"
 line-length = 88
-extend-exclude = [".venv", "artifacts", "data", "docs/SPEC.md", "mlruns"]
+extend-exclude = [".venv", "artifacts", "data", "ops/docs/SPEC.md", "mlruns"]
 
 [tool.ruff.lint]
 select = ["B", "E", "F", "I", "RUF", "SIM", "UP"]
 
 [tool.pytest.ini_options]
 addopts = "--strict-config --strict-markers"
-pythonpath = ["."]
+pythonpath = [".", "core", "ops/scripts"]
 testpaths = ["tests"]
 
 [tool.coverage.run]

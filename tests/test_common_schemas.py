@@ -1,9 +1,8 @@
 """Tests for the serving API contract schemas."""
 
 import pytest
-from pydantic import ValidationError
-
 from mlp_common.schemas import Prediction, PredictRequest
+from pydantic import ValidationError
 
 
 def test_predict_request_accepts_contract_batch() -> None:

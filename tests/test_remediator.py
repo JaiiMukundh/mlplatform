@@ -6,9 +6,8 @@ from types import SimpleNamespace
 from unittest.mock import MagicMock
 
 import pytest
-from fastapi.testclient import TestClient
-
 import remediator.main as remediator_main
+from fastapi.testclient import TestClient
 from remediator.main import RemediatorSettings, create_app
 
 

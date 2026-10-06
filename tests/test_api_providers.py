@@ -9,12 +9,11 @@ import joblib
 import numpy as np
 import pandas as pd
 import pytest
-from sklearn.dummy import DummyClassifier
-
 from ml.data.schemas import ENTITY_COLUMN, FEATURE_COLUMNS
 from model_api import deps as deps_module
 from model_api.deps import ModelApiSettings, build_feature_source, build_model_source
 from model_api.providers.stub import JoblibModelSource, ParquetFeatureSource
+from sklearn.dummy import DummyClassifier
 
 
 def feature_frame() -> pd.DataFrame:

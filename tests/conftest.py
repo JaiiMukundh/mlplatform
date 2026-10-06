@@ -6,9 +6,9 @@ from collections.abc import Iterator
 
 import pytest
 from fastapi.testclient import TestClient
-
 from model_api.deps import ModelApiSettings
 from model_api.main import create_app
+
 from tests.fakes import FakeFeatureSource, FakeModelSource
 
 

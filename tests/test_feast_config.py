@@ -5,11 +5,15 @@ from __future__ import annotations
 from pathlib import Path
 
 import pytest
-
 from feature_repo.render_config import REQUIRED_VARIABLES, render
 
 REPO_ROOT = Path(__file__).resolve().parents[1]
-TEMPLATE = REPO_ROOT / "feature_repo" / "feature_store.yaml.tmpl"
+_candidate_tmpl = REPO_ROOT / "core" / "feature_repo" / "feature_store.yaml.tmpl"
+TEMPLATE = (
+    _candidate_tmpl
+    if _candidate_tmpl.exists()
+    else REPO_ROOT / "feature_repo" / "feature_store.yaml.tmpl"
+)
 
 ENVIRON = {
     "POSTGRES_USER": "mlp",

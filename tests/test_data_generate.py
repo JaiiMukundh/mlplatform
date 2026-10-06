@@ -3,7 +3,6 @@
 import datetime as dt
 
 import pandas as pd
-
 from ml.data.generate import generate_dataset
 from ml.data.schemas import FEATURE_COLUMNS, LABEL_COLUMN
 
