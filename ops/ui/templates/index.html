@@ -45,19 +45,19 @@
     .cypher-panel {
       background: var(--paper-raised);
       border: 2px solid var(--border);
-      box-shadow: 4px 4px 0 var(--border);
+      box-shadow: 2px 2px 0 var(--border);
     }
 
     .cypher-panel-bright {
       background: var(--paper-bright);
       border: 2px solid var(--border);
-      box-shadow: 4px 4px 0 var(--border);
+      box-shadow: 2px 2px 0 var(--border);
     }
 
     .cypher-panel-lime {
       background: var(--lime);
       border: 2px solid var(--border);
-      box-shadow: 4px 4px 0 var(--border);
+      box-shadow: 2px 2px 0 var(--border);
     }
 
     /* Buttons */
@@ -69,40 +69,77 @@
       background: var(--ink);
       color: var(--paper-bright);
       border: 2px solid var(--border);
-      padding: 8px 16px;
+      padding: 7px 14px;
       font-weight: 700;
       font-size: 11px;
-      letter-spacing: 0.08em;
+      letter-spacing: 0.06em;
       text-transform: uppercase;
-      box-shadow: 3px 3px 0 var(--border);
-      transition: transform 100ms ease, box-shadow 100ms ease;
+      box-shadow: none; /* NO black shadow on black component */
+      transition: all 120ms ease;
       cursor: pointer;
     }
 
     .cypher-btn:hover {
-      transform: translate(-2px, -2px);
-      box-shadow: 5px 5px 0 var(--border);
+      background: #262626;
+      border-color: var(--lime);
+      color: var(--lime);
+      transform: translateY(-1px);
     }
 
     .cypher-btn:active {
-      transform: translate(0, 0);
-      box-shadow: none;
+      transform: translateY(0);
+      background: #000;
     }
 
     .cypher-btn-secondary {
       background: var(--paper-bright);
       color: var(--ink);
+      border: 2px solid var(--border);
+      box-shadow: 2px 2px 0 var(--border);
+    }
+
+    .cypher-btn-secondary:hover {
+      background: #FFFFFF;
+      border-color: var(--border);
+      color: var(--ink);
+      transform: translateY(-1px);
+      box-shadow: 3px 3px 0 var(--border);
     }
 
     .cypher-btn-lime {
       background: var(--lime);
       color: var(--ink);
+      border: 2px solid var(--border);
+      box-shadow: 2px 2px 0 var(--border);
+    }
+
+    .cypher-btn-lime:hover {
+      background: #D8FF85;
+      border-color: var(--border);
+      color: var(--ink);
+      transform: translateY(-1px);
+      box-shadow: 3px 3px 0 var(--border);
     }
 
     .cypher-btn-danger {
       background: var(--danger);
-      color: #ffffff;
-      border-color: var(--ink);
+      color: white;
+      border: 2px solid var(--border);
+      box-shadow: 2px 2px 0 var(--border);
+    }
+
+    .cypher-btn-danger:hover {
+      background: #DC2626;
+      transform: translateY(-1px);
+      box-shadow: 3px 3px 0 var(--border);
+    }
+
+    /* Dark components must never have ugly black shadows */
+    .bg-black,
+    .bg-\[\#171717\],
+    [class*="bg-black"],
+    [class*="bg-[#171717]"] {
+      box-shadow: none !important;
     }
 
     /* Navigation Segments */
@@ -182,51 +219,51 @@
 <body class="min-h-screen flex flex-col antialiased">
 
   <!-- ================= TOP HEADER ================= -->
-  <header class="border-b-2 border-black bg-[#E7E3D8] px-6 py-3">
-    <div class="max-w-[1400px] mx-auto flex flex-col lg:flex-row items-start lg:items-center justify-between gap-3">
+  <header class="border-b-2 border-black bg-[#E7E3D8] px-5 py-2 shrink-0">
+    <div class="max-w-[1440px] mx-auto flex flex-col sm:flex-row items-center justify-between gap-2">
       
       <!-- Brand & Sector Tag -->
-      <div class="flex items-center gap-4">
-        <a href="#overview" onclick="switchTab('overview')" class="flex items-center gap-3">
-          <div class="w-9 h-9 bg-black text-[#C8FF5A] font-mono font-bold text-base flex items-center justify-center border-2 border-black">
+      <div class="flex items-center gap-3">
+        <a href="#overview" onclick="switchTab('overview')" class="flex items-center gap-2.5">
+          <div class="w-8 h-8 bg-black text-[#C8FF5A] font-mono font-bold text-sm flex items-center justify-center border-2 border-black">
             ML
           </div>
           <div>
             <div class="flex items-center gap-2">
-              <span class="text-lg font-bold tracking-tight text-black uppercase">MLPLATFORM</span>
-              <span class="px-1.5 py-0.5 text-[9px] font-mono font-bold bg-[#C8FF5A] text-black border border-black">
+              <span class="text-base font-bold tracking-tight text-black uppercase leading-none">MLPLATFORM</span>
+              <span class="px-1.5 py-0.5 text-[9px] font-mono font-bold bg-[#C8FF5A] text-black border border-black leading-none">
                 SPEC 6.4 // PROD
               </span>
             </div>
-            <p class="micro-label">AUTONOMOUS CREDIT RISK PLATFORM</p>
+            <p class="micro-label text-[9px] leading-none mt-0.5">AUTONOMOUS CREDIT RISK PLATFORM</p>
           </div>
         </a>
 
         <!-- Cluster Status Badge -->
-        <div id="clusterHealthBadge" class="hidden sm:flex items-center gap-2 px-2.5 py-1 bg-[#F8F6F0] border-2 border-black font-mono text-xs font-bold text-black">
+        <div id="clusterHealthBadge" class="hidden md:flex items-center gap-2 px-2 py-0.5 bg-[#F8F6F0] border-2 border-black font-mono text-[11px] font-bold text-black">
           <span class="w-2 h-2 bg-[#1D7A4D]"></span>
           <span>KIND // 3 NODES READY</span>
         </div>
       </div>
 
       <!-- Segmented Navigation Bar -->
-      <nav class="flex items-center gap-1 bg-[#E7E3D8] p-1 border-2 border-black overflow-x-auto max-w-full">
-        <button id="tab-overview" onclick="switchTab('overview')" class="cypher-tab active">
+      <nav class="flex items-center gap-1 bg-[#E7E3D8] p-0.5 border-2 border-black overflow-x-auto max-w-full">
+        <button id="tab-overview" onclick="switchTab('overview')" class="cypher-tab active text-xs py-1.5 px-3">
           01 // OVERVIEW
         </button>
-        <button id="tab-scoring" onclick="switchTab('scoring')" class="cypher-tab">
+        <button id="tab-scoring" onclick="switchTab('scoring')" class="cypher-tab text-xs py-1.5 px-3">
           02 // LOAN SCORER
         </button>
-        <button id="tab-chaos" onclick="switchTab('chaos')" class="cypher-tab">
+        <button id="tab-chaos" onclick="switchTab('chaos')" class="cypher-tab text-xs py-1.5 px-3">
           03 // CHAOS LAB
         </button>
-        <button id="tab-drift" onclick="switchTab('drift')" class="cypher-tab">
+        <button id="tab-drift" onclick="switchTab('drift')" class="cypher-tab text-xs py-1.5 px-3">
           04 // DRIFT MONITOR
         </button>
-        <button id="tab-terminal" onclick="switchTab('terminal')" class="cypher-tab">
+        <button id="tab-terminal" onclick="switchTab('terminal')" class="cypher-tab text-xs py-1.5 px-3">
           05 // CONSOLE
         </button>
-        <button id="tab-ecosystem" onclick="switchTab('ecosystem')" class="cypher-tab">
+        <button id="tab-ecosystem" onclick="switchTab('ecosystem')" class="cypher-tab text-xs py-1.5 px-3">
           06 // PORTALS
         </button>
       </nav>
@@ -235,16 +272,16 @@
   </header>
 
   <!-- ================= SUB-HEADER TICKER ================= -->
-  <div class="border-b-2 border-black bg-[#C8FF5A] px-6 py-1.5">
-    <div class="max-w-[1400px] mx-auto flex flex-wrap items-center justify-between text-xs font-mono text-black font-semibold gap-3">
-      <div class="flex items-center gap-4">
+  <div class="border-b-2 border-black bg-[#C8FF5A] px-5 py-1 shrink-0">
+    <div class="max-w-[1440px] mx-auto flex flex-wrap items-center justify-between text-[11px] font-mono text-black font-semibold gap-2">
+      <div class="flex items-center gap-3">
         <span>MODEL: <strong id="subHeaderModelVer" class="underline decoration-2">loan-default:v10</strong></span>
         <span>FLEET: <strong id="subHeaderFleet">2 / 2 REPLICAS</strong></span>
         <span>ONLINE STORE: <strong>Feast / Redis 6379</strong></span>
       </div>
-      <div class="flex items-center gap-4">
+      <div class="flex items-center gap-3">
         <span>DATASET: <strong>UCI Taiwan (30,000 Borrowers)</strong></span>
-        <span id="driftStatePill" class="px-2 py-0.5 bg-black text-[#C8FF5A] border border-black font-bold uppercase text-[10px]">
+        <span id="driftStatePill" class="px-2 py-0.5 bg-black text-[#C8FF5A] border border-black font-bold uppercase text-[9px]">
           DRIFT: STABLE
         </span>
       </div>
@@ -252,30 +289,30 @@
   </div>
 
   <!-- ================= MAIN VIEW CONTAINER ================= -->
-  <main class="flex-1 max-w-[1400px] w-full mx-auto p-6 space-y-8">
+  <main class="flex-1 max-w-[1440px] w-full mx-auto p-4 sm:p-5 space-y-4 sm:space-y-5">
 
     <!-- ================= PAGE 1: OVERVIEW ================= -->
-    <div id="view-overview" class="view-panel space-y-6">
+    <div id="view-overview" class="view-panel space-y-4">
       
-      <!-- Minimalist Hero -->
-      <div class="cypher-panel-lime p-6 sm:p-8">
-        <div class="flex flex-col lg:flex-row lg:items-center justify-between gap-6">
-          <div class="space-y-2">
+      <!-- Scaled Minimalist Hero -->
+      <div class="cypher-panel-lime p-4 sm:p-5">
+        <div class="flex flex-col lg:flex-row lg:items-center justify-between gap-4">
+          <div class="space-y-1.5">
             <span class="micro-label bg-white px-2 py-0.5 border border-black inline-block text-black">
               CORE CONTROL PLANE
             </span>
-            <h1 class="text-3xl sm:text-5xl font-black text-black leading-none tracking-tight uppercase">
+            <h1 class="text-2xl sm:text-3xl font-black text-black leading-tight tracking-tight uppercase">
               AUTONOMOUS MLOPS &amp; RECONCILIATION
             </h1>
-            <p class="text-sm font-medium text-black max-w-xl">
+            <p class="text-xs font-medium text-black max-w-xl">
               Production credit scoring on 30,000 Taiwan borrower records with Feast point-in-time features, automated drift gating, and zero-downtime Kubernetes pod self-healing.
             </p>
           </div>
-          <div class="flex items-center gap-3">
-            <button onclick="switchTab('chaos')" class="cypher-btn py-3 px-5 text-xs">
+          <div class="flex items-center gap-2.5 shrink-0">
+            <button onclick="switchTab('chaos')" class="cypher-btn py-2 px-4 text-xs">
               ⚡ CHAOS DRILL &rarr;
             </button>
-            <button onclick="switchTab('scoring')" class="cypher-btn cypher-btn-secondary py-3 px-5 text-xs">
+            <button onclick="switchTab('scoring')" class="cypher-btn cypher-btn-secondary py-2 px-4 text-xs">
               SCORE BORROWER
             </button>
           </div>
@@ -284,53 +321,53 @@
 
       <!-- Four Golden Signals -->
       <div>
-        <div class="flex items-center justify-between mb-3 border-b-2 border-black pb-2">
+        <div class="flex items-center justify-between mb-2 border-b-2 border-black pb-1.5">
           <h2 class="text-xs font-bold uppercase tracking-wider text-black">
             01 // FOUR GOLDEN SIGNALS (PROMETHEUS TELEMETRY)
           </h2>
-          <span class="micro-label">REFRESH: 2.5S</span>
+          <span class="micro-label text-[9px]">REFRESH: 2.5S</span>
         </div>
 
-        <div class="grid grid-cols-2 lg:grid-cols-4 gap-4">
+        <div class="grid grid-cols-2 lg:grid-cols-4 gap-3">
           
           <!-- RPS -->
-          <div class="cypher-panel-bright p-5 flex flex-col justify-between">
-            <span class="micro-label">01.01 // THROUGHPUT</span>
-            <p id="metricRPS" class="text-4xl sm:text-5xl font-black text-black font-mono tracking-tighter my-2">0.0</p>
-            <div class="pt-2 border-t-2 border-black flex items-center justify-between text-xs font-mono text-[#66645D]">
+          <div class="cypher-panel-bright p-3 sm:p-3.5 flex flex-col justify-between">
+            <span class="micro-label text-[9px]">01.01 // THROUGHPUT</span>
+            <p id="metricRPS" class="text-3xl sm:text-4xl font-black text-black font-mono tracking-tighter my-1">0.0</p>
+            <div class="pt-1.5 border-t border-black flex items-center justify-between text-[11px] font-mono text-[#66645D]">
               <span>REQ/SEC</span>
               <span class="text-black font-bold">RATE(1M)</span>
             </div>
           </div>
 
           <!-- P95 Latency -->
-          <div class="cypher-panel-bright p-5 flex flex-col justify-between">
-            <span class="micro-label">01.02 // P95 LATENCY</span>
-            <p id="metricP95" class="text-4xl sm:text-5xl font-black text-black font-mono tracking-tighter my-2">--</p>
-            <div class="pt-2 border-t-2 border-black flex items-center justify-between text-xs font-mono text-[#66645D]">
+          <div class="cypher-panel-bright p-3 sm:p-3.5 flex flex-col justify-between">
+            <span class="micro-label text-[9px]">01.02 // P95 LATENCY</span>
+            <p id="metricP95" class="text-3xl sm:text-4xl font-black text-black font-mono tracking-tighter my-1">--</p>
+            <div class="pt-1.5 border-t border-black flex items-center justify-between text-[11px] font-mono text-[#66645D]">
               <span>SLA: &lt; 50MS</span>
               <span class="text-black font-bold">P50: <span id="metricP50">-- ms</span></span>
             </div>
           </div>
 
           <!-- Error Rate -->
-          <div class="cypher-panel-bright p-5 flex flex-col justify-between">
-            <span class="micro-label">01.03 // ERROR RATE</span>
-            <p id="metricErrors" class="text-4xl sm:text-5xl font-black text-black font-mono tracking-tighter my-2">0.0%</p>
-            <div class="pt-2 border-t-2 border-black flex items-center justify-between text-xs font-mono text-[#66645D]">
+          <div class="cypher-panel-bright p-3 sm:p-3.5 flex flex-col justify-between">
+            <span class="micro-label text-[9px]">01.03 // ERROR RATE</span>
+            <p id="metricErrors" class="text-3xl sm:text-4xl font-black text-black font-mono tracking-tighter my-1">0.0%</p>
+            <div class="pt-1.5 border-t border-black flex items-center justify-between text-[11px] font-mono text-[#66645D]">
               <span>5XX RATIO</span>
               <span class="text-[#1D7A4D] font-bold">HEALTHY</span>
             </div>
           </div>
 
           <!-- Serving Replicas (Exactly 2 Pods!) -->
-          <div class="cypher-panel-bright p-5 flex flex-col justify-between">
-            <span class="micro-label">01.04 // SERVING FLEET</span>
-            <div class="flex items-baseline gap-2 my-2">
-              <span id="metricReplicas" class="text-4xl sm:text-5xl font-black text-black font-mono tracking-tighter">2</span>
-              <span class="text-sm font-mono font-bold text-[#66645D]">/ <span id="metricDesired">2</span> DESIRED</span>
+          <div class="cypher-panel-bright p-3 sm:p-3.5 flex flex-col justify-between">
+            <span class="micro-label text-[9px]">01.04 // SERVING FLEET</span>
+            <div class="flex items-baseline gap-2 my-1">
+              <span id="metricReplicas" class="text-3xl sm:text-4xl font-black text-black font-mono tracking-tighter">2</span>
+              <span class="text-xs font-mono font-bold text-[#66645D]">/ <span id="metricDesired">2</span> DESIRED</span>
             </div>
-            <div class="pt-2 border-t-2 border-black flex items-center justify-between text-xs font-mono">
+            <div class="pt-1.5 border-t border-black flex items-center justify-between text-[11px] font-mono">
               <span id="metricReplicasBadge" class="font-bold text-[#1D7A4D]">ALL ONLINE</span>
               <span class="text-[#66645D]">PDB: MIN 1</span>
             </div>
@@ -340,39 +377,39 @@
       </div>
 
       <!-- Lineage & Topology Bento -->
-      <div class="grid grid-cols-1 lg:grid-cols-12 gap-5">
+      <div class="grid grid-cols-1 lg:grid-cols-12 gap-3.5">
         
         <!-- Champion Model Dossier (8 cols) -->
-        <div class="lg:col-span-8 cypher-panel p-5 space-y-3">
-          <div class="flex items-center justify-between border-b-2 border-black pb-2">
+        <div class="lg:col-span-8 cypher-panel p-3.5 sm:p-4 space-y-2.5">
+          <div class="flex items-center justify-between border-b-2 border-black pb-1.5">
             <div>
               <span class="micro-label">02 // CHAMPION ARTIFACT</span>
-              <h3 id="championModelTitle" class="text-base font-black uppercase text-black">Champion Model Version 10</h3>
+              <h3 id="championModelTitle" class="text-sm sm:text-base font-black uppercase text-black">Champion Model Version 10</h3>
             </div>
-            <span class="px-2 py-0.5 bg-black text-[#C8FF5A] font-mono text-xs font-bold">
+            <span class="px-2 py-0.5 bg-black text-[#C8FF5A] font-mono text-[11px] font-bold">
               ALIAS: @champion
             </span>
           </div>
 
-          <div class="grid grid-cols-3 gap-3 pt-1">
-            <div class="p-3 bg-[#F8F6F0] border-2 border-black">
-              <span class="micro-label">ALGORITHM</span>
-              <p class="font-mono text-sm font-bold text-black mt-0.5">HistGradientBoosting</p>
-              <p class="text-[10px] text-[#66645D]">Scikit-Learn 1.4+ • max_iter=180</p>
+          <div class="grid grid-cols-3 gap-2.5 pt-0.5">
+            <div class="p-2.5 bg-[#F8F6F0] border-2 border-black">
+              <span class="micro-label text-[9px]">ALGORITHM</span>
+              <p class="font-mono text-xs font-bold text-black mt-0.5">HistGradientBoosting</p>
+              <p class="text-[9px] text-[#66645D]">Scikit-Learn 1.4+ • max_iter=180</p>
             </div>
-            <div class="p-3 bg-[#F8F6F0] border-2 border-black">
-              <span class="micro-label">TEST ROC-AUC</span>
-              <p id="championAucMetric" class="font-mono text-sm font-bold text-[#1D7A4D] mt-0.5">0.9665 (Pass Gate)</p>
-              <p class="text-[10px] text-[#66645D]">SPEC Floor: &ge; 0.70</p>
+            <div class="p-2.5 bg-[#F8F6F0] border-2 border-black">
+              <span class="micro-label text-[9px]">TEST ROC-AUC</span>
+              <p id="championAucMetric" class="font-mono text-xs font-bold text-[#1D7A4D] mt-0.5">0.9665 (Pass Gate)</p>
+              <p class="text-[9px] text-[#66645D]">SPEC Floor: &ge; 0.70</p>
             </div>
-            <div class="p-3 bg-[#F8F6F0] border-2 border-black">
-              <span class="micro-label">FEAST SERVICE</span>
-              <p class="font-mono text-sm font-bold text-black mt-0.5">loan_default_v1</p>
-              <p class="text-[10px] text-[#66645D]">Point-in-time Redis online store</p>
+            <div class="p-2.5 bg-[#F8F6F0] border-2 border-black">
+              <span class="micro-label text-[9px]">FEAST SERVICE</span>
+              <p class="font-mono text-xs font-bold text-black mt-0.5">loan_default_v1</p>
+              <p class="text-[9px] text-[#66645D]">Point-in-time Redis online store</p>
             </div>
           </div>
 
-          <div class="p-3 bg-[#F8F6F0] border-2 border-black flex items-center justify-between text-xs font-mono">
+          <div class="p-2.5 bg-[#F8F6F0] border-2 border-black flex items-center justify-between text-[11px] font-mono">
             <div>
               <span class="text-[#66645D]">MLflow Run ID:</span>
               <span id="metaRunId" class="text-black font-bold ml-1">561bbd7f190f4cb6965f3b86f9db6188</span>
@@ -384,10 +421,10 @@
         </div>
 
         <!-- Infrastructure Vitals (4 cols) -->
-        <div class="lg:col-span-4 cypher-panel p-5 flex flex-col justify-between space-y-3">
-          <div class="border-b-2 border-black pb-2">
+        <div class="lg:col-span-4 cypher-panel p-3.5 sm:p-4 flex flex-col justify-between space-y-2">
+          <div class="border-b-2 border-black pb-1.5">
             <span class="micro-label">03 // INFRASTRUCTURE</span>
-            <h3 class="text-base font-black uppercase text-black">Cluster Health</h3>
+            <h3 class="text-sm sm:text-base font-black uppercase text-black">Cluster Health</h3>
           </div>
 
           <div class="space-y-1.5 text-xs font-mono">
@@ -409,7 +446,7 @@
             </div>
           </div>
 
-          <button onclick="executeAction('reset_demo')" class="cypher-btn cypher-btn-secondary w-full text-xs">
+          <button onclick="executeAction('reset_demo')" class="cypher-btn cypher-btn-secondary w-full text-xs py-1.5">
             RESTORE BASELINE
           </button>
         </div>
@@ -419,10 +456,10 @@
     </div>
 
     <!-- ================= PAGE 2: LOAN SCORER & AUTONOMOUS HEALING ================= -->
-    <div id="view-scoring" class="view-panel hidden space-y-6">
+    <div id="view-scoring" class="view-panel hidden space-y-3.5">
       
       <!-- Drift Threshold Rule Banner (High Contrast, Bold, Minimalist) -->
-      <div class="p-4 bg-[#171717] text-[#F8F6F0] border-2 border-black shadow-[3px_3px_0_#171717] flex flex-col md:flex-row items-start md:items-center justify-between gap-4 font-mono text-xs">
+      <div class="p-3 bg-[#171717] text-[#F8F6F0] border-2 border-black flex flex-col md:flex-row items-start md:items-center justify-between gap-3 font-mono text-xs">
         <div class="flex items-center gap-3">
           <span class="w-3.5 h-3.5 bg-[#C8FF5A] border border-black inline-block animate-pulse"></span>
           <div>
@@ -446,7 +483,7 @@
         <!-- Archetypes -->
         <div class="flex flex-wrap items-center gap-2">
           <span class="micro-label">SELECT APPLICANT:</span>
-          <button onclick="pickBorrower(7)" id="archBtn7" class="px-3 py-2 bg-[#C8FF5A] border-2 border-black text-xs font-mono font-bold text-black transition shadow-[2px_2px_0_#171717]">
+          <button onclick="pickBorrower(7)" id="archBtn7" class="px-2.5 py-1.5 bg-[#C8FF5A] border-2 border-black text-xs font-mono font-bold text-black transition">
             👤 #7 SUPER PRIME ($500k Limit)
           </button>
           <button onclick="pickBorrower(12)" id="archBtn12" class="px-3 py-2 bg-[#F8F6F0] hover:bg-[#C8FF5A] border-2 border-black text-xs font-mono font-bold text-black transition">
@@ -466,7 +503,7 @@
 
         <!-- Single Primary Action Controls -->
         <div class="flex items-center gap-2">
-          <button id="injectDriftBtn" onclick="triggerDriftShockAction()" class="cypher-btn cypher-btn-danger text-xs py-2 px-4 flex items-center gap-2 font-black shadow-[3px_3px_0_#171717]">
+          <button id="injectDriftBtn" onclick="triggerDriftShockAction()" class="cypher-btn cypher-btn-danger text-xs py-2 px-4 flex items-center gap-2 font-black">
             <span>💥</span> <span>INJECT DRIFT SHOCK</span>
           </button>
           <button onclick="resetBaselineAction()" class="cypher-btn cypher-btn-secondary text-xs py-2 px-3">
@@ -579,13 +616,13 @@
           <!-- Unmissable Verdict Box -->
           <div class="text-center py-2 space-y-3">
             <span class="micro-label">PREDICTED DEFAULT PROBABILITY</span>
-            <p id="scoreProbability" class="text-5xl sm:text-6xl font-black font-mono tracking-tighter text-black my-1">6.2%</p>
+            <p id="scoreProbability" class="text-4xl sm:text-5xl font-black font-mono tracking-tighter text-black my-0.5">6.2%</p>
             
             <div class="w-full bg-[#E7E3D8] border-2 border-black h-3.5 overflow-hidden">
               <div id="scoreProbBar" class="h-full bg-[#1D7A4D] transition-all duration-500" style="width: 6.2%"></div>
             </div>
 
-            <div id="verdictBox" class="p-3.5 border-2 border-black bg-[#ecfdf5] text-center shadow-[2px_2px_0_#171717] transition-all duration-300">
+            <div id="verdictBox" class="p-2.5 border-2 border-black bg-[#ecfdf5] text-center transition-all duration-300">
               <span id="scoreRiskLevel" class="font-mono text-lg font-black text-[#1D7A4D] uppercase tracking-wide">
                 APPROVED // LOW RISK (FINE)
               </span>
@@ -652,7 +689,7 @@
     </div>
 
     <!-- ================= PAGE 3: CHAOS LAB (2 PODS // TRAFFIC REDIRECTION) ================= -->
-    <div id="view-chaos" class="view-panel hidden space-y-6">
+    <div id="view-chaos" class="view-panel hidden space-y-3.5">
       
       <div class="border-b-2 border-black pb-3 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3">
         <div>
@@ -673,7 +710,7 @@
       </div>
 
       <!-- Live Traffic Routing Status Banner -->
-      <div id="trafficRoutingBanner" class="p-3.5 bg-[#F8F6F0] border-2 border-black flex flex-col sm:flex-row items-center justify-between gap-3 font-mono text-xs">
+      <div id="trafficRoutingBanner" class="p-2.5 bg-[#F8F6F0] border-2 border-black flex flex-col sm:flex-row items-center justify-between gap-2.5 font-mono text-xs">
         <div class="flex items-center gap-2">
           <span id="trafficPulseDot" class="w-3 h-3 bg-[#1D7A4D] border border-black inline-block animate-pulse"></span>
           <span class="font-bold text-black uppercase">LIVE TRAFFIC DISTRIBUTION:</span>
@@ -699,7 +736,7 @@
       </div>
 
       <!-- Live Proof Banner: Run Burst Probe to Prove Zero Dropped Requests -->
-      <div class="cypher-panel p-5 flex flex-col md:flex-row items-start md:items-center justify-between gap-4">
+      <div class="cypher-panel p-3.5 flex flex-col md:flex-row items-start md:items-center justify-between gap-3">
         <div>
           <span class="micro-label">LIVE PROOF OF HIGH AVAILABILITY</span>
           <h3 class="text-base font-black uppercase text-black mt-0.5">Fire Rapid Prediction Burst</h3>
@@ -844,7 +881,7 @@
     </div>
 
     <!-- ================= PAGE 5: CONSOLE ================= -->
-    <div id="view-terminal" class="view-panel hidden space-y-5">
+    <div id="view-terminal" class="view-panel hidden space-y-3.5">
       
       <div class="border-b-2 border-black pb-3 flex items-center justify-between">
         <div>
@@ -889,7 +926,7 @@
       </div>
 
       <!-- Terminal Screen -->
-      <div class="border-2 border-black bg-black text-[#F8F6F0] shadow-[4px_4px_0_#171717] font-mono text-xs">
+      <div class="border-2 border-black bg-black text-[#F8F6F0] font-mono text-xs">
         <div class="bg-[#171717] border-b-2 border-black px-4 py-2 flex items-center justify-between">
           <div class="flex items-center gap-2">
             <span class="w-2.5 h-2.5 bg-[#B52A24]"></span>
@@ -901,7 +938,7 @@
             STATUS: IDLE
           </span>
         </div>
-        <div class="p-4 h-[380px] overflow-y-auto">
+        <div class="p-3 h-[280px] overflow-y-auto">
           <pre id="terminalOutput" class="whitespace-pre-wrap leading-relaxed text-[#E7E3D8]"># MLPlatform Execution Console Ready.
 # Select a drill above to trigger live streaming output.
 </pre>
@@ -924,7 +961,7 @@
     </div>
 
     <!-- ================= PAGE 6: PORTALS ================= -->
-    <div id="view-ecosystem" class="view-panel hidden space-y-5">
+    <div id="view-ecosystem" class="view-panel hidden space-y-3.5">
       
       <div class="border-b-2 border-black pb-3">
         <span class="micro-label text-black bg-[#C8FF5A] px-2 py-0.5 border border-black inline-block mb-1">
@@ -936,7 +973,7 @@
       <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
         
         <!-- Grafana -->
-        <a href="http://localhost:3000" target="_blank" class="cypher-panel p-5 flex flex-col justify-between hover:bg-[#F8F6F0] transition group">
+        <a href="http://localhost:3000" target="_blank" class="cypher-panel p-3.5 flex flex-col justify-between hover:bg-[#F8F6F0] transition group">
           <div>
             <div class="flex items-center justify-between border-b-2 border-black pb-2 mb-2">
               <span class="micro-label">PORTAL 06.01</span>
@@ -945,14 +982,14 @@
             <h3 class="text-base font-black uppercase text-black">Grafana Dashboard</h3>
             <p class="text-xs text-[#66645D] mt-1">Live metrics: p95 latency, RPS, pod CPU/memory, error budget.</p>
           </div>
-          <div class="mt-4 pt-2 border-t-2 border-black flex items-center justify-between text-xs font-bold text-black uppercase">
+          <div class="mt-2.5 pt-1.5 border-t-2 border-black flex items-center justify-between text-xs font-bold text-black uppercase">
             <span>LAUNCH GRAFANA</span>
             <span>&rarr;</span>
           </div>
         </a>
 
         <!-- MLflow -->
-        <a href="http://localhost:5000" target="_blank" class="cypher-panel p-5 flex flex-col justify-between hover:bg-[#F8F6F0] transition group">
+        <a href="http://localhost:5000" target="_blank" class="cypher-panel p-3.5 flex flex-col justify-between hover:bg-[#F8F6F0] transition group">
           <div>
             <div class="flex items-center justify-between border-b-2 border-black pb-2 mb-2">
               <span class="micro-label">PORTAL 06.02</span>
@@ -961,14 +998,14 @@
             <h3 class="text-base font-black uppercase text-black">MLflow Registry</h3>
             <p class="text-xs text-[#66645D] mt-1">Model artifact store, parameters, gate tags, and champion lineage.</p>
           </div>
-          <div class="mt-4 pt-2 border-t-2 border-black flex items-center justify-between text-xs font-bold text-black uppercase">
+          <div class="mt-2.5 pt-1.5 border-t-2 border-black flex items-center justify-between text-xs font-bold text-black uppercase">
             <span>LAUNCH MLFLOW</span>
             <span>&rarr;</span>
           </div>
         </a>
 
         <!-- Swagger -->
-        <a href="http://localhost:8080/docs" target="_blank" class="cypher-panel p-5 flex flex-col justify-between hover:bg-[#F8F6F0] transition group">
+        <a href="http://localhost:8080/docs" target="_blank" class="cypher-panel p-3.5 flex flex-col justify-between hover:bg-[#F8F6F0] transition group">
           <div>
             <div class="flex items-center justify-between border-b-2 border-black pb-2 mb-2">
               <span class="micro-label">PORTAL 06.03</span>
@@ -977,14 +1014,14 @@
             <h3 class="text-base font-black uppercase text-black">Model API Docs</h3>
             <p class="text-xs text-[#66645D] mt-1">Interactive OpenAPI Swagger UI testing live `/predict` and `/healthz`.</p>
           </div>
-          <div class="mt-4 pt-2 border-t-2 border-black flex items-center justify-between text-xs font-bold text-black uppercase">
+          <div class="mt-2.5 pt-1.5 border-t-2 border-black flex items-center justify-between text-xs font-bold text-black uppercase">
             <span>OPEN SWAGGER</span>
             <span>&rarr;</span>
           </div>
         </a>
 
         <!-- MinIO -->
-        <a href="http://localhost:9001" target="_blank" class="cypher-panel p-5 flex flex-col justify-between hover:bg-[#F8F6F0] transition group">
+        <a href="http://localhost:9001" target="_blank" class="cypher-panel p-3.5 flex flex-col justify-between hover:bg-[#F8F6F0] transition group">
           <div>
             <div class="flex items-center justify-between border-b-2 border-black pb-2 mb-2">
               <span class="micro-label">PORTAL 06.04</span>
@@ -993,14 +1030,14 @@
             <h3 class="text-base font-black uppercase text-black">MinIO Storage</h3>
             <p class="text-xs text-[#66645D] mt-1">S3 bucket browser for Feast offline parquets and MLflow binaries.</p>
           </div>
-          <div class="mt-4 pt-2 border-t-2 border-black flex items-center justify-between text-xs font-bold text-black uppercase">
+          <div class="mt-2.5 pt-1.5 border-t-2 border-black flex items-center justify-between text-xs font-bold text-black uppercase">
             <span>LAUNCH MINIO</span>
             <span>&rarr;</span>
           </div>
         </a>
 
         <!-- Alertmanager -->
-        <a href="http://localhost:9093" target="_blank" class="cypher-panel p-5 flex flex-col justify-between hover:bg-[#F8F6F0] transition group">
+        <a href="http://localhost:9093" target="_blank" class="cypher-panel p-3.5 flex flex-col justify-between hover:bg-[#F8F6F0] transition group">
           <div>
             <div class="flex items-center justify-between border-b-2 border-black pb-2 mb-2">
               <span class="micro-label">PORTAL 06.05</span>
@@ -1009,7 +1046,7 @@
             <h3 class="text-base font-black uppercase text-black">Alertmanager</h3>
             <p class="text-xs text-[#66645D] mt-1">Active Prometheus alerts and webhook triggers to the remediator.</p>
           </div>
-          <div class="mt-4 pt-2 border-t-2 border-black flex items-center justify-between text-xs font-bold text-black uppercase">
+          <div class="mt-2.5 pt-1.5 border-t-2 border-black flex items-center justify-between text-xs font-bold text-black uppercase">
             <span>LAUNCH ALERTS</span>
             <span>&rarr;</span>
           </div>
@@ -1097,7 +1134,7 @@
           </div>
 
           <!-- Surviving Pod Path -->
-          <div class="flex items-center justify-between p-2.5 bg-[#C8FF5A] border-2 border-black shadow-[2px_2px_0_#171717]">
+          <div class="flex items-center justify-between p-2.5 bg-[#C8FF5A] border-2 border-black">
             <div class="flex items-center gap-2">
               <span class="w-6 h-6 bg-black text-[#C8FF5A] font-bold flex items-center justify-center text-xs">✓</span>
               <div>
@@ -1187,7 +1224,7 @@
   </div>
 
   <!-- Toast Notification -->
-  <div id="toast" class="hidden fixed bottom-6 right-6 z-50 bg-[#F8F6F0] border-2 border-black shadow-[4px_4px_0_#171717] p-4 font-mono text-xs flex items-center gap-3 max-w-md">
+  <div id="toast" class="hidden fixed bottom-6 right-6 z-50 bg-[#F8F6F0] border-2 border-black p-4 font-mono text-xs flex items-center gap-3 max-w-md">
     <div id="toastIcon" class="text-xl">⚡</div>
     <div>
       <h4 id="toastTitle" class="font-bold text-black uppercase">Notification</h4>
@@ -1689,7 +1726,7 @@
         if (healthyServing.length === 1) {
           const survivor = healthyServing[0];
           if (banner) {
-            banner.className = 'p-3.5 bg-[#C8FF5A] border-2 border-black flex flex-col sm:flex-row items-center justify-between gap-3 font-mono text-xs shadow-[2px_2px_0_#171717]';
+            banner.className = 'p-3.5 bg-[#C8FF5A] border-2 border-black flex flex-col sm:flex-row items-center justify-between gap-3 font-mono text-xs';
           }
           if (splitText) {
             splitText.innerHTML = `⚡ <span class="bg-black text-[#C8FF5A] px-1.5 py-0.5">100% OF LIVE TRAFFIC</span> REDIRECTED TO SURVIVOR: <strong>${survivor.name}</strong>`;
@@ -1833,7 +1870,7 @@
           badge.className = 'text-[9px] bg-[#1D7A4D] text-white px-1 font-bold';
           badge.innerText = 'PASSED';
         } else if (i === stepNum) {
-          card.className = 'p-3 border-2 border-black font-mono bg-[#C8FF5A] shadow-[2px_2px_0_#171717] transition animate-pulse';
+          card.className = 'p-3 border-2 border-black font-mono bg-[#C8FF5A] transition animate-pulse';
           badge.className = 'text-[9px] bg-black text-[#C8FF5A] px-1 font-bold';
           badge.innerText = 'ACTIVE';
         } else {
@@ -1906,7 +1943,7 @@
       const subText = document.getElementById('scoreSubText');
       const fleetPill = document.getElementById('scoreFleetStatusPill');
 
-      if (verdictBox) verdictBox.className = 'p-3.5 border-2 border-black bg-[#fed7aa] text-center shadow-[2px_2px_0_#171717]';
+      if (verdictBox) verdictBox.className = 'p-3.5 border-2 border-black bg-[#fed7aa] text-center';
       if (scoreRiskLevel) {
         scoreRiskLevel.className = 'font-mono text-lg font-black text-[#B52A24] uppercase tracking-wide';
         scoreRiskLevel.innerText = '🚨 HIGH RISK // FRAUD REJECTED (DUMB)';
@@ -2043,7 +2080,7 @@
       const subText = document.getElementById('scoreSubText');
       const fleetPill = document.getElementById('scoreFleetStatusPill');
 
-      if (verdictBox) verdictBox.className = 'p-3.5 border-2 border-black bg-[#ecfdf5] text-center shadow-[2px_2px_0_#171717]';
+      if (verdictBox) verdictBox.className = 'p-3.5 border-2 border-black bg-[#ecfdf5] text-center';
       if (scoreRiskLevel) {
         scoreRiskLevel.className = 'font-mono text-lg font-black text-[#1D7A4D] uppercase tracking-wide';
         scoreRiskLevel.innerText = 'APPROVED // HEALED & RESTORED (FINE)';
@@ -2099,13 +2136,13 @@
       const subText = document.getElementById('scoreSubText');
       const fleetPill = document.getElementById('scoreFleetStatusPill');
 
-      if (verdictBox) verdictBox.className = 'p-3.5 border-2 border-black bg-[#ecfdf5] text-center shadow-[2px_2px_0_#171717]';
+      if (verdictBox) verdictBox.className = 'p-3.5 border-2 border-black bg-[#ecfdf5] text-center';
       if (scoreRiskLevel) {
         scoreRiskLevel.className = 'font-mono text-lg font-black text-[#1D7A4D] uppercase tracking-wide';
         scoreRiskLevel.innerText = 'APPROVED // LOW RISK (FINE)';
       }
       if (scoreProb) {
-        scoreProb.className = 'text-5xl sm:text-6xl font-black font-mono tracking-tighter text-black my-1';
+        scoreProb.className = 'text-4xl sm:text-5xl font-black font-mono tracking-tighter text-black my-0.5';
         scoreProb.innerText = '6.2%';
       }
       if (scoreProbBar) {
@@ -2196,7 +2233,7 @@
       });
       const activeBtn = document.getElementById(`archBtn${id}`);
       if (activeBtn) {
-        activeBtn.className = 'px-3 py-2 bg-[#C8FF5A] border-2 border-black text-xs font-mono font-bold text-black transition shadow-[2px_2px_0_#171717]';
+        activeBtn.className = 'px-2.5 py-1.5 bg-[#C8FF5A] border-2 border-black text-xs font-mono font-bold text-black transition';
       }
 
       loadCustomerProfile(id);
@@ -2263,7 +2300,7 @@
 
           if (data.prediction === 1) {
             if (verdictElem) verdictElem.innerText = '🚨 HIGH RISK // FRAUD REJECTED (DUMB)';
-            if (verdictBox) verdictBox.className = 'p-3.5 border-2 border-black bg-[#fed7aa] text-center shadow-[2px_2px_0_#171717]';
+            if (verdictBox) verdictBox.className = 'p-3.5 border-2 border-black bg-[#fed7aa] text-center';
             if (verdictElem) verdictElem.className = 'font-mono text-lg font-black text-[#B52A24] uppercase tracking-wide';
             if (barElem) barElem.className = 'h-full bg-[#B52A24] transition-all duration-300';
             if (cogBadge) {
@@ -2272,7 +2309,7 @@
             }
           } else {
             if (verdictElem) verdictElem.innerText = 'APPROVED // LOW RISK (FINE)';
-            if (verdictBox) verdictBox.className = 'p-3.5 border-2 border-black bg-[#ecfdf5] text-center shadow-[2px_2px_0_#171717]';
+            if (verdictBox) verdictBox.className = 'p-3.5 border-2 border-black bg-[#ecfdf5] text-center';
             if (verdictElem) verdictElem.className = 'font-mono text-lg font-black text-[#1D7A4D] uppercase tracking-wide';
             if (barElem) barElem.className = 'h-full bg-[#1D7A4D] transition-all duration-300';
             if (cogBadge) {

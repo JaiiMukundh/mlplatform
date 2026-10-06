@@ -24,10 +24,15 @@ ARG HELM_VERSION=v3.22.0
 ENV KUBECTL_VERSION=${KUBECTL_VERSION} HELM_VERSION=${HELM_VERSION}
 
 COPY --chown=10001:10001 core/retrain/ retrain/
-COPY --chown=10001:10001 ops/scripts/model_release_local.sh ops/scripts/deploy.sh ops/scripts/smoke.sh ops/scripts/loadcheck.py ops/scripts/run_gate.sh ops/scripts/run_job.sh ops/scripts/archive/install_k8s_tools.py scripts/
+COPY --chown=10001:10001 ops/scripts/model_release_local.sh ops/scripts/deploy.sh ops/scripts/smoke.sh ops/scripts/loadcheck.py ops/scripts/run_gate.sh ops/scripts/run_job.sh scripts/
 COPY --chown=10001:10001 infra/deploy/charts/model-api deploy/charts/model-api
 COPY --chown=10001:10001 infra/deploy/gate deploy/gate
 
-RUN python3 scripts/install_k8s_tools.py
+RUN curl -fsSL -o /app/bin/kubectl "https://dl.k8s.io/release/${KUBECTL_VERSION}/bin/linux/amd64/kubectl" \
+    && chmod +x /app/bin/kubectl \
+    && curl -fsSL "https://get.helm.sh/helm-${HELM_VERSION}-linux-amd64.tar.gz" | tar -xz -C /tmp \
+    && mv /tmp/linux-amd64/helm /app/bin/helm \
+    && chmod +x /app/bin/helm \
+    && rm -rf /tmp/linux-amd64
 
 USER 10001:10001

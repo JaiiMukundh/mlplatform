@@ -14,7 +14,7 @@ bootstrap: ## Verify the laptop prerequisites and record their versions.
 	@bash ops/scripts/bootstrap.sh
 
 preflight: ## Verify host kernel limits required by kind.
-	@bash ops/scripts/archive/check_host.sh
+	@test $$(cat /proc/sys/fs/inotify/max_user_watches 2>/dev/null || echo 0) -ge 524288 || (echo "Kernel limits too low. Run: sudo sysctl -w fs.inotify.max_user_watches=524288" && exit 1)
 
 lint: ## Lint all implemented Python code.
 	@uv run ruff check .
@@ -69,11 +69,11 @@ e2e: ## Run the local serving and self-healing end-to-end tests.
 	@MLP_RUN_E2E=1 MLP_E2E_RUN_DEMO=1 uv run pytest tests/e2e -q
 
 up: ## Build the complete local platform from scratch.
-	@bash ops/scripts/archive/check_host.sh
+	@test $$(cat /proc/sys/fs/inotify/max_user_watches 2>/dev/null || echo 0) -ge 524288 || (echo "Kernel limits too low. Run: sudo sysctl -w fs.inotify.max_user_watches=524288" && exit 1)
 	@tofu -chdir=infra/envs/local init
 	@tofu -chdir=infra/envs/local apply -auto-approve \
 		-target=module.registry -target=module.cluster
-	@bash ops/scripts/archive/push_bootstrap_images.sh
+	@docker build --file infra/docker/mlflow.Dockerfile --tag localhost:5001/mlflow:dev . && docker push localhost:5001/mlflow:dev
 	@tofu -chdir=infra/envs/local apply -auto-approve
 	@bash ops/scripts/bootstrap-post.sh
 
