@@ -1080,7 +1080,7 @@ def main():
     """Run the UI server via uvicorn."""
     import uvicorn
 
-    uvicorn.run("ui.app:app", host="0.0.0.0", port=8050, reload=True)
+    uvicorn.run("ops.ui.app:app", host="0.0.0.0", port=8050, reload=True)
 
 
 if __name__ == "__main__":
