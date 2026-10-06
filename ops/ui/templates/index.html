@@ -27,16 +27,13 @@
       border-radius: 0px !important;
     }
 
-    html, body {
-      height: 100vh;
-      max-height: 100vh;
-      overflow: hidden;
-      margin: 0;
-      padding: 0;
+    body {
       background-color: var(--paper);
       color: var(--ink);
       font-family: 'Space Grotesk', 'Inter', -apple-system, sans-serif;
       letter-spacing: -0.01em;
+      margin: 0;
+      padding: 0;
       -webkit-font-smoothing: antialiased;
     }
 
@@ -182,38 +179,38 @@
     }
   </style>
 </head>
-<body class="h-screen max-h-screen overflow-hidden flex flex-col antialiased bg-[#F1EEE5]">
+<body class="min-h-screen flex flex-col antialiased">
 
   <!-- ================= TOP HEADER ================= -->
-  <header class="border-b-2 border-black bg-[#E7E3D8] px-4 py-1.5 shrink-0">
-    <div class="max-w-[1550px] mx-auto flex flex-col sm:flex-row items-center justify-between gap-2">
+  <header class="border-b-2 border-black bg-[#E7E3D8] px-6 py-3">
+    <div class="max-w-[1400px] mx-auto flex flex-col lg:flex-row items-start lg:items-center justify-between gap-3">
       
       <!-- Brand & Sector Tag -->
-      <div class="flex items-center gap-3">
-        <a href="#overview" onclick="switchTab('overview')" class="flex items-center gap-2.5">
-          <div class="w-8 h-8 bg-black text-[#C8FF5A] font-mono font-bold text-sm flex items-center justify-center border-2 border-black">
+      <div class="flex items-center gap-4">
+        <a href="#overview" onclick="switchTab('overview')" class="flex items-center gap-3">
+          <div class="w-9 h-9 bg-black text-[#C8FF5A] font-mono font-bold text-base flex items-center justify-center border-2 border-black">
             ML
           </div>
           <div>
             <div class="flex items-center gap-2">
-              <span class="text-base font-bold tracking-tight text-black uppercase leading-none">MLPLATFORM</span>
-              <span class="px-1.5 py-0.5 text-[9px] font-mono font-bold bg-[#C8FF5A] text-black border border-black leading-none">
+              <span class="text-lg font-bold tracking-tight text-black uppercase">MLPLATFORM</span>
+              <span class="px-1.5 py-0.5 text-[9px] font-mono font-bold bg-[#C8FF5A] text-black border border-black">
                 SPEC 6.4 // PROD
               </span>
             </div>
-            <p class="micro-label text-[9px] leading-none mt-0.5">AUTONOMOUS CREDIT RISK PLATFORM</p>
+            <p class="micro-label">AUTONOMOUS CREDIT RISK PLATFORM</p>
           </div>
         </a>
 
         <!-- Cluster Status Badge -->
-        <div id="clusterHealthBadge" class="hidden md:flex items-center gap-2 px-2 py-0.5 bg-[#F8F6F0] border-2 border-black font-mono text-[11px] font-bold text-black">
+        <div id="clusterHealthBadge" class="hidden sm:flex items-center gap-2 px-2.5 py-1 bg-[#F8F6F0] border-2 border-black font-mono text-xs font-bold text-black">
           <span class="w-2 h-2 bg-[#1D7A4D]"></span>
           <span>KIND // 3 NODES READY</span>
         </div>
       </div>
 
       <!-- Segmented Navigation Bar -->
-      <nav class="flex items-center gap-1 bg-[#E7E3D8] p-0.5 border-2 border-black overflow-x-auto max-w-full">
+      <nav class="flex items-center gap-1 bg-[#E7E3D8] p-1 border-2 border-black overflow-x-auto max-w-full">
         <button id="tab-overview" onclick="switchTab('overview')" class="cypher-tab active">
           01 // OVERVIEW
         </button>
@@ -238,16 +235,16 @@
   </header>
 
   <!-- ================= SUB-HEADER TICKER ================= -->
-  <div class="border-b-2 border-black bg-[#C8FF5A] px-4 py-1 shrink-0">
-    <div class="max-w-[1550px] mx-auto flex flex-wrap items-center justify-between text-[11px] font-mono text-black font-semibold gap-2">
-      <div class="flex items-center gap-3">
-        <span>MODEL: <strong id="subHeaderModelVer" class="underline decoration-2">loan-default:v64</strong></span>
+  <div class="border-b-2 border-black bg-[#C8FF5A] px-6 py-1.5">
+    <div class="max-w-[1400px] mx-auto flex flex-wrap items-center justify-between text-xs font-mono text-black font-semibold gap-3">
+      <div class="flex items-center gap-4">
+        <span>MODEL: <strong id="subHeaderModelVer" class="underline decoration-2">loan-default:v10</strong></span>
         <span>FLEET: <strong id="subHeaderFleet">2 / 2 REPLICAS</strong></span>
         <span>ONLINE STORE: <strong>Feast / Redis 6379</strong></span>
       </div>
-      <div class="flex items-center gap-3">
+      <div class="flex items-center gap-4">
         <span>DATASET: <strong>UCI Taiwan (30,000 Borrowers)</strong></span>
-        <span id="driftStatePill" class="px-2 py-0.5 bg-black text-[#C8FF5A] border border-black font-bold uppercase text-[9px]">
+        <span id="driftStatePill" class="px-2 py-0.5 bg-black text-[#C8FF5A] border border-black font-bold uppercase text-[10px]">
           DRIFT: STABLE
         </span>
       </div>
@@ -255,127 +252,130 @@
   </div>
 
   <!-- ================= MAIN VIEW CONTAINER ================= -->
-  <main class="flex-1 h-[calc(100vh-76px)] overflow-hidden p-3 max-w-[1550px] w-full mx-auto flex flex-col">
+  <main class="flex-1 max-w-[1400px] w-full mx-auto p-6 space-y-8">
 
     <!-- ================= PAGE 1: OVERVIEW ================= -->
-    <div id="view-overview" class="view-panel h-full flex flex-col justify-between gap-2.5 overflow-hidden">
+    <div id="view-overview" class="view-panel space-y-6">
       
-      <!-- Top Bar: Platform Summary + Direct Actions -->
-      <div class="cypher-panel-lime p-2.5 shrink-0 flex flex-col sm:flex-row sm:items-center justify-between gap-2">
-        <div class="flex items-center gap-2.5">
-          <span class="micro-label bg-white px-2 py-0.5 border border-black text-black">
-            SPEC 6.4 PROD
-          </span>
-          <div>
-            <h1 class="text-sm sm:text-base font-black text-black tracking-tight uppercase leading-none">
-              AUTONOMOUS MLOPS &amp; SERVING RECONCILIATION
+      <!-- Minimalist Hero -->
+      <div class="cypher-panel-lime p-6 sm:p-8">
+        <div class="flex flex-col lg:flex-row lg:items-center justify-between gap-6">
+          <div class="space-y-2">
+            <span class="micro-label bg-white px-2 py-0.5 border border-black inline-block text-black">
+              CORE CONTROL PLANE
+            </span>
+            <h1 class="text-3xl sm:text-5xl font-black text-black leading-none tracking-tight uppercase">
+              AUTONOMOUS MLOPS &amp; RECONCILIATION
             </h1>
-            <p class="text-[11px] font-medium text-black mt-0.5">
-              Production credit risk scoring on 30,000 Taiwan borrower records with Feast point-in-time features &amp; self-healing.
+            <p class="text-sm font-medium text-black max-w-xl">
+              Production credit scoring on 30,000 Taiwan borrower records with Feast point-in-time features, automated drift gating, and zero-downtime Kubernetes pod self-healing.
             </p>
           </div>
-        </div>
-        <div class="flex items-center gap-2 shrink-0">
-          <button onclick="switchTab('chaos')" class="cypher-btn py-1.5 px-3 text-[10px]">
-            ⚡ CHAOS DRILL &rarr;
-          </button>
-          <button onclick="switchTab('scoring')" class="cypher-btn cypher-btn-secondary py-1.5 px-3 text-[10px]">
-            👤 SCORE BORROWER
-          </button>
+          <div class="flex items-center gap-3">
+            <button onclick="switchTab('chaos')" class="cypher-btn py-3 px-5 text-xs">
+              ⚡ CHAOS DRILL &rarr;
+            </button>
+            <button onclick="switchTab('scoring')" class="cypher-btn cypher-btn-secondary py-3 px-5 text-xs">
+              SCORE BORROWER
+            </button>
+          </div>
         </div>
       </div>
 
       <!-- Four Golden Signals -->
-      <div class="shrink-0">
-        <div class="flex items-center justify-between mb-1 border-b-2 border-black pb-1">
-          <h2 class="text-[10px] font-bold uppercase tracking-wider text-black">
+      <div>
+        <div class="flex items-center justify-between mb-3 border-b-2 border-black pb-2">
+          <h2 class="text-xs font-bold uppercase tracking-wider text-black">
             01 // FOUR GOLDEN SIGNALS (PROMETHEUS TELEMETRY)
           </h2>
           <span class="micro-label">REFRESH: 2.5S</span>
         </div>
 
-        <div class="grid grid-cols-2 lg:grid-cols-4 gap-2.5">
+        <div class="grid grid-cols-2 lg:grid-cols-4 gap-4">
+          
           <!-- RPS -->
-          <div class="cypher-panel-bright p-3 flex flex-col justify-between">
+          <div class="cypher-panel-bright p-5 flex flex-col justify-between">
             <span class="micro-label">01.01 // THROUGHPUT</span>
-            <p id="metricRPS" class="text-3xl sm:text-4xl font-black text-black font-mono tracking-tighter my-0.5">0.0</p>
-            <div class="pt-1 border-t border-black flex items-center justify-between text-[10px] font-mono text-[#66645D]">
+            <p id="metricRPS" class="text-4xl sm:text-5xl font-black text-black font-mono tracking-tighter my-2">0.0</p>
+            <div class="pt-2 border-t-2 border-black flex items-center justify-between text-xs font-mono text-[#66645D]">
               <span>REQ/SEC</span>
               <span class="text-black font-bold">RATE(1M)</span>
             </div>
           </div>
 
           <!-- P95 Latency -->
-          <div class="cypher-panel-bright p-3 flex flex-col justify-between">
+          <div class="cypher-panel-bright p-5 flex flex-col justify-between">
             <span class="micro-label">01.02 // P95 LATENCY</span>
-            <p id="metricP95" class="text-3xl sm:text-4xl font-black text-black font-mono tracking-tighter my-0.5">--</p>
-            <div class="pt-1 border-t border-black flex items-center justify-between text-[10px] font-mono text-[#66645D]">
+            <p id="metricP95" class="text-4xl sm:text-5xl font-black text-black font-mono tracking-tighter my-2">--</p>
+            <div class="pt-2 border-t-2 border-black flex items-center justify-between text-xs font-mono text-[#66645D]">
               <span>SLA: &lt; 50MS</span>
               <span class="text-black font-bold">P50: <span id="metricP50">-- ms</span></span>
             </div>
           </div>
 
           <!-- Error Rate -->
-          <div class="cypher-panel-bright p-3 flex flex-col justify-between">
+          <div class="cypher-panel-bright p-5 flex flex-col justify-between">
             <span class="micro-label">01.03 // ERROR RATE</span>
-            <p id="metricErrors" class="text-3xl sm:text-4xl font-black text-black font-mono tracking-tighter my-0.5">0.0%</p>
-            <div class="pt-1 border-t border-black flex items-center justify-between text-[10px] font-mono text-[#66645D]">
+            <p id="metricErrors" class="text-4xl sm:text-5xl font-black text-black font-mono tracking-tighter my-2">0.0%</p>
+            <div class="pt-2 border-t-2 border-black flex items-center justify-between text-xs font-mono text-[#66645D]">
               <span>5XX RATIO</span>
               <span class="text-[#1D7A4D] font-bold">HEALTHY</span>
             </div>
           </div>
 
-          <!-- Serving Replicas -->
-          <div class="cypher-panel-bright p-3 flex flex-col justify-between">
+          <!-- Serving Replicas (Exactly 2 Pods!) -->
+          <div class="cypher-panel-bright p-5 flex flex-col justify-between">
             <span class="micro-label">01.04 // SERVING FLEET</span>
-            <div class="flex items-baseline gap-2 my-0.5">
-              <span id="metricReplicas" class="text-3xl sm:text-4xl font-black text-black font-mono tracking-tighter">2</span>
-              <span class="text-xs font-mono font-bold text-[#66645D]">/ <span id="metricDesired">2</span> DESIRED</span>
+            <div class="flex items-baseline gap-2 my-2">
+              <span id="metricReplicas" class="text-4xl sm:text-5xl font-black text-black font-mono tracking-tighter">2</span>
+              <span class="text-sm font-mono font-bold text-[#66645D]">/ <span id="metricDesired">2</span> DESIRED</span>
             </div>
-            <div class="pt-1 border-t border-black flex items-center justify-between text-[10px] font-mono">
+            <div class="pt-2 border-t-2 border-black flex items-center justify-between text-xs font-mono">
               <span id="metricReplicasBadge" class="font-bold text-[#1D7A4D]">ALL ONLINE</span>
               <span class="text-[#66645D]">PDB: MIN 1</span>
             </div>
           </div>
+
         </div>
       </div>
 
-      <!-- Lineage & Topology Bento (flex-1) -->
-      <div class="grid grid-cols-1 lg:grid-cols-12 gap-2.5 flex-1 min-h-0">
+      <!-- Lineage & Topology Bento -->
+      <div class="grid grid-cols-1 lg:grid-cols-12 gap-5">
+        
         <!-- Champion Model Dossier (8 cols) -->
-        <div class="lg:col-span-8 cypher-panel p-3 flex flex-col justify-between">
-          <div class="flex items-center justify-between border-b-2 border-black pb-1">
+        <div class="lg:col-span-8 cypher-panel p-5 space-y-3">
+          <div class="flex items-center justify-between border-b-2 border-black pb-2">
             <div>
               <span class="micro-label">02 // CHAMPION ARTIFACT</span>
-              <h3 id="championModelTitle" class="text-xs sm:text-sm font-black uppercase text-black">Champion Model Version 64</h3>
+              <h3 id="championModelTitle" class="text-base font-black uppercase text-black">Champion Model Version 10</h3>
             </div>
-            <span class="px-2 py-0.5 bg-black text-[#C8FF5A] font-mono text-[9px] font-bold">
+            <span class="px-2 py-0.5 bg-black text-[#C8FF5A] font-mono text-xs font-bold">
               ALIAS: @champion
             </span>
           </div>
 
-          <div class="grid grid-cols-3 gap-2 py-1.5">
-            <div class="p-2 bg-[#F8F6F0] border border-black">
-              <span class="micro-label text-[9px]">ALGORITHM</span>
-              <p class="font-mono text-xs font-bold text-black mt-0.5">HistGradientBoosting</p>
-              <p class="text-[9px] text-[#66645D]">Scikit-Learn • max_iter=180</p>
+          <div class="grid grid-cols-3 gap-3 pt-1">
+            <div class="p-3 bg-[#F8F6F0] border-2 border-black">
+              <span class="micro-label">ALGORITHM</span>
+              <p class="font-mono text-sm font-bold text-black mt-0.5">HistGradientBoosting</p>
+              <p class="text-[10px] text-[#66645D]">Scikit-Learn 1.4+ • max_iter=180</p>
             </div>
-            <div class="p-2 bg-[#F8F6F0] border border-black">
-              <span class="micro-label text-[9px]">TEST ROC-AUC</span>
-              <p id="championAucMetric" class="font-mono text-xs font-bold text-[#1D7A4D] mt-0.5">0.9665 (Pass Gate)</p>
-              <p class="text-[9px] text-[#66645D]">SPEC Floor: &ge; 0.70</p>
+            <div class="p-3 bg-[#F8F6F0] border-2 border-black">
+              <span class="micro-label">TEST ROC-AUC</span>
+              <p id="championAucMetric" class="font-mono text-sm font-bold text-[#1D7A4D] mt-0.5">0.9665 (Pass Gate)</p>
+              <p class="text-[10px] text-[#66645D]">SPEC Floor: &ge; 0.70</p>
             </div>
-            <div class="p-2 bg-[#F8F6F0] border border-black">
-              <span class="micro-label text-[9px]">FEAST SERVICE</span>
-              <p class="font-mono text-xs font-bold text-black mt-0.5">loan_default_v1</p>
-              <p class="text-[9px] text-[#66645D]">Point-in-time Redis online store</p>
+            <div class="p-3 bg-[#F8F6F0] border-2 border-black">
+              <span class="micro-label">FEAST SERVICE</span>
+              <p class="font-mono text-sm font-bold text-black mt-0.5">loan_default_v1</p>
+              <p class="text-[10px] text-[#66645D]">Point-in-time Redis online store</p>
             </div>
           </div>
 
-          <div class="p-2 bg-[#F8F6F0] border border-black flex items-center justify-between text-[11px] font-mono">
+          <div class="p-3 bg-[#F8F6F0] border-2 border-black flex items-center justify-between text-xs font-mono">
             <div>
               <span class="text-[#66645D]">MLflow Run ID:</span>
-              <span id="metaRunId" class="text-black font-bold ml-1">19b46caac84b4bcba8179acf06d681aa</span>
+              <span id="metaRunId" class="text-black font-bold ml-1">561bbd7f190f4cb6965f3b86f9db6188</span>
             </div>
             <a href="http://localhost:5000" target="_blank" class="text-black underline font-bold hover:text-[#1D7A4D]">
               OPEN IN MLFLOW &rarr;
@@ -384,328 +384,330 @@
         </div>
 
         <!-- Infrastructure Vitals (4 cols) -->
-        <div class="lg:col-span-4 cypher-panel p-3 flex flex-col justify-between">
-          <div class="border-b-2 border-black pb-1 flex items-center justify-between">
+        <div class="lg:col-span-4 cypher-panel p-5 flex flex-col justify-between space-y-3">
+          <div class="border-b-2 border-black pb-2">
             <span class="micro-label">03 // INFRASTRUCTURE</span>
-            <h3 class="text-xs font-black uppercase text-black">Cluster Health</h3>
+            <h3 class="text-base font-black uppercase text-black">Cluster Health</h3>
           </div>
 
-          <div class="space-y-1 text-[11px] font-mono py-1">
-            <div class="flex items-center justify-between p-1 bg-[#F8F6F0] border border-black">
+          <div class="space-y-1.5 text-xs font-mono">
+            <div class="flex items-center justify-between p-2 bg-[#F8F6F0] border border-black">
               <span>Kind Nodes (Control/Workers)</span>
               <strong class="text-[#1D7A4D]">3 / 3 READY</strong>
             </div>
-            <div class="flex items-center justify-between p-1 bg-[#F8F6F0] border border-black">
+            <div class="flex items-center justify-between p-2 bg-[#F8F6F0] border border-black">
               <span>Prometheus + Alertmanager</span>
               <strong class="text-[#1D7A4D]">ONLINE (9090)</strong>
             </div>
-            <div class="flex items-center justify-between p-1 bg-[#F8F6F0] border border-black">
+            <div class="flex items-center justify-between p-2 bg-[#F8F6F0] border border-black">
               <span>MLflow Model Registry</span>
               <strong class="text-[#1D7A4D]">ONLINE (5000)</strong>
             </div>
-            <div class="flex items-center justify-between p-1 bg-[#F8F6F0] border border-black">
+            <div class="flex items-center justify-between p-2 bg-[#F8F6F0] border border-black">
               <span>MinIO S3 Artifact Store</span>
               <strong class="text-[#1D7A4D]">ONLINE (9000)</strong>
             </div>
           </div>
 
-          <button onclick="executeAction('reset_demo')" class="cypher-btn cypher-btn-secondary w-full text-[10px] py-1.5">
+          <button onclick="executeAction('reset_demo')" class="cypher-btn cypher-btn-secondary w-full text-xs">
             RESTORE BASELINE
           </button>
         </div>
+
       </div>
+
     </div>
 
     <!-- ================= PAGE 2: LOAN SCORER & AUTONOMOUS HEALING ================= -->
-    <div id="view-scoring" class="view-panel hidden h-full flex flex-col justify-between gap-2.5 overflow-hidden">
+    <div id="view-scoring" class="view-panel hidden space-y-6">
       
-      <!-- Top Strip: Drift Threshold Rule + Controls -->
-      <div class="p-2 bg-[#171717] text-[#F8F6F0] border-2 border-black shadow-[2px_2px_0_#171717] flex flex-wrap items-center justify-between gap-2 font-mono shrink-0">
-        <div class="flex items-center gap-2">
-          <span class="w-2.5 h-2.5 bg-[#C8FF5A] border border-black inline-block animate-pulse"></span>
-          <span class="text-[9px] text-[#A3A3A3] font-bold uppercase">RULE:</span>
-          <strong class="text-xs font-black text-[#C8FF5A]">PSI &gt; 0.25 (&ge; 2 FEATS) &rarr; AUTO K8S RETRAIN</strong>
-          <span class="text-[#66645D]">|</span>
-          <span class="text-[9px] text-[#A3A3A3]">FLEET:</span>
-          <strong id="scoreModelPill" class="text-xs text-white font-bold">loan-default:v64</strong>
-          <div id="scoreFleetStatusPill" class="px-2 py-0.5 bg-[#1D7A4D] text-white font-bold text-[9px] uppercase">
-            🟢 CALIBRATED
+      <!-- Drift Threshold Rule Banner (High Contrast, Bold, Minimalist) -->
+      <div class="p-4 bg-[#171717] text-[#F8F6F0] border-2 border-black shadow-[3px_3px_0_#171717] flex flex-col md:flex-row items-start md:items-center justify-between gap-4 font-mono text-xs">
+        <div class="flex items-center gap-3">
+          <span class="w-3.5 h-3.5 bg-[#C8FF5A] border border-black inline-block animate-pulse"></span>
+          <div>
+            <span class="text-[10px] text-[#A3A3A3] block font-bold uppercase tracking-wider">DRIFT THRESHOLD RULE:</span>
+            <strong class="text-sm font-black text-[#C8FF5A]">PSI &gt; 0.25 (ON &ge; 2 FEATURES) &rarr; TRIGGERS AUTONOMOUS K8S RETRAINING</strong>
+          </div>
+        </div>
+        <div class="flex flex-wrap items-center gap-2">
+          <div class="px-3 py-1 bg-black border border-[#333] text-right">
+            <span class="text-[9px] text-[#A3A3A3] block">SERVING FLEET:</span>
+            <strong id="scoreModelPill" class="text-xs text-white font-bold">loan-default:v37</strong>
+          </div>
+          <div id="scoreFleetStatusPill" class="px-3 py-2 bg-[#1D7A4D] border border-black text-white font-bold text-xs uppercase tracking-wider">
+            🟢 DECISIONS CALIBRATED (FINE)
+          </div>
+        </div>
+      </div>
+
+      <!-- Action & Borrower Archetype Selector -->
+      <div class="flex flex-col sm:flex-row items-stretch sm:items-center justify-between gap-3">
+        <!-- Archetypes -->
+        <div class="flex flex-wrap items-center gap-2">
+          <span class="micro-label">SELECT APPLICANT:</span>
+          <button onclick="pickBorrower(7)" id="archBtn7" class="px-3 py-2 bg-[#C8FF5A] border-2 border-black text-xs font-mono font-bold text-black transition shadow-[2px_2px_0_#171717]">
+            👤 #7 SUPER PRIME ($500k Limit)
+          </button>
+          <button onclick="pickBorrower(12)" id="archBtn12" class="px-3 py-2 bg-[#F8F6F0] hover:bg-[#C8FF5A] border-2 border-black text-xs font-mono font-bold text-black transition">
+            👤 #12 PRIME EXEC ($260k)
+          </button>
+          <button onclick="pickBorrower(1)" id="archBtn1" class="px-3 py-2 bg-[#F8F6F0] hover:bg-[#C8FF5A] border-2 border-black text-xs font-mono font-bold text-black transition">
+            🚨 #1 SUBPRIME ($20k)
+          </button>
+          <div class="flex items-center gap-1 font-mono text-xs ml-2">
+            <span class="text-[#66645D]">ID:</span>
+            <input type="number" id="inputCustomerId" value="7" min="1" max="30000" class="w-20 px-2 py-1 border-2 border-black font-mono text-xs font-bold bg-[#F8F6F0]">
+            <button onclick="loadCustomerProfile(document.getElementById('inputCustomerId').value); scoreCurrentBorrower();" class="cypher-btn text-xs py-1.5 px-3">
+              FETCH &rarr;
+            </button>
           </div>
         </div>
 
-        <!-- Controls: Archetypes & Action Buttons -->
-        <div class="flex items-center gap-1.5">
-          <button onclick="pickBorrower(7)" id="archBtn7" class="px-2 py-1 bg-[#C8FF5A] border border-black text-[10px] font-mono font-bold text-black shadow-[1px_1px_0_#171717]">
-            👤 #7 SUPER PRIME
+        <!-- Single Primary Action Controls -->
+        <div class="flex items-center gap-2">
+          <button id="injectDriftBtn" onclick="triggerDriftShockAction()" class="cypher-btn cypher-btn-danger text-xs py-2 px-4 flex items-center gap-2 font-black shadow-[3px_3px_0_#171717]">
+            <span>💥</span> <span>INJECT DRIFT SHOCK</span>
           </button>
-          <button onclick="pickBorrower(12)" id="archBtn12" class="px-2 py-1 bg-[#F8F6F0] hover:bg-[#C8FF5A] border border-black text-[10px] font-mono font-bold text-black">
-            👤 #12 PRIME
+          <button onclick="resetBaselineAction()" class="cypher-btn cypher-btn-secondary text-xs py-2 px-3">
+            ↩️ RESET BASELINE
           </button>
-          <button onclick="pickBorrower(1)" id="archBtn1" class="px-2 py-1 bg-[#F8F6F0] hover:bg-[#C8FF5A] border border-black text-[10px] font-mono font-bold text-black">
-            🚨 #1 SUBPRIME
-          </button>
-          <div class="flex items-center gap-1 font-mono text-[10px] ml-1">
-            <input type="number" id="inputCustomerId" value="7" min="1" max="30000" class="w-14 px-1 py-0.5 border border-black font-mono text-[10px] font-bold bg-[#F8F6F0] text-black">
-            <button onclick="loadCustomerProfile(document.getElementById('inputCustomerId').value); scoreCurrentBorrower();" class="cypher-btn text-[10px] py-0.5 px-2">
-              FETCH
-            </button>
-          </div>
-          <button id="injectDriftBtn" onclick="triggerDriftShockAction()" class="cypher-btn cypher-btn-danger text-[10px] py-1 px-2.5 flex items-center gap-1 font-bold ml-1">
-            <span>💥</span> <span>INJECT DRIFT</span>
-          </button>
-          <button onclick="resetBaselineAction()" class="cypher-btn cypher-btn-secondary text-[10px] py-1 px-2">
-            ↩️ RESET
-          </button>
-          <button onclick="scoreCurrentBorrower()" class="cypher-btn text-[10px] py-1 px-2">
+          <button onclick="scoreCurrentBorrower()" class="cypher-btn text-xs py-2 px-3">
             🔄 RE-SCORE
           </button>
         </div>
       </div>
 
-      <!-- Main 3-Column Bento (flex-1 min-h-0) -->
-      <div class="grid grid-cols-1 lg:grid-cols-12 gap-2.5 flex-1 min-h-0">
+      <!-- Core 2-Column Bento: Applicant & Feature Drift Audit (Left) vs Real-Time Decision (Right) -->
+      <div class="grid grid-cols-1 lg:grid-cols-12 gap-5">
         
-        <!-- Col 1: Applicant Profile & Live Feature Drift (4 cols) -->
-        <div class="lg:col-span-4 cypher-panel p-3 flex flex-col justify-between">
+        <!-- Left: Applicant Dossier & Live Feature Drift Auditing (6 cols) -->
+        <div class="lg:col-span-6 cypher-panel p-5 flex flex-col justify-between space-y-4">
           <div>
-            <div class="flex items-center justify-between border-b-2 border-black pb-1 mb-2">
+            <div class="flex items-center justify-between border-b-2 border-black pb-2 mb-3">
               <div>
                 <span class="micro-label">FEAST FEATURE VECTOR // ONLINE STORE</span>
-                <h3 class="text-xs font-black uppercase text-black">Applicant Profile</h3>
+                <h3 class="text-sm font-black uppercase text-black">Applicant Profile</h3>
               </div>
-              <span id="dossierShockBadge" class="hidden text-[9px] bg-[#B52A24] text-white px-1.5 py-0.5 border border-black font-bold animate-pulse">
-                ⚡ SHOCK INJECTED
+              <span id="dossierShockBadge" class="hidden text-[10px] bg-[#B52A24] text-white px-2 py-0.5 border border-black font-bold animate-pulse">
+                ⚡ COVARIATE SHOCK INJECTED
               </span>
             </div>
 
             <!-- Profile Summary Grid -->
-            <div class="grid grid-cols-3 gap-1.5 mb-2.5">
-              <div class="p-1.5 bg-[#F8F6F0] border border-black">
-                <span class="micro-label text-[9px]">CREDIT LIMIT</span>
-                <p id="profLimit" class="font-mono text-xs font-bold text-black mt-0.5">$500,000</p>
+            <div class="grid grid-cols-3 gap-2.5 mb-4">
+              <div class="p-3 bg-[#F8F6F0] border-2 border-black">
+                <span class="micro-label">CREDIT LIMIT</span>
+                <p id="profLimit" class="font-mono text-base font-bold text-black mt-0.5">$500,000</p>
               </div>
-              <div class="p-1.5 bg-[#F8F6F0] border border-black">
-                <span class="micro-label text-[9px]">PAY STATUS (PAY_0)</span>
-                <p id="profPay0" class="font-mono text-xs font-bold text-[#1D7A4D] mt-0.5">On time</p>
+              <div class="p-3 bg-[#F8F6F0] border-2 border-black">
+                <span class="micro-label">PAY STATUS (PAY_0)</span>
+                <p id="profPay0" class="font-mono text-sm font-bold text-[#1D7A4D] mt-0.5">On time (0 mo)</p>
               </div>
-              <div class="p-1.5 bg-[#F8F6F0] border border-black">
-                <span class="micro-label text-[9px]">RECENT BILL</span>
-                <p id="profBill" class="font-mono text-xs font-bold text-black mt-0.5">$367,965</p>
+              <div class="p-3 bg-[#F8F6F0] border-2 border-black">
+                <span class="micro-label">RECENT BILL</span>
+                <p id="profBill" class="font-mono text-base font-bold text-black mt-0.5">$367,965</p>
               </div>
-              <div class="p-1.5 bg-[#F8F6F0] border border-black">
-                <span class="micro-label text-[9px]">AGE &amp; SEX</span>
-                <p id="profAgeSex" class="font-mono text-[10px] font-bold text-black mt-0.5">29y • Male</p>
+              <div class="p-3 bg-[#F8F6F0] border-2 border-black">
+                <span class="micro-label">AGE &amp; SEX</span>
+                <p id="profAgeSex" class="font-mono text-xs font-bold text-black mt-0.5">29 yrs • Male</p>
               </div>
-              <div class="p-1.5 bg-[#F8F6F0] border border-black">
-                <span class="micro-label text-[9px]">EDUCATION</span>
-                <p id="profEdu" class="font-mono text-[10px] font-bold text-black mt-0.5">Graduate</p>
+              <div class="p-3 bg-[#F8F6F0] border-2 border-black">
+                <span class="micro-label">EDUCATION</span>
+                <p id="profEdu" class="font-mono text-xs font-bold text-black mt-0.5">Graduate School</p>
               </div>
-              <div class="p-1.5 bg-[#F8F6F0] border border-black">
-                <span class="micro-label text-[9px]">MARRIAGE</span>
-                <p id="profMarriage" class="font-mono text-[10px] font-bold text-black mt-0.5">Single</p>
+              <div class="p-3 bg-[#F8F6F0] border-2 border-black">
+                <span class="micro-label">MARRIAGE</span>
+                <p id="profMarriage" class="font-mono text-xs font-bold text-black mt-0.5">Single</p>
               </div>
             </div>
           </div>
 
           <!-- Feature Drift Auditing vs 0.25 Threshold -->
-          <div class="p-2 bg-[#F8F6F0] border-2 border-black font-mono space-y-1.5">
-            <div class="flex items-center justify-between border-b border-black pb-0.5 text-[10px]">
-              <span class="font-bold text-black uppercase">LIVE FEATURE DRIFT (PSI):</span>
-              <span class="text-[9px] text-[#66645D]">THRESHOLD = 0.25</span>
+          <div class="p-3.5 bg-[#F8F6F0] border-2 border-black font-mono space-y-3">
+            <div class="flex items-center justify-between border-b border-black pb-1.5 text-xs">
+              <span class="font-bold text-black uppercase">LIVE STATISTICAL FEATURE DRIFT (PSI):</span>
+              <span class="text-[10px] text-[#66645D]">THRESHOLD = 0.25</span>
             </div>
 
             <!-- PAY_0 PSI -->
-            <div class="space-y-0.5">
-              <div class="flex justify-between text-[10px]">
-                <span class="text-[#66645D]">PAY_0 (Delay):</span>
+            <div class="space-y-1">
+              <div class="flex justify-between text-xs">
+                <span class="text-[#66645D]">PAY_0 (Repayment Delay):</span>
                 <strong id="psiValPay0" class="text-black font-bold">0.008 (STABLE)</strong>
               </div>
-              <div class="relative w-full bg-[#E7E3D8] border border-black h-2 overflow-hidden">
+              <div class="relative w-full bg-[#E7E3D8] border border-black h-3 overflow-hidden">
                 <div id="psiBarPay0" class="h-full bg-[#1D7A4D] transition-all duration-300" style="width: 3.2%"></div>
-                <div class="absolute top-0 bottom-0 left-[25%] border-r border-dashed border-[#B52A24]" title="0.25 Threshold"></div>
+                <!-- 0.25 Threshold Marker (25%) -->
+                <div class="absolute top-0 bottom-0 left-[25%] border-r-2 border-dashed border-[#B52A24]" title="0.25 Threshold"></div>
               </div>
             </div>
 
             <!-- LIMIT_BAL PSI -->
-            <div class="space-y-0.5">
-              <div class="flex justify-between text-[10px]">
-                <span class="text-[#66645D]">LIMIT_BAL (Limit):</span>
+            <div class="space-y-1">
+              <div class="flex justify-between text-xs">
+                <span class="text-[#66645D]">LIMIT_BAL (Credit Limit):</span>
                 <strong id="psiValLimit" class="text-black font-bold">0.012 (STABLE)</strong>
               </div>
-              <div class="relative w-full bg-[#E7E3D8] border border-black h-2 overflow-hidden">
+              <div class="relative w-full bg-[#E7E3D8] border border-black h-3 overflow-hidden">
                 <div id="psiBarLimit" class="h-full bg-[#1D7A4D] transition-all duration-300" style="width: 4.8%"></div>
-                <div class="absolute top-0 bottom-0 left-[25%] border-r border-dashed border-[#B52A24]" title="0.25 Threshold"></div>
+                <!-- 0.25 Threshold Marker (25%) -->
+                <div class="absolute top-0 bottom-0 left-[25%] border-r-2 border-dashed border-[#B52A24]" title="0.25 Threshold"></div>
               </div>
             </div>
 
-            <div class="flex items-center justify-between text-[8px] text-[#66645D] pt-0.5 border-t border-black">
-              <span>0.00 Match</span>
-              <span class="text-[#B52A24] font-bold">&uarr; 0.25 BREACH</span>
-              <span>1.00 Shift</span>
+            <div class="flex items-center justify-between text-[10px] text-[#66645D] pt-1 border-t border-black">
+              <span>0.00 (Perfect Match)</span>
+              <span class="text-[#B52A24] font-bold">&uarr; 0.25 CRITICAL DRIFT</span>
+              <span>1.00 (Total Shift)</span>
             </div>
           </div>
         </div>
 
-        <!-- Col 2: Real-Time Decision & Verdict (4 cols) -->
-        <div class="lg:col-span-4 cypher-panel p-3 flex flex-col justify-between">
-          <div class="flex items-center justify-between border-b-2 border-black pb-1">
+        <!-- Right: Real-Time Model Decision & Cognitive Gauge (6 cols) -->
+        <div class="lg:col-span-6 cypher-panel p-5 flex flex-col justify-between space-y-4">
+          <div class="flex items-center justify-between border-b-2 border-black pb-2">
             <div>
               <span class="micro-label">REAL-TIME INFERENCE DECISION</span>
-              <span id="scoreModelVer" class="font-mono text-[10px] text-[#66645D] block font-bold">Champion Active Fleet</span>
+              <span id="scoreModelVer" class="font-mono text-xs text-[#66645D] block font-bold">Champion Active Fleet</span>
             </div>
-            <span id="scoreCognitiveBadge" class="px-2 py-0.5 text-[10px] font-mono font-bold bg-[#ecfdf5] text-[#1D7A4D] border border-black">
-              🟢 CALIBRATED
+            <span id="scoreCognitiveBadge" class="px-2.5 py-1 text-xs font-mono font-bold bg-[#ecfdf5] text-[#1D7A4D] border-2 border-black">
+              🟢 CALIBRATED DECISION (FINE)
             </span>
           </div>
 
-          <!-- Verdict Box -->
-          <div class="text-center py-1 space-y-1">
+          <!-- Unmissable Verdict Box -->
+          <div class="text-center py-2 space-y-3">
             <span class="micro-label">PREDICTED DEFAULT PROBABILITY</span>
-            <p id="scoreProbability" class="text-4xl sm:text-5xl font-black font-mono tracking-tighter text-black my-0.5">6.2%</p>
+            <p id="scoreProbability" class="text-5xl sm:text-6xl font-black font-mono tracking-tighter text-black my-1">6.2%</p>
             
-            <div class="w-full bg-[#E7E3D8] border border-black h-2 overflow-hidden">
+            <div class="w-full bg-[#E7E3D8] border-2 border-black h-3.5 overflow-hidden">
               <div id="scoreProbBar" class="h-full bg-[#1D7A4D] transition-all duration-500" style="width: 6.2%"></div>
             </div>
 
-            <div id="verdictBox" class="p-2 border-2 border-black bg-[#ecfdf5] text-center shadow-[2px_2px_0_#171717] transition-all duration-300">
-              <span id="scoreRiskLevel" class="font-mono text-sm font-black text-[#1D7A4D] uppercase tracking-wide">
+            <div id="verdictBox" class="p-3.5 border-2 border-black bg-[#ecfdf5] text-center shadow-[2px_2px_0_#171717] transition-all duration-300">
+              <span id="scoreRiskLevel" class="font-mono text-lg font-black text-[#1D7A4D] uppercase tracking-wide">
                 APPROVED // LOW RISK (FINE)
               </span>
             </div>
           </div>
 
-          <!-- Pathology Box -->
-          <div id="scorePathologyBox" class="p-2 bg-[#F8F6F0] border border-black font-mono text-[10px] space-y-0.5">
+          <!-- Pathology & Cognitive State Explanation -->
+          <div id="scorePathologyBox" class="p-3 bg-[#F8F6F0] border-2 border-black font-mono text-xs space-y-1">
             <p id="scorePathologyText" class="font-bold text-black leading-snug">
               ✓ Calibrated decision: High credit limit ($500k), 0 late payments. Applicant approved.
             </p>
-            <p id="scoreSubText" class="text-[#66645D] text-[9px] leading-tight">
+            <p id="scoreSubText" class="text-[#66645D] text-[11px] leading-tight">
               Baseline distribution matches training references. Decisions are crisp and accurate.
             </p>
           </div>
 
-          <div class="pt-1 border-t border-black flex items-center justify-between text-[10px] font-mono">
+          <div class="pt-2 border-t-2 border-black flex items-center justify-between text-xs font-mono">
             <span id="scoreLatencyBadge" class="text-[#66645D]">LATENCY: 14.2 MS</span>
-            <span id="scoreStatusHint" class="text-[#1D7A4D] font-bold">✓ EVALUATED LIVE IN K8S</span>
-          </div>
-        </div>
-
-        <!-- Col 3: Autonomous Retraining Watchdog HUD (4 cols) -->
-        <div class="lg:col-span-4 cypher-panel p-3 flex flex-col justify-between font-mono">
-          <div>
-            <div class="flex items-center justify-between border-b-2 border-black pb-1 mb-1.5">
-              <div class="flex items-center gap-1.5">
-                <span class="w-2.5 h-2.5 bg-[#1D7A4D] inline-block animate-pulse"></span>
-                <span class="font-black text-xs text-black uppercase">AUTONOMOUS RETRAINING</span>
-              </div>
-              <span id="watchdogStatusPill" class="px-2 py-0.5 text-[9px] font-bold border border-black bg-[#1D7A4D] text-white">
-                🟢 ACTIVE // STANDBY
-              </span>
-            </div>
-
-            <!-- Real-Time Progress Bar & Cluster State -->
-            <div class="p-2 bg-[#F8F6F0] border-2 border-black space-y-1 text-xs mb-1.5">
-              <div class="flex justify-between items-center text-[10px]">
-                <span id="retrainStatusText" class="font-bold text-black flex items-center gap-1.5">
-                  <span id="retrainStatusDot" class="w-1.5 h-1.5 bg-[#1D7A4D] inline-block"></span>
-                  <span id="retrainStatusMsg" class="truncate max-w-[180px]">Watchdog monitoring stream...</span>
-                </span>
-                <span class="text-[#66645D] text-[9px]">
-                  Job: <strong id="retrainJobPill" class="text-black underline">standby</strong>
-                </span>
-              </div>
-              <div class="w-full bg-[#E7E3D8] border border-black h-2 overflow-hidden">
-                <div id="retrainProgressBar" class="h-full bg-[#C8FF5A] transition-all duration-500" style="width: 0%"></div>
-              </div>
-            </div>
-
-            <!-- 5-Stage Stepper List -->
-            <div class="space-y-0.5 text-[9px] text-[#66645D]">
-              <div class="flex items-center gap-1.5 p-1 bg-[#F8F6F0] border border-black">
-                <span class="font-bold text-black">1.</span>
-                <span>Covariate Shock &amp; PSI Breach (&gt;0.25)</span>
-              </div>
-              <div class="flex items-center gap-1.5 p-1 bg-[#F8F6F0] border border-black">
-                <span class="font-bold text-black">2.</span>
-                <span>Autonomous K8s Job Spawn in <code class="text-black font-bold">data</code></span>
-              </div>
-              <div class="flex items-center gap-1.5 p-1 bg-[#F8F6F0] border border-black">
-                <span class="font-bold text-black">3.</span>
-                <span>Quality Gate (AUC &ge; 0.70 &amp; Parity)</span>
-              </div>
-              <div class="flex items-center gap-1.5 p-1 bg-[#F8F6F0] border border-black">
-                <span class="font-bold text-black">4.</span>
-                <span>Staging Canary Load Check (300 reqs)</span>
-              </div>
-              <div class="flex items-center gap-1.5 p-1 bg-[#F8F6F0] border border-black">
-                <span class="font-bold text-black">5.</span>
-                <span>Zero-Downtime Rollout to Serving Fleet</span>
-              </div>
-            </div>
-          </div>
-
-          <div class="pt-1.5 border-t border-black text-[9px] text-[#66645D] flex items-center justify-between">
-            <span>POLLS EVERY 10S // CLOSED-LOOP</span>
-            <span class="text-black font-bold">ZERO HUMAN CLICKS</span>
+            <span id="scoreStatusHint" class="text-[#1D7A4D] font-bold">✓ EVALUATED LIVE IN KUBERNETES</span>
           </div>
         </div>
 
       </div>
 
+      <!-- Autonomous Closed-Loop Retraining Watchdog (Kubernetes Live HUD) -->
+      <div class="cypher-panel p-4 font-mono space-y-3">
+        <div class="flex flex-col sm:flex-row sm:items-center justify-between border-b-2 border-black pb-2 gap-2 text-xs">
+          <div class="flex items-center gap-2">
+            <span class="w-2.5 h-2.5 bg-[#1D7A4D] inline-block animate-pulse"></span>
+            <span class="font-black text-black uppercase">AUTONOMOUS CLOSED-LOOP WATCHDOG (KUBERNETES):</span>
+            <span class="bg-[#C8FF5A] text-black px-1.5 py-0.5 border border-black font-bold text-[10px]">ZERO HUMAN CLICKS</span>
+          </div>
+          <div class="flex items-center gap-2">
+            <span id="watchdogStatusPill" class="px-2.5 py-1 text-xs font-bold border-2 border-black bg-[#1D7A4D] text-white">
+              🟢 WATCHDOG: ACTIVE // STANDBY
+            </span>
+          </div>
+        </div>
+
+        <!-- Real-Time Progress Bar & Cluster State -->
+        <div class="p-3 bg-[#F8F6F0] border-2 border-black space-y-2 text-xs">
+          <div class="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-1">
+            <span id="retrainStatusText" class="font-bold text-black flex items-center gap-2">
+              <span id="retrainStatusDot" class="w-2 h-2 bg-[#1D7A4D] inline-block"></span>
+              <span id="retrainStatusMsg">Watchdog daemon monitoring prediction stream every 10s...</span>
+            </span>
+            <span class="text-[#66645D] text-[11px]">
+              K8s Job: <strong id="retrainJobPill" class="text-black underline">standby</strong>
+            </span>
+          </div>
+          <div class="w-full bg-[#E7E3D8] border-2 border-black h-2.5 overflow-hidden">
+            <div id="retrainProgressBar" class="h-full bg-[#C8FF5A] transition-all duration-500" style="width: 0%"></div>
+          </div>
+          <div class="flex justify-between text-[10px] text-[#66645D] pt-0.5">
+            <span>1. Covariate Shock &amp; PSI Breach</span>
+            <span>2. Autonomous K8s Job Spawn</span>
+            <span>3. Quality Gate (AUC &ge; 0.70)</span>
+            <span>4. Staging Canary</span>
+            <span>5. Zero-Downtime Rollout</span>
+          </div>
+        </div>
+      </div>
+
     </div>
 
     <!-- ================= PAGE 3: CHAOS LAB (2 PODS // TRAFFIC REDIRECTION) ================= -->
-    <div id="view-chaos" class="view-panel hidden h-full flex flex-col justify-between gap-2 overflow-hidden">
+    <div id="view-chaos" class="view-panel hidden space-y-6">
       
-      <div class="border-b-2 border-black pb-1.5 flex items-center justify-between shrink-0">
+      <div class="border-b-2 border-black pb-3 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3">
         <div>
-          <span class="micro-label text-black bg-[#C8FF5A] px-2 py-0.5 border border-black inline-block mb-0.5">
+          <span class="micro-label text-black bg-[#C8FF5A] px-2 py-0.5 border border-black inline-block mb-1">
             03 // ZERO-DOWNTIME CHAOS LAB
           </span>
-          <h1 class="text-base sm:text-lg font-black uppercase text-black leading-none">Serving Fleet &amp; Traffic Shift</h1>
+          <h1 class="text-2xl sm:text-3xl font-black uppercase text-black">Serving Fleet &amp; Traffic Shift</h1>
         </div>
-        <div class="flex items-center gap-2">
-          <label class="flex items-center gap-1.5 font-mono text-[10px] font-bold text-black cursor-pointer bg-[#F8F6F0] px-2 py-1 border border-black">
-            <input type="checkbox" id="oblivionToggle" checked class="w-3.5 h-3.5 accent-black">
+        <div class="flex items-center gap-3">
+          <label class="flex items-center gap-2 font-mono text-xs font-bold text-black cursor-pointer bg-[#F8F6F0] px-3 py-1.5 border-2 border-black">
+            <input type="checkbox" id="oblivionToggle" checked class="w-4 h-4 accent-black">
             <span>OBLIVION PROTOCOL HUD</span>
           </label>
-          <button onclick="loadPods()" class="cypher-btn cypher-btn-secondary text-[10px] py-1 px-2.5">
+          <button onclick="loadPods()" class="cypher-btn cypher-btn-secondary text-xs py-1.5 px-3">
             REFRESH PODS
           </button>
         </div>
       </div>
 
       <!-- Live Traffic Routing Status Banner -->
-      <div id="trafficRoutingBanner" class="p-2 bg-[#F8F6F0] border-2 border-black flex items-center justify-between gap-2 font-mono text-xs shrink-0">
+      <div id="trafficRoutingBanner" class="p-3.5 bg-[#F8F6F0] border-2 border-black flex flex-col sm:flex-row items-center justify-between gap-3 font-mono text-xs">
         <div class="flex items-center gap-2">
-          <span id="trafficPulseDot" class="w-2.5 h-2.5 bg-[#1D7A4D] border border-black inline-block animate-pulse"></span>
-          <span class="font-bold text-black uppercase text-[11px]">LIVE TRAFFIC DISTRIBUTION:</span>
-          <span id="trafficSplitText" class="text-black font-bold text-[11px]">50% / 50% LOAD BALANCED ACROSS 2 REPLICAS</span>
+          <span id="trafficPulseDot" class="w-3 h-3 bg-[#1D7A4D] border border-black inline-block animate-pulse"></span>
+          <span class="font-bold text-black uppercase">LIVE TRAFFIC DISTRIBUTION:</span>
+          <span id="trafficSplitText" class="text-black font-bold">50% / 50% LOAD BALANCED ACROSS 2 REPLICAS</span>
         </div>
-        <div class="text-[10px] text-[#66645D] font-bold">
+        <div class="text-[11px] text-[#66645D] font-bold">
           0 DROPPED REQUESTS • ZERO DOWNTIME
         </div>
       </div>
 
-      <!-- Live 2-Replica Grid with Real-Time Traffic Routing Share (flex-1) -->
-      <div class="flex-1 min-h-0 flex flex-col justify-center">
-        <div id="servingPodsGrid" class="grid grid-cols-1 md:grid-cols-2 gap-3">
-          <div class="p-6 col-span-2 cypher-panel text-center text-xs font-mono text-[#66645D]">
+      <!-- Live 2-Replica Grid with Real-Time Traffic Routing Share -->
+      <div class="space-y-4">
+        <div class="flex items-center justify-between border-b-2 border-black pb-2 text-xs font-mono">
+          <span class="font-bold uppercase text-black">SERVING REPLICAS (EXACTLY 2 PINNED PODS)</span>
+          <span class="text-[#66645D]">TOTAL TRAFFIC: 100% ROUTED ACROSS HEALTHY REPLICAS</span>
+        </div>
+
+        <div id="servingPodsGrid" class="grid grid-cols-1 md:grid-cols-2 gap-5">
+          <div class="p-8 col-span-2 cypher-panel text-center text-xs font-mono text-[#66645D]">
             Loading serving pods from cluster...
           </div>
         </div>
       </div>
 
       <!-- Live Proof Banner: Run Burst Probe to Prove Zero Dropped Requests -->
-      <div class="cypher-panel p-2.5 flex flex-col sm:flex-row items-center justify-between gap-2 shrink-0">
+      <div class="cypher-panel p-5 flex flex-col md:flex-row items-start md:items-center justify-between gap-4">
         <div>
           <span class="micro-label">LIVE PROOF OF HIGH AVAILABILITY</span>
-          <h3 class="text-xs font-black uppercase text-black">Fire Rapid Prediction Burst</h3>
-          <p class="text-[11px] text-[#66645D]">Send 10 concurrent requests to prove 100% success during pod vaporizations.</p>
+          <h3 class="text-base font-black uppercase text-black mt-0.5">Fire Rapid Prediction Burst</h3>
+          <p class="text-xs text-[#66645D]">Send 10 concurrent requests right now (or during a pod crash) to prove 100% of calls succeed with zero dropped requests.</p>
         </div>
-        <div class="flex items-center gap-2">
+        <div class="flex items-center gap-3">
           <span id="burstProbeResult" class="font-mono text-xs font-bold text-[#1D7A4D] hidden"></span>
-          <button onclick="triggerBurstTest()" id="burstProbeBtn" class="cypher-btn cypher-btn-lime py-1.5 px-3.5 text-[10px]">
+          <button onclick="triggerBurstTest()" id="burstProbeBtn" class="cypher-btn cypher-btn-lime py-3 px-5 text-xs">
             ⚡ FIRE 10-REQUEST PROBE &rarr;
           </button>
         </div>
@@ -714,271 +716,304 @@
     </div>
 
     <!-- ================= PAGE 4: DRIFT MONITOR ================= -->
-    <div id="view-drift" class="view-panel hidden h-full flex flex-col justify-between gap-2 overflow-hidden">
+    <div id="view-drift" class="view-panel hidden space-y-4">
       
-      <!-- Top Strip: Title + Thresholds + Macro Summary -->
-      <div class="shrink-0 space-y-1.5">
-        <div class="border-b-2 border-black pb-1 flex items-center justify-between">
-          <div>
-            <span class="micro-label text-black bg-[#C8FF5A] px-2 py-0.5 border border-black inline-block mb-0.5">
-              04 // STATISTICAL SURVEILLANCE
-            </span>
-            <h1 class="text-base font-black uppercase text-black leading-none">Statistical Drift Monitor (23 Features)</h1>
-          </div>
+      <!-- Top Title & Trigger Rule -->
+      <div class="border-b-2 border-black pb-2 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-2">
+        <div class="flex items-center gap-3">
+          <span class="micro-label text-black bg-[#C8FF5A] px-2 py-0.5 border border-black inline-block font-mono">
+            04 // STATISTICAL SURVEILLANCE &amp; COGNITIVE AUDIT
+          </span>
+          <h1 class="text-xl sm:text-2xl font-black uppercase text-black tracking-tight">Statistical Drift Monitor</h1>
+        </div>
+        <div class="flex items-center gap-2">
+          <span class="px-2.5 py-1 bg-[#F8F6F0] border-2 border-black font-mono text-xs font-bold text-black">
+            TRIGGER RULE: PSI &gt; 0.25 (MIN 2 FEATURES)
+          </span>
+          <span id="driftBreachBadge" class="px-2.5 py-1 bg-[#B52A24] text-white font-mono text-xs font-bold border-2 border-black animate-pulse">
+            🚨 RETRAINING REQUIRED
+          </span>
+        </div>
+      </div>
+
+      <!-- Compact Regulatory Thresholds + Macro Cognitive Drift Bar -->
+      <div class="cypher-panel p-3.5 space-y-2.5 font-mono">
+        <div class="flex flex-col md:flex-row items-start md:items-center justify-between gap-2 border-b-2 border-black pb-2">
           <div class="flex items-center gap-2">
-            <span id="driftBreachBadge" class="px-2 py-0.5 bg-[#1D7A4D] text-white font-mono text-[9px] font-bold border border-black">
-              🟢 ALL FEATURES STABLE
-            </span>
-            <span class="px-2 py-0.5 bg-[#F8F6F0] border border-black font-mono text-[9px] font-bold text-black">
-              RULE: PSI &gt; 0.25 (MIN 2 FEATS)
-            </span>
+            <span class="micro-label">REGULATORY AUDIT STANDARD // SPEC 5.4 &amp; 8.1</span>
+            <h3 id="driftMacroTitle" class="text-xs sm:text-sm font-black uppercase text-black">Model Discrimination &amp; Population Stability Audit</h3>
+          </div>
+          <div class="flex items-center gap-1.5 text-[11px] font-bold">
+            <span class="px-2 py-0.5 bg-[#ecfdf5] text-[#1D7A4D] border border-black">&lt; 0.10 STABLE</span>
+            <span class="px-2 py-0.5 bg-[#fef3c7] text-[#B77900] border border-black">0.10 - 0.25 WARNING</span>
+            <span class="px-2 py-0.5 bg-[#fed7aa] text-[#B52A24] border border-black">&gt; 0.25 CRITICAL BREACH</span>
           </div>
         </div>
 
-        <p id="driftMacroTitle" class="hidden"></p>
-
-        <!-- Macro Summary Strip -->
-        <div class="grid grid-cols-3 gap-2 font-mono">
-          <div class="p-1.5 bg-[#F8F6F0] border border-black flex items-center justify-between text-xs">
-            <span class="micro-label text-[8px]">UNCERTAINTY</span>
-            <p class="text-xs font-black text-[#B52A24]">0.31 &rarr; 0.98 bits</p>
+        <div class="grid grid-cols-1 sm:grid-cols-3 gap-2.5">
+          <div class="p-2.5 bg-[#F8F6F0] border-2 border-black flex items-center justify-between">
+            <div>
+              <span class="micro-label text-[9px]">POPULATION UNCERTAINTY</span>
+              <p class="text-xl font-black text-[#B52A24] leading-none mt-1 font-mono">0.31 &rarr; 0.98 <span class="text-xs">bits</span></p>
+            </div>
+            <span class="text-[11px] font-bold text-[#B52A24] text-right font-mono">+216% Entropy</span>
           </div>
-          <div class="p-1.5 bg-[#F8F6F0] border border-black flex items-center justify-between text-xs">
-            <span class="micro-label text-[8px]">PRIME REJECT</span>
-            <p class="text-xs font-black text-[#B52A24]">+54.3% Surge</p>
+          <div class="p-2.5 bg-[#F8F6F0] border-2 border-black flex items-center justify-between">
+            <div>
+              <span class="micro-label text-[9px]">PRIME FALSE REJECTIONS</span>
+              <p class="text-xl font-black text-[#B52A24] leading-none mt-1 font-mono">+54.3%</p>
+            </div>
+            <span class="text-[11px] font-bold text-[#B52A24] text-right font-mono">Prime Denied</span>
           </div>
-          <div class="p-1.5 bg-[#F8F6F0] border border-black flex items-center justify-between text-xs">
-            <span class="micro-label text-[8px]">AUC IMPACT</span>
-            <p class="text-xs font-black text-black">0.966 &rarr; 0.534</p>
+          <div class="p-2.5 bg-[#F8F6F0] border-2 border-black flex items-center justify-between">
+            <div>
+              <span class="micro-label text-[9px]">AUC DISCRIMINATION</span>
+              <p class="text-xl font-black text-black leading-none mt-1 font-mono">0.966 &rarr; 0.534</p>
+            </div>
+            <span class="text-[11px] font-bold text-[#66645D] text-right font-mono">Coin-Flip</span>
           </div>
         </div>
       </div>
 
-      <!-- 23 Feature Trays in 4-Column Bento (flex-1 min-h-0) -->
-      <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-2 flex-1 min-h-0">
+      <!-- 23 Feature Trays in 4-Column Bento (Scroll-Free with local tray scrolling) -->
+      <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3">
         
         <!-- Demographics -->
-        <div class="cypher-panel p-2 flex flex-col min-h-0">
-          <span class="micro-label text-[9px] border-b border-black pb-0.5 mb-1">01 // DEMOGRAPHICS &amp; LIMIT</span>
-          <div id="psi_group_demographics" class="space-y-1 overflow-y-auto flex-1 pr-1"></div>
+        <div class="cypher-panel p-3 flex flex-col justify-between">
+          <div class="border-b border-black pb-1 mb-2 flex justify-between items-center">
+            <span class="micro-label text-[9px]">GROUP 01 // DEMOGRAPHICS</span>
+            <span class="text-[9px] font-mono text-[#66645D]">3 FEAT</span>
+          </div>
+          <div id="psi_group_demographics" class="space-y-1.5 max-h-[270px] overflow-y-auto pr-1"></div>
         </div>
 
         <!-- Repayment History -->
-        <div class="cypher-panel p-2 flex flex-col min-h-0">
-          <span class="micro-label text-[9px] border-b border-black pb-0.5 mb-1">02 // DELINQUENCY (PAY_0-6)</span>
-          <div id="psi_group_repayment" class="space-y-1 overflow-y-auto flex-1 pr-1"></div>
+        <div class="cypher-panel p-3 flex flex-col justify-between">
+          <div class="border-b border-black pb-1 mb-2 flex justify-between items-center">
+            <span class="micro-label text-[9px]">GROUP 02 // REPAYMENT (PAY_0-6)</span>
+            <span class="text-[9px] font-mono text-[#66645D]">6 FEAT</span>
+          </div>
+          <div id="psi_group_repayment" class="space-y-1.5 max-h-[270px] overflow-y-auto pr-1"></div>
         </div>
 
         <!-- Bill Statements -->
-        <div class="cypher-panel p-2 flex flex-col min-h-0">
-          <span class="micro-label text-[9px] border-b border-black pb-0.5 mb-1">03 // STATEMENTS (BILL_1-6)</span>
-          <div id="psi_group_bills" class="space-y-1 overflow-y-auto flex-1 pr-1"></div>
+        <div class="cypher-panel p-3 flex flex-col justify-between">
+          <div class="border-b border-black pb-1 mb-2 flex justify-between items-center">
+            <span class="micro-label text-[9px]">GROUP 03 // STATEMENTS (BILL_1-6)</span>
+            <span class="text-[9px] font-mono text-[#66645D]">6 FEAT</span>
+          </div>
+          <div id="psi_group_bills" class="space-y-1.5 max-h-[270px] overflow-y-auto pr-1"></div>
         </div>
 
         <!-- Prior Payments -->
-        <div class="cypher-panel p-2 flex flex-col min-h-0">
-          <span class="micro-label text-[9px] border-b border-black pb-0.5 mb-1">04 // PAYMENTS (PAY_1-6)</span>
-          <div id="psi_group_payments" class="space-y-1 overflow-y-auto flex-1 pr-1"></div>
+        <div class="cypher-panel p-3 flex flex-col justify-between">
+          <div class="border-b border-black pb-1 mb-2 flex justify-between items-center">
+            <span class="micro-label text-[9px]">GROUP 04 // PAYMENTS (AMT_1-6)</span>
+            <span class="text-[9px] font-mono text-[#66645D]">6 FEAT</span>
+          </div>
+          <div id="psi_group_payments" class="space-y-1.5 max-h-[270px] overflow-y-auto pr-1"></div>
         </div>
 
       </div>
 
-      <!-- Action Trigger Buttons (shrink-0) -->
-      <div class="grid grid-cols-2 gap-2 shrink-0">
-        <button onclick="executeAction('simulate_drift')" class="cypher-btn cypher-btn-danger w-full py-1.5 text-[10px]">
-          💥 1. TRIGGER DRIFT SHOCK (PAY DELAY +3 MO)
-        </button>
-        <button onclick="executeAction('auto_heal')" class="cypher-btn cypher-btn-lime w-full py-1.5 text-[10px]">
-          🤖 2. LAUNCH FULL CLOSED-LOOP RETRAIN &amp; ROLLOUT
-        </button>
+      <!-- Action Trigger Buttons -->
+      <div class="grid grid-cols-1 md:grid-cols-2 gap-3">
+        <div class="cypher-panel-bright p-3.5 flex items-center justify-between gap-3">
+          <div>
+            <span class="micro-label">STEP 01 // SYNTHETIC INJECTION</span>
+            <h4 class="text-xs sm:text-sm font-black uppercase text-black mt-0.5">Inject Drift Shock</h4>
+            <p class="text-[11px] text-[#66645D] leading-tight mt-0.5">Shifts payment delay by +3 months &amp; streams 750 requests to trigger breach.</p>
+          </div>
+          <button onclick="executeAction('simulate_drift')" class="cypher-btn cypher-btn-danger text-xs py-2.5 px-4 shrink-0 font-mono">
+            💥 TRIGGER DRIFT SHOCK
+          </button>
+        </div>
+
+        <div class="cypher-panel-bright p-3.5 flex items-center justify-between gap-3">
+          <div>
+            <span class="micro-label">STEP 02 // CLOSED-LOOP REMEDIATION</span>
+            <h4 class="text-xs sm:text-sm font-black uppercase text-black mt-0.5">Autonomous Retraining &amp; Rollout</h4>
+            <p class="text-[11px] text-[#66645D] leading-tight mt-0.5">In-cluster daemon detects PSI &gt; 0.25 and triggers automated retraining Job.</p>
+          </div>
+          <button onclick="executeAction('auto_heal')" class="cypher-btn cypher-btn-lime text-xs py-2.5 px-4 shrink-0 font-mono">
+            🤖 LAUNCH FULL AUTONOMOUS DRIFT &amp; HEAL
+          </button>
+        </div>
       </div>
 
     </div>
 
     <!-- ================= PAGE 5: CONSOLE ================= -->
-    <div id="view-terminal" class="view-panel hidden h-full flex flex-col justify-between gap-2 overflow-hidden">
+    <div id="view-terminal" class="view-panel hidden space-y-5">
       
-      <div class="border-b-2 border-black pb-1 flex items-center justify-between shrink-0">
+      <div class="border-b-2 border-black pb-3 flex items-center justify-between">
         <div>
-          <span class="micro-label text-black bg-[#C8FF5A] px-2 py-0.5 border border-black inline-block mb-0.5">
+          <span class="micro-label text-black bg-[#C8FF5A] px-2 py-0.5 border border-black inline-block mb-1">
             05 // PLATFORM RUNTIME
           </span>
-          <h1 class="text-base font-black uppercase text-black leading-none">Operator Execution Console</h1>
+          <h1 class="text-2xl sm:text-3xl font-black uppercase text-black">Operator Execution Console</h1>
         </div>
         <div class="flex items-center gap-2">
-          <button onclick="clearTerminal()" class="cypher-btn cypher-btn-secondary text-[10px] py-1 px-2.5">
+          <button onclick="clearTerminal()" class="cypher-btn cypher-btn-secondary text-xs py-1 px-3">
             CLEAR
           </button>
-          <button onclick="copyTerminal()" class="cypher-btn cypher-btn-secondary text-[10px] py-1 px-2.5">
+          <button onclick="copyTerminal()" class="cypher-btn cypher-btn-secondary text-xs py-1 px-3">
             COPY
           </button>
         </div>
       </div>
 
       <!-- Quick Action Chips -->
-      <div class="grid grid-cols-2 sm:grid-cols-4 lg:grid-cols-7 gap-1.5 shrink-0">
-        <button onclick="executeAction('simulate_drift')" class="p-1.5 bg-[#F8F6F0] hover:bg-[#fed7aa] border border-black text-[10px] font-mono font-bold text-black transition">
-          [ 💥 1. DRIFT ]
+      <div class="grid grid-cols-2 sm:grid-cols-4 lg:grid-cols-7 gap-2">
+        <button onclick="executeAction('simulate_drift')" class="p-2.5 bg-[#F8F6F0] hover:bg-[#fed7aa] border-2 border-black text-xs font-mono font-bold text-black transition">
+          [ 💥 1. DRIFT SHOCK ]
         </button>
-        <button onclick="executeAction('auto_heal')" class="p-1.5 bg-[#F8F6F0] hover:bg-[#C8FF5A] border border-black text-[10px] font-mono font-bold text-black transition">
-          [ 🤖 2. AUTO-HEAL ]
+        <button onclick="executeAction('auto_heal')" class="p-2.5 bg-[#F8F6F0] hover:bg-[#C8FF5A] border-2 border-black text-xs font-mono font-bold text-black transition">
+          [ 🤖 2. AUTO-HEAL LOOP ]
         </button>
-        <button onclick="executeAction('manual_retrain')" class="p-1.5 bg-[#F8F6F0] hover:bg-[#C8FF5A] border border-black text-[10px] font-mono font-bold text-black transition">
-          [ 🛠️ 3. RETRAIN ]
+        <button onclick="executeAction('manual_retrain')" class="p-2.5 bg-[#F8F6F0] hover:bg-[#C8FF5A] border-2 border-black text-xs font-mono font-bold text-black transition">
+          [ 🛠️ 3. FORCE RETRAIN ]
         </button>
-        <button onclick="executeAction('run_gate')" class="p-1.5 bg-[#F8F6F0] hover:bg-[#C8FF5A] border border-black text-[10px] font-mono font-bold text-black transition">
-          [ 🛡️ 4. GATE ]
+        <button onclick="executeAction('run_gate')" class="p-2.5 bg-[#F8F6F0] hover:bg-[#C8FF5A] border-2 border-black text-xs font-mono font-bold text-black transition">
+          [ 🛡️ 4. QUALITY GATE ]
         </button>
-        <button onclick="executeAction('chaos_pod_kill')" class="p-1.5 bg-[#F8F6F0] hover:bg-[#fed7aa] border border-black text-[10px] font-mono font-bold text-black transition">
-          [ 💥 5. KILL POD ]
+        <button onclick="executeAction('chaos_pod_kill')" class="p-2.5 bg-[#F8F6F0] hover:bg-[#fed7aa] border-2 border-black text-xs font-mono font-bold text-black transition">
+          [ 💥 5. KILL POD DRILL ]
         </button>
-        <button onclick="executeAction('traffic_burst')" class="p-1.5 bg-[#F8F6F0] hover:bg-[#C8FF5A] border border-black text-[10px] font-mono font-bold text-black transition">
-          [ 🚀 6. TRAFFIC ]
+        <button onclick="executeAction('traffic_burst')" class="p-2.5 bg-[#F8F6F0] hover:bg-[#C8FF5A] border-2 border-black text-xs font-mono font-bold text-black transition">
+          [ 🚀 6. TRAFFIC BURST ]
         </button>
-        <button onclick="executeAction('reset_demo')" class="p-1.5 bg-[#F8F6F0] hover:bg-[#C8FF5A] border border-black text-[10px] font-mono font-bold text-black transition">
-          [ 🔄 7. RESET ]
+        <button onclick="executeAction('reset_demo')" class="p-2.5 bg-[#F8F6F0] hover:bg-[#C8FF5A] border-2 border-black text-xs font-mono font-bold text-black transition">
+          [ 🔄 7. RESET DEMO ]
         </button>
       </div>
 
-      <!-- Terminal Screen (flex-1 min-h-0) -->
-      <div class="border-2 border-black bg-black text-[#F8F6F0] shadow-[3px_3px_0_#171717] font-mono text-xs flex-1 min-h-0 flex flex-col overflow-hidden">
-        <div class="bg-[#171717] border-b border-black px-3 py-1 flex items-center justify-between shrink-0">
-          <div class="flex items-center gap-1.5">
-            <span class="w-2 h-2 bg-[#B52A24]"></span>
-            <span class="w-2 h-2 bg-[#B77900]"></span>
-            <span class="w-2 h-2 bg-[#1D7A4D]"></span>
-            <span class="text-[#66645D] text-[10px] ml-2">stdout // live SSE stream</span>
+      <!-- Terminal Screen -->
+      <div class="border-2 border-black bg-black text-[#F8F6F0] shadow-[4px_4px_0_#171717] font-mono text-xs">
+        <div class="bg-[#171717] border-b-2 border-black px-4 py-2 flex items-center justify-between">
+          <div class="flex items-center gap-2">
+            <span class="w-2.5 h-2.5 bg-[#B52A24]"></span>
+            <span class="w-2.5 h-2.5 bg-[#B77900]"></span>
+            <span class="w-2.5 h-2.5 bg-[#1D7A4D]"></span>
+            <span class="text-[#66645D] text-[11px] ml-2">stdout // live SSE stream</span>
           </div>
-          <span id="terminalStatusPill" class="text-[9px] bg-black text-[#C8FF5A] px-1.5 py-0.5 border border-[#C8FF5A]">
+          <span id="terminalStatusPill" class="text-[10px] bg-black text-[#C8FF5A] px-2 py-0.5 border border-[#C8FF5A]">
             STATUS: IDLE
           </span>
         </div>
-        <div class="p-3 overflow-y-auto flex-1 font-mono text-[11px] leading-relaxed">
-          <pre id="terminalOutput" class="whitespace-pre-wrap text-[#E7E3D8]"># MLPlatform Execution Console Ready.
+        <div class="p-4 h-[380px] overflow-y-auto">
+          <pre id="terminalOutput" class="whitespace-pre-wrap leading-relaxed text-[#E7E3D8]"># MLPlatform Execution Console Ready.
 # Select a drill above to trigger live streaming output.
 </pre>
         </div>
       </div>
 
-      <!-- Post-Execution Navigation Bar (shrink-0) -->
-      <div class="flex items-center justify-between gap-2 shrink-0 pt-0.5">
+      <!-- Post-Execution Navigation Bar -->
+      <div class="flex flex-wrap items-center justify-between gap-3 pt-1">
         <div class="flex items-center gap-2">
-          <button onclick="switchTab('scoring')" class="cypher-btn cypher-btn-lime text-[10px] py-1 px-3">
-            👉 RETURN TO LOAN SCORER &rarr;
+          <button onclick="switchTab('scoring')" class="cypher-btn cypher-btn-lime text-xs py-2 px-4">
+            👉 RETURN TO LOAN SCORER (INSPECT DECISION) &rarr;
           </button>
-          <button onclick="switchTab('drift')" class="cypher-btn cypher-btn-secondary text-[10px] py-1 px-2.5">
-            📊 VIEW DRIFT MONITOR
+          <button onclick="switchTab('drift')" class="cypher-btn cypher-btn-secondary text-xs py-2 px-3">
+            📊 VIEW STATISTICAL DRIFT MONITOR
           </button>
         </div>
-        <span class="text-[10px] font-mono text-[#66645D]">Zero-downtime execution output streamed via SSE</span>
+        <span class="text-xs font-mono text-[#66645D]">Zero-downtime execution output streamed via SSE</span>
       </div>
 
     </div>
 
     <!-- ================= PAGE 6: PORTALS ================= -->
-    <div id="view-ecosystem" class="view-panel hidden h-full flex flex-col justify-between gap-2.5 overflow-hidden">
+    <div id="view-ecosystem" class="view-panel hidden space-y-5">
       
-      <div class="border-b-2 border-black pb-1.5 shrink-0">
-        <span class="micro-label text-black bg-[#C8FF5A] px-2 py-0.5 border border-black inline-block mb-0.5">
+      <div class="border-b-2 border-black pb-3">
+        <span class="micro-label text-black bg-[#C8FF5A] px-2 py-0.5 border border-black inline-block mb-1">
           06 // ECOSYSTEM
         </span>
-        <h1 class="text-base sm:text-lg font-black uppercase text-black leading-none">Supporting Cluster Portals</h1>
+        <h1 class="text-2xl sm:text-3xl font-black uppercase text-black">Supporting Cluster Portals</h1>
       </div>
 
-      <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-2.5 flex-1 min-h-0">
+      <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
         
         <!-- Grafana -->
-        <a href="http://localhost:3000" target="_blank" class="cypher-panel p-3.5 flex flex-col justify-between hover:bg-[#F8F6F0] transition group">
+        <a href="http://localhost:3000" target="_blank" class="cypher-panel p-5 flex flex-col justify-between hover:bg-[#F8F6F0] transition group">
           <div>
-            <div class="flex items-center justify-between border-b border-black pb-1.5 mb-1.5">
+            <div class="flex items-center justify-between border-b-2 border-black pb-2 mb-2">
               <span class="micro-label">PORTAL 06.01</span>
-              <span class="font-mono text-[10px] font-bold text-black bg-[#C8FF5A] px-1.5 py-0.5 border border-black">:3000</span>
+              <span class="font-mono text-xs font-bold text-black bg-[#C8FF5A] px-2 py-0.5 border border-black">:3000</span>
             </div>
-            <h3 class="text-sm font-black uppercase text-black">Grafana Dashboard</h3>
-            <p class="text-[11px] text-[#66645D] mt-0.5">Live metrics: p95 latency, RPS, pod CPU/memory, error budget.</p>
+            <h3 class="text-base font-black uppercase text-black">Grafana Dashboard</h3>
+            <p class="text-xs text-[#66645D] mt-1">Live metrics: p95 latency, RPS, pod CPU/memory, error budget.</p>
           </div>
-          <div class="mt-2 pt-1.5 border-t border-black flex items-center justify-between text-[10px] font-bold text-black uppercase">
+          <div class="mt-4 pt-2 border-t-2 border-black flex items-center justify-between text-xs font-bold text-black uppercase">
             <span>LAUNCH GRAFANA</span>
             <span>&rarr;</span>
           </div>
         </a>
 
         <!-- MLflow -->
-        <a href="http://localhost:5000" target="_blank" class="cypher-panel p-3.5 flex flex-col justify-between hover:bg-[#F8F6F0] transition group">
+        <a href="http://localhost:5000" target="_blank" class="cypher-panel p-5 flex flex-col justify-between hover:bg-[#F8F6F0] transition group">
           <div>
-            <div class="flex items-center justify-between border-b border-black pb-1.5 mb-1.5">
+            <div class="flex items-center justify-between border-b-2 border-black pb-2 mb-2">
               <span class="micro-label">PORTAL 06.02</span>
-              <span class="font-mono text-[10px] font-bold text-black bg-[#C8FF5A] px-1.5 py-0.5 border border-black">:5000</span>
+              <span class="font-mono text-xs font-bold text-black bg-[#C8FF5A] px-2 py-0.5 border border-black">:5000</span>
             </div>
-            <h3 class="text-sm font-black uppercase text-black">MLflow Registry</h3>
-            <p class="text-[11px] text-[#66645D] mt-0.5">Model artifact store, parameters, gate tags, and champion lineage.</p>
+            <h3 class="text-base font-black uppercase text-black">MLflow Registry</h3>
+            <p class="text-xs text-[#66645D] mt-1">Model artifact store, parameters, gate tags, and champion lineage.</p>
           </div>
-          <div class="mt-2 pt-1.5 border-t border-black flex items-center justify-between text-[10px] font-bold text-black uppercase">
+          <div class="mt-4 pt-2 border-t-2 border-black flex items-center justify-between text-xs font-bold text-black uppercase">
             <span>LAUNCH MLFLOW</span>
             <span>&rarr;</span>
           </div>
         </a>
 
         <!-- Swagger -->
-        <a href="http://localhost:8080/docs" target="_blank" class="cypher-panel p-3.5 flex flex-col justify-between hover:bg-[#F8F6F0] transition group">
+        <a href="http://localhost:8080/docs" target="_blank" class="cypher-panel p-5 flex flex-col justify-between hover:bg-[#F8F6F0] transition group">
           <div>
-            <div class="flex items-center justify-between border-b border-black pb-1.5 mb-1.5">
+            <div class="flex items-center justify-between border-b-2 border-black pb-2 mb-2">
               <span class="micro-label">PORTAL 06.03</span>
-              <span class="font-mono text-[10px] font-bold text-black bg-[#C8FF5A] px-1.5 py-0.5 border border-black">:8080</span>
+              <span class="font-mono text-xs font-bold text-black bg-[#C8FF5A] px-2 py-0.5 border border-black">:8080</span>
             </div>
-            <h3 class="text-sm font-black uppercase text-black">Model API Docs</h3>
-            <p class="text-[11px] text-[#66645D] mt-0.5">Interactive OpenAPI Swagger UI testing live `/predict` and `/healthz`.</p>
+            <h3 class="text-base font-black uppercase text-black">Model API Docs</h3>
+            <p class="text-xs text-[#66645D] mt-1">Interactive OpenAPI Swagger UI testing live `/predict` and `/healthz`.</p>
           </div>
-          <div class="mt-2 pt-1.5 border-t border-black flex items-center justify-between text-[10px] font-bold text-black uppercase">
+          <div class="mt-4 pt-2 border-t-2 border-black flex items-center justify-between text-xs font-bold text-black uppercase">
             <span>OPEN SWAGGER</span>
             <span>&rarr;</span>
           </div>
         </a>
 
         <!-- MinIO -->
-        <a href="http://localhost:9001" target="_blank" class="cypher-panel p-3.5 flex flex-col justify-between hover:bg-[#F8F6F0] transition group">
+        <a href="http://localhost:9001" target="_blank" class="cypher-panel p-5 flex flex-col justify-between hover:bg-[#F8F6F0] transition group">
           <div>
-            <div class="flex items-center justify-between border-b border-black pb-1.5 mb-1.5">
+            <div class="flex items-center justify-between border-b-2 border-black pb-2 mb-2">
               <span class="micro-label">PORTAL 06.04</span>
-              <span class="font-mono text-[10px] font-bold text-black bg-[#C8FF5A] px-1.5 py-0.5 border border-black">:9001</span>
+              <span class="font-mono text-xs font-bold text-black bg-[#C8FF5A] px-2 py-0.5 border border-black">:9001</span>
             </div>
-            <h3 class="text-sm font-black uppercase text-black">MinIO Storage</h3>
-            <p class="text-[11px] text-[#66645D] mt-0.5">S3 bucket browser for Feast offline parquets and MLflow binaries.</p>
+            <h3 class="text-base font-black uppercase text-black">MinIO Storage</h3>
+            <p class="text-xs text-[#66645D] mt-1">S3 bucket browser for Feast offline parquets and MLflow binaries.</p>
           </div>
-          <div class="mt-2 pt-1.5 border-t border-black flex items-center justify-between text-[10px] font-bold text-black uppercase">
+          <div class="mt-4 pt-2 border-t-2 border-black flex items-center justify-between text-xs font-bold text-black uppercase">
             <span>LAUNCH MINIO</span>
             <span>&rarr;</span>
           </div>
         </a>
 
         <!-- Alertmanager -->
-        <a href="http://localhost:9093" target="_blank" class="cypher-panel p-3.5 flex flex-col justify-between hover:bg-[#F8F6F0] transition group">
+        <a href="http://localhost:9093" target="_blank" class="cypher-panel p-5 flex flex-col justify-between hover:bg-[#F8F6F0] transition group">
           <div>
-            <div class="flex items-center justify-between border-b border-black pb-1.5 mb-1.5">
+            <div class="flex items-center justify-between border-b-2 border-black pb-2 mb-2">
               <span class="micro-label">PORTAL 06.05</span>
-              <span class="font-mono text-[10px] font-bold text-black bg-[#C8FF5A] px-1.5 py-0.5 border border-black">:9093</span>
+              <span class="font-mono text-xs font-bold text-black bg-[#C8FF5A] px-2 py-0.5 border border-black">:9093</span>
             </div>
-            <h3 class="text-sm font-black uppercase text-black">Alertmanager</h3>
-            <p class="text-[11px] text-[#66645D] mt-0.5">Active Prometheus alerts and webhook triggers to the remediator.</p>
+            <h3 class="text-base font-black uppercase text-black">Alertmanager</h3>
+            <p class="text-xs text-[#66645D] mt-1">Active Prometheus alerts and webhook triggers to the remediator.</p>
           </div>
-          <div class="mt-2 pt-1.5 border-t border-black flex items-center justify-between text-[10px] font-bold text-black uppercase">
+          <div class="mt-4 pt-2 border-t-2 border-black flex items-center justify-between text-xs font-bold text-black uppercase">
             <span>LAUNCH ALERTS</span>
             <span>&rarr;</span>
           </div>
         </a>
-
-        <!-- In-Cluster Service Banner -->
-        <div class="cypher-panel-lime p-3.5 flex flex-col justify-between">
-          <div>
-            <span class="micro-label">KIND CLUSTER SERVICES</span>
-            <h3 class="text-sm font-black uppercase text-black mt-1">Local Development Mesh</h3>
-            <p class="text-[11px] text-black font-medium mt-0.5">All services orchestrated in-cluster with pinned NodePort &amp; port-forwards.</p>
-          </div>
-          <div class="pt-1.5 border-t border-black flex items-center justify-between text-[10px] font-bold text-black">
-            <span>READY STATE</span>
-            <span>3 / 3 NODES</span>
-          </div>
-        </div>
 
       </div>
 
@@ -1332,16 +1367,16 @@
           const pct = Math.min(Math.max((psi / 0.40) * 100, 5), 100);
 
           html += `
-            <div class="p-1 bg-[#F8F6F0] border border-black space-y-0.5">
-              <div class="flex justify-between items-center text-[10px] font-mono leading-none">
+            <div class="p-1.5 bg-[#F8F6F0] border border-black space-y-0.5">
+              <div class="flex justify-between items-center text-[11px] font-mono leading-tight">
                 <span class="font-bold text-black uppercase">${feat}</span>
-                <span class="${textColor} font-bold">${psi.toFixed(3)}</span>
+                <span class="${textColor} font-bold text-[10px]">${psi.toFixed(3)}</span>
               </div>
-              <div class="w-full bg-[#E7E3D8] border border-black h-1.5 overflow-hidden">
+              <div class="w-full bg-[#E7E3D8] border border-black h-1 overflow-hidden">
                 <div class="h-full ${barBg}" style="width: ${pct}%"></div>
               </div>
               <div class="flex justify-between text-[8px] font-mono text-[#66645D] leading-none">
-                <span>LIM 0.25</span>
+                <span>LIMIT 0.25</span>
                 <span class="font-bold">${statusText}</span>
               </div>
             </div>
@@ -1695,23 +1730,23 @@
           }
 
           return `
-            <div id="pod-card-${p.name}" class="cypher-panel p-3.5 flex flex-col justify-between space-y-2.5">
+            <div id="pod-card-${p.name}" class="cypher-panel p-5 flex flex-col justify-between space-y-4">
               <div>
-                <div class="flex items-center justify-between border-b-2 border-black pb-1.5 mb-2">
-                  <div class="flex items-center gap-1.5">
+                <div class="flex items-center justify-between border-b-2 border-black pb-2 mb-3">
+                  <div class="flex items-center gap-2">
                     <span class="micro-label">REPLICA 03.0${idx + 1}</span>
-                    <span id="pod-traffic-badge-${p.name}" class="px-1.5 py-0.5 text-[9px] font-mono font-bold ${trafficBadgeClass}">
+                    <span id="pod-traffic-badge-${p.name}" class="px-1.5 py-0.5 text-[10px] font-mono font-bold ${trafficBadgeClass}">
                       ${trafficBadge}
                     </span>
                   </div>
-                  <span class="px-1.5 py-0.5 text-[10px] font-mono font-bold border ${statusBadge}">
+                  <span class="px-2 py-0.5 text-xs font-mono font-bold border-2 ${statusBadge}">
                     ${p.ready} ${p.status.toUpperCase()}
                   </span>
                 </div>
 
                 <!-- Traffic Share Visualizer Bar -->
-                <div class="mb-2 p-2 bg-[#F8F6F0] border border-black font-mono space-y-1">
-                  <div class="flex justify-between items-center text-[11px]">
+                <div class="mb-3 p-3 bg-[#F8F6F0] border border-black font-mono space-y-1">
+                  <div class="flex justify-between items-center text-xs">
                     <span class="text-[#66645D]">TRAFFIC SHARE:</span>
                     <strong class="text-black">${sharePct.toFixed(1)}% (${rps.toFixed(1)} req/s)</strong>
                   </div>
@@ -1720,22 +1755,22 @@
                   </div>
                 </div>
 
-                <div class="space-y-0.5 text-[11px] font-mono">
+                <div class="space-y-1 text-xs font-mono">
                   <p class="truncate"><span class="text-[#66645D]">NAME:</span> <strong class="text-black">${p.name}</strong></p>
                   <p><span class="text-[#66645D]">AGE:</span> <strong class="text-black">${p.age}</strong> • <span class="text-[#66645D]">RESTARTS:</span> <strong class="text-black">${p.restarts}</strong></p>
                 </div>
               </div>
 
-              <div class="pt-2 border-t border-black flex items-center justify-between gap-2">
-                <button onclick="viewPodLogs('${p.namespace}', '${p.name}')" class="cypher-btn cypher-btn-secondary text-[10px] py-1 px-2.5">
+              <div class="pt-3 border-t-2 border-black flex items-center justify-between gap-2">
+                <button onclick="viewPodLogs('${p.namespace}', '${p.name}')" class="cypher-btn cypher-btn-secondary text-[10px] py-1.5 px-3">
                   LOGS
                 </button>
                 ${isHealthy ? `
-                  <button onclick="killPod('${p.namespace}', '${p.name}')" class="cypher-btn cypher-btn-danger text-[10px] py-1 px-2.5">
+                  <button onclick="killPod('${p.namespace}', '${p.name}')" class="cypher-btn cypher-btn-danger text-[10px] py-1.5 px-3">
                     💥 KILL REPLICA
                   </button>
                 ` : `
-                  <span class="text-[10px] font-mono font-bold text-[#66645D]">RECONCILING...</span>
+                  <span class="text-xs font-mono font-bold text-[#66645D]">RECONCILING...</span>
                 `}
               </div>
             </div>
