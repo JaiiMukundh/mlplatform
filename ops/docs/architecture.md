@@ -72,7 +72,7 @@ flowchart TD
 | **Feast Offline Store** | Parquet on MinIO / S3 | `data` | S3 API (`s3://ml-data/feast/`) | Point-in-time correct historical feature joins (`get_historical_features`) for model training and retraining without data leakage. |
 | **Model Registry** | MLflow 2.18.0 | `data` | 5000 (NodePort 30500)<br>Postgres backend + MinIO store | Centralized metadata registry storing pinned model artifacts, reference distributions, signatures, hyperparameters, and aliases (`champion`, `candidate`). |
 | **Metadata Database** | PostgreSQL 16 | `data` | 5432 (StatefulSet)<br>Req: 100m/256Mi, Lim: 500m/512Mi | Relational persistence for inference history (`prediction_log`), drift audit logs (`drift_state`), and true labels (`labels_log`). |
-| **Object Storage** | MinIO (AWS S3 Parity) | `data` | 9000 (S3 API), 9001 (Console)<br>Req: 100m/256Mi, Lim: 500m/512Mi | S3-compliant bucket storage for training datasets, historical Parquet logs, and serialized MLflow model artifacts. |
+| **Object Storage** | MinIO (S3-compatible object store) | `data` | 9000 (S3 API), 9001 (Console)<br>Req: 100m/256Mi, Lim: 500m/512Mi | S3-compliant bucket storage for training datasets, historical Parquet logs, and serialized MLflow model artifacts. |
 | **Drift Monitor** | Python 3.11, SciPy, NumPy | `data` | Daemon / Cron execution<br>Req: 100m/256Mi, Lim: 250m/512Mi | Continuously evaluates Population Stability Index (PSI) and Kolmogorov-Smirnov (KS) statistics against the model's MLflow reference distribution. Spawns retrain Job on breach. |
 | **Retrain Job** | Kubernetes Batch Job | `data` | Ephemeral Job pod<br>Req: 250m/512Mi, Lim: 1000m/1Gi | Point-in-time historical join via Feast, LightGBM training, evaluation on temporal holdout, MLflow model registration with `candidate` alias. |
 | **Remediator** | FastAPI, Kubernetes Client | `observability` | 8000 (ClusterIP)<br>Req: 50m/128Mi, Lim: 200m/256Mi | Automated incident response webhook receiving Alertmanager alerts. Executes live HPA floor adjustments and Grafana event annotations. |
@@ -153,7 +153,7 @@ sequenceDiagram
     Job->>Job: Point-in-time join via Feast get_historical_features
     Job->>Job: Train LightGBM & evaluate on holdout
     Job->>MLflow: Log run, metrics, reference.parquet, register as candidate
-    Job->>Gate: Trigger release gate (scripts/run_gate.sh)
+    Job->>Gate: Trigger release gate (ops/scripts/run_gate.sh)
     Gate->>Gate: Verify AUC floor & non-regression vs champion
     Gate->>Staging: Deploy candidate to staging (Port 8081)
     Gate->>Staging: Run 2,000-request load & latency test
@@ -246,6 +246,6 @@ s3://mlflow-artifacts/
 | **Reference Distribution Tied to Model Run** | Drift monitor reads `reference.parquet` directly from the active champion's MLflow run. Retraining recalculates the reference from the new training set. | Fixed global baseline or rolling window baseline (rejected: causes endless retraining loops or hides gradual drift). |
 | **Point-in-Time Correct Feature Joins** | Feast `get_historical_features` joins customer entities with feature state as of event timestamp. | Simple SQL JOINs on current feature tables (rejected: causes catastrophic data leakage from future state into training). |
 | **In-Memory Buffered Prediction Logging** | FastAPI request handler pushes logs to an in-memory deque; background thread flushes micro-batches to Postgres. | Synchronous DB insert per request (rejected: adds 5-15ms DB round-trip latency to critical inference path and causes 500s when DB restarts). |
-| **OpenTofu & Kind for AWS Parity** | 100% open-source local stack mimicking VPC, EKS, RDS, S3, and ECR with zero cloud billing during active development. | LocalStack (rejected: free tier restricted) or direct AWS development (rejected: \$100s in unnecessary student cloud spend). |
+| **Terraform & Kind for Azure Parity** | 100% Terraform-driven local stack plus an Azure VM cloud host running the identical kind platform, with zero cloud billing during active development. | LocalStack (rejected: free tier restricted) or direct AWS development (rejected: \$100s in unnecessary student cloud spend). |
 | **Grafana Alloy over Promtail** | Promtail has been deprecated upstream by Grafana Labs; Grafana Alloy is the official long-term log collector. | Promtail (rejected: EOL status). |
 | **Unified Release Pipeline for Code & Models** | Both software changes and retrained ML candidates use the identical gate (`gate.py`), staging load check, and Helm deployment script. | Separate pipelines for code vs model releases (rejected: leads to configuration drift and untested model delivery paths). |

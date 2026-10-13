@@ -27,7 +27,7 @@ env:
   LOG_LEVEL: INFO
 
 database:
-  # Prediction rows go to Postgres (P6.7). deploy.sh mirrors the tofu-managed
+  # Prediction rows go to Postgres (P6.7). deploy.sh mirrors the terraform-managed
   # postgres-auth credentials into the release namespace as this secret, with
   # the full SQLAlchemy URL under `secretKey`.
   enabled: true
@@ -102,3 +102,5 @@ serviceAccount:
   create: false
   name: ""
   annotations: {}
+  # Extra labels (e.g. azure.workload.identity/use on AKS).
+  labels: {}

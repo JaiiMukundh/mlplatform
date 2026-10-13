@@ -51,7 +51,7 @@ resource "kubernetes_secret_v1" "minio_auth" {
 resource "helm_release" "metrics_server" {
   name  = "metrics-server"
   chart = "${path.module}/../../../infra/charts/metrics-server-3.14.0.tgz"
-  # Vendored (see docs/DECISIONS.md): the asset host times out for helm/tofu.
+  # Vendored (see docs/DECISIONS.md): the asset host times out for helm/terraform.
   namespace = "kube-system"
 
   # Required on kind (same flag as the P2.3 imperative install).
@@ -66,7 +66,7 @@ resource "helm_release" "metrics_server" {
 
 resource "helm_release" "postgres" {
   name      = "postgres"
-  chart     = "${path.module}/../../../deploy/charts/postgres"
+  chart     = "${path.module}/../../deploy/charts/postgres"
   namespace = kubernetes_namespace_v1.data.metadata[0].name
 
   set = [
@@ -88,7 +88,7 @@ resource "helm_release" "postgres" {
 
 resource "helm_release" "minio" {
   name      = "minio"
-  chart     = "${path.module}/../../../deploy/charts/minio"
+  chart     = "${path.module}/../../deploy/charts/minio"
   namespace = kubernetes_namespace_v1.data.metadata[0].name
 
   set = [
@@ -110,7 +110,7 @@ resource "helm_release" "minio" {
 
 resource "helm_release" "redis" {
   name      = "redis"
-  chart     = "${path.module}/../../../deploy/charts/redis"
+  chart     = "${path.module}/../../deploy/charts/redis"
   namespace = kubernetes_namespace_v1.data.metadata[0].name
 
   wait    = true
@@ -121,11 +121,101 @@ resource "helm_release" "redis" {
 
 resource "helm_release" "mlflow" {
   name      = "mlflow"
-  chart     = "${path.module}/../../../deploy/charts/mlflow"
+  chart     = "${path.module}/../../deploy/charts/mlflow"
   namespace = kubernetes_namespace_v1.data.metadata[0].name
 
   wait    = true
   timeout = 600
 
   depends_on = [kubernetes_secret_v1.minio_auth, kubernetes_secret_v1.postgres_auth]
+}
+
+variable "namespace" {
+  description = "Namespace for the data-layer releases (postgres, minio, redis)."
+  type        = string
+  default     = "data"
+}
+
+variable "metrics_server_version" {
+  description = "Pinned metrics-server chart version."
+  type        = string
+  default     = "3.14.0"
+}
+
+variable "metrics_server_repository" {
+  description = "Helm repository serving the metrics-server chart."
+  type        = string
+  default     = "https://kubernetes-sigs.github.io/metrics-server/"
+}
+
+variable "postgres_user" {
+  description = "Postgres application username (stored in the managed Secret)."
+  type        = string
+  default     = "mlp"
+}
+
+variable "minio_user" {
+  description = "MinIO root username (stored in the managed Secret)."
+  type        = string
+  default     = "minioadmin"
+}
+
+variable "buckets" {
+  description = "Object-store buckets created by the MinIO bucket Job."
+  type        = list(string)
+  default     = ["mlflow-artifacts", "feast-offline", "ml-data"]
+}
+
+output "namespace" {
+  description = "Namespace hosting the data-layer releases."
+  value       = kubernetes_namespace_v1.data.metadata[0].name
+}
+
+output "s3_endpoint" {
+  description = "Cluster-internal MinIO S3 endpoint."
+  value       = "http://${helm_release.minio.name}.${var.namespace}.svc:9000"
+}
+
+output "buckets" {
+  description = "Object-store buckets created by the MinIO bucket Job."
+  value       = var.buckets
+}
+
+output "db_host" {
+  description = "Cluster-internal PostgreSQL hostname."
+  value       = "${helm_release.postgres.name}.${var.namespace}.svc"
+}
+
+output "redis_host" {
+  description = "Cluster-internal Redis hostname."
+  value       = "${helm_release.redis.name}.${var.namespace}.svc"
+}
+
+output "postgres_secret_name" {
+  description = "Name of the Secret holding the Postgres credentials."
+  value       = kubernetes_secret_v1.postgres_auth.metadata[0].name
+}
+
+output "minio_secret_name" {
+  description = "Name of the Secret holding the MinIO credentials."
+  value       = kubernetes_secret_v1.minio_auth.metadata[0].name
+}
+
+terraform {
+  required_version = ">= 1.9.0"
+
+  required_providers {
+    helm = {
+      source  = "hashicorp/helm"
+      version = "3.3.0"
+    }
+    kubernetes = {
+      source  = "hashicorp/kubernetes"
+      version = "3.3.0"
+    }
+    random = {
+      source  = "hashicorp/random"
+      version = "3.9.1"
+    }
+  }
 }

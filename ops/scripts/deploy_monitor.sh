@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 # Build and deploy the drift monitor plus retraining platform (P8.2-P8.4).
 # Images are built first so helm never installs a missing tag. The database
-# secret is mirrored from the tofu-managed postgres-auth source of truth.
+# secret is mirrored from the terraform-managed postgres-auth source of truth.
 set -Eeuo pipefail
 
 echo "building drift-monitor image"

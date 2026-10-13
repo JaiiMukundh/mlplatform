@@ -245,4 +245,4 @@ In our **Chaos Lab**:
 | **Quality Gate** | An automated bouncer that refuses to deploy a new model if it's dumb, slow, or broken. |
 | **Zero-Downtime Rollout** | Updating the application while users are actively using it, without a single request failing or hanging. |
 | **HPA (Horizontal Pod Autoscaler)** | A thermostat that adds more server pods when CPU or request lines get too hot, and turns them off when quiet. |
-| **OpenTofu** | Open-source code that provisions all cloud infrastructure (VPCs, clusters, databases) identically every single time. |
+| **Terraform** | Infrastructure-as-code that provisions local and Azure cloud infrastructure (clusters, networks, VMs) identically every single time. |

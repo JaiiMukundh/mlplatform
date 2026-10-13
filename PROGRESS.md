@@ -548,3 +548,42 @@ Only observed command output is recorded here.
   - Restarted Kind cluster and rehydrated Feast Redis store (30,000 customer feature vectors).
   - Verified live scoring: `model-api` running Champion version 64 on 2 pinned replicas; customer #7 scores at 8.56% default risk.
   - Launched UI Server on http://localhost:8050 with all metrics and services (Prometheus, MLflow, MinIO, Model-API) returning 200 OK.
+- TERRAFORM-ONLY + AZURE-ONLY + COMPACT SWEEP PASS (2026-10-13) —
+  - Gating Q: yes, Terraform provisions locally (terraform v1.16.1 installed; HCL is provider-agnostic; `terraform init/validate/plan` all green on infra/envs/local).
+  - Converted OpenTofu -> Terraform: Makefile/CI-CD/scripts/comments/locks now `terraform`; lock regenerates on registry.terraform.io (state keeps opentofu addrs until next apply by design).
+  - Azure-only cloud: deleted infra/envs/aws + 6 AWS modules + 6 unused *_azure modules + values-aws.yaml + aws-port.md + empty deploy/destroy_aws stubs; added values-azure.yaml; local env untouched.
+  - Fixed 2 live bugs: modules pointed charts at `../../../deploy/...` (only worked via stray dup dir, now deleted) and registry script default pointed at an empty 0-byte file (restored real idempotent script at infra/modules/registry/files/registry.sh).
+  - Verify output: ruff 93 files formatted clean; pytest 83 passed 3 skipped; coverage 84.29% (gate 80%); terraform validate local+azure Success; fmt -check clean; helm lint 9/9 charts ok; local plan converges (6 in-place, 1 registry replace, cluster untouched).
+- Next action: next `make up` migrates state provider addresses to registry.terraform.io automatically; Azure apply remains a [HUMAN] step per AGENTS.md Rule 12.
+- CLEAN-ROOM LOCAL STARTUP PASS (2026-10-13) —
+  - `make up`: Kind cluster (3 nodes) + registry + data layer (postgres/minio/redis/mlflow) + observability (prometheus/loki/alloy/grafana) all applied clean (17 resources).
+  - `make deploy-all`: 6 images built/pushed; 120k rows generated; Feast apply/materialize/verify ok; MLflow v1 champion (val AUC 0.8808 / test 0.8970) + v2 candidate; gate PASS (5/5); staging loadcheck 2000 req 0 errors p95 17.6ms; prod 100 req 0 errors p95 18.5ms; drift-monitor live, no drift.
+  - Fixed 2 startup blockers: hadolint DL4006 ignore in `infra/docker/retrain.Dockerfile`; `reset_demo.py` baseline default `"4"`->`"2"` + champion fallback (fresh registry holds only v1+v2).
+  - `make reset-demo`: baseline restored through 2026-10-12, champion v2, `model-api` 2/2 pods serving v2 (`/healthz ok`, customer #7 -> 6.17% Approved), drift state cleared.
+- Next action: platform is up locally; Azure full-training port (train/retrain Jobs on AKS) still pending implementation. `make e2e` not yet run on this rebuild.
+- UI PASS (2026-10-13) — Central dashboard restarted detached (`setsid .venv/bin/python -m ops.ui.app`); `http://localhost:8050/` returns HTTP 200. Note: `make ui` blocks the terminal; detached launch + `/tmp/mlp-ui.log` used instead. Earlier `pkill -f "ops.ui.app"` matched its own shell — use `pkill -f "[o]ps.ui.app"`.
+- RETRAIN DEBUG INTERIM (2026-10-13, UNVERIFIED — local stopped per human before verification) —
+  - Symptom: drift detected (limit_bal PSI 0.97, pay_0 8.07) but retrain Jobs failed repeatedly (v3..v29 registered, most tagged `gate_status=rejected`).
+  - Root cause (confirmed via --previous logs of retrain-2-1791863820): candidate v17 trained + gate PASSED, then staging deploy crashed with `path "//infra/deploy/charts/model-api" not found`. `ops/scripts/deploy.sh` computes REPO_ROOT as script-dir/../.. which is `/` for the in-image flattened layout (`/app/scripts` + `/app/deploy`), no fallback. Fallout from 3-bucket reorg; `run_gate.sh`/`model_release_local.sh` already have the fallback, `deploy.sh` was missed.
+  - Fix applied (unverified): fallback in `deploy.sh` to `deploy/charts/model-api` + `scripts/smoke.sh`; retrain image rebuilt+pushed to local registry. Staging helm history later showed new upgrade attempts (fix likely took) but loop had not closed before shutdown. Re-verify on next local or Azure run.
+- AZURE MOVE SCAFFOLD PASS (2026-10-13, unapplied — apply is [HUMAN]) —
+  - Stopped local fully: UI killed, port-forwards killed, `make down` (20 resources destroyed; no clusters/containers remain).
+  - Researched student limits (MS Learn + Q&A): ~4 Total Regional vCPUs, no quota increases, B-series v1 retiring per region, 1GB SKUs unusable for AKS, allowed regions vary per subscription, max 3 AKS clusters/region.
+  - Added: vm_size/node_count validation, 3 values-azure overlays, train-job-azure.yaml (B2s-safe), azure_preflight/train_azure/azure_compute/deploy_azure_full scripts, 6 Makefile targets (all billable ones refuse with human instructions).
+  - Verify output: terraform validate Success, fmt clean, helm lint 3/3, helm template renders ACR images, train-job-azure renders with zero placeholders, bash -n on all scripts.
+- Next action: HUMAN runs `make azure-preflight`, then `TAG=v1.0.0 bash ops/scripts/deploy_azure_full.sh` (needs az login). Local retrain deploy.sh fix still unverified — covered by Azure run or next local up.
+- AZURE PREFLIGHT LIVE VERDICT (2026-10-13) —
+  - Subscription is self-serve "Azure for Students" (Enabled), login is the Manipal learner school email — individual student offer, not school-tenant-managed.
+  - Measured quotas (indiasouthcentral): cores 4/6, BSFamily 4/4 full (deallocated `mlp-cloud-vm` B4ms still counts), Basv2 0/10 free; B2s + B2as_v2 both unrestricted here.
+  - Fixed preflight: quota names are classic (`cores`/family, strings not ints) and heredoc stdin clobbers pipes — usage now via env + int(). Verified: default 2xB2s FAILS correctly; B2as_v2 x1 PASSES.
+  - Blocker for full deploy: delete leftover `mlp-cloud-vm` first (or terraform apply destroys the orphaned RG per state note, with ordering risk). Recommend 2xB2as_v2 after.
+- QUOTA FREED (2026-10-13) — deleted leftover `mlp-cloud-vm` (B4ms, deallocated) per human request: cores 4/6->0/6, BSFamily 4/4->0/4. Preflight default 2xB2s now PASSES. Leftovers (no quota, pennies storage): unattached OS disk + orphaned NIC in MLP-CLOUD-RG; terraform apply will reconcile the orphaned RG per prior state note.
+- ORPHAN CLEANUP (2026-10-13) — deleted orphaned NIC + unattached OS disk in MLP-CLOUD-RG per human request. Old RG is now completely empty (verified via az resource list).
+- AZURE ARCHITECTURE LOCKED (2026-10-13) — `ops/docs/azure-architecture.md`: full cloud setup (account/quotas, VNet/NSG, AKS fit math ~2.2/3.8 CPU, namespace map, 4 flows, OIDC CD decisions, kill-switch matrix, cost table, access map, 5 honest seams). No code touched.
+
+- G1 PASS (2026-10-13) — Published migration preparation and compacted Terraform modules from 38 HCL files to 10, preserving module interfaces/resource addresses. Existing Azure-only changes included; unrelated `MLPlatform_Synopsis.docx` excluded. AzureRM 5.9.0 pinned from official registry; migrated AKS provisioning profile, DNS identity/link fields, and subnet endpoint schema. Terraform locks now tracked; rendered Feast secret path corrected in gitignore.
+  - `make lint`: All checks passed; 94 files already formatted.
+  - `make test`: 83 passed, 3 skipped (cluster e2e intentionally disabled); coverage 84.29% >= 80%.
+  - `make check-infra`: local and Azure Terraform validation Success; fmt clean; 9 Helm charts linted, zero failed; shell syntax clean.
+  - `make secret-scan`: 84 commits and staged changes scanned; no leaks. Ignored local Terraform backups contain credentials and were never staged.
+  - Next action: consolidate GitHub CI/CD and overlapping Azure deployment scripts, then push and observe cloud CI. No Azure resource creation executed.

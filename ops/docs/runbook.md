@@ -6,7 +6,7 @@ This runbook documents production operations, alert triage procedures, disaster 
 
 ## 1. Alert Response Directory
 
-Alerts are defined in `deploy/charts/observability/templates/alerts.yaml`. Automated remediations are handled by the `remediator` service (`remediator/`) and verified via `make demo-infra` (`scripts/chaos_alert.sh`).
+Alerts are defined in `infra/deploy/charts/observability/templates/alerts.yaml`. Automated remediations are handled by the `remediator` service (`remediator/`) and verified via `make demo-infra` (`ops/scripts/chaos_alert.sh`).
 
 ### 1.1 ModelApiDown
 * **Severity:** Critical
@@ -185,14 +185,14 @@ Alerts are defined in `deploy/charts/observability/templates/alerts.yaml`. Autom
 
 ### 2.4 Staging Candidate Release Rejection
 * **Symptom:** Retrain job completes, but `candidate` model is never promoted to `champion`.
-* **Root Cause:** Candidate failed quality gate checks in `scripts/gate.py`:
+* **Root Cause:** Candidate failed quality gate checks in `ops/scripts/gate.py`:
   * Test AUC < 0.70 (AUC floor breach).
   * Candidate AUC < (Champion AUC - 0.02) (Regression gate).
   * Feature schema mismatch between candidate and active feature service.
 * **Resolution:**
   1. Inspect release log in MLflow or gate output:
      ```bash
-     uv run python scripts/gate.py --candidate-version <version>
+     uv run python ops/scripts/gate.py --candidate-version <version>
      ```
   2. If data drift requires hyperparameter tuning or new features, update `ml/train.py` and run a manual retraining cycle.
 
@@ -200,7 +200,7 @@ Alerts are defined in `deploy/charts/observability/templates/alerts.yaml`. Autom
 
 ## 3. How to Reset the Repeatable Demo Baseline
 
-The platform includes a dedicated idempotent reset tool: `scripts/reset_demo.py` (accessible via `make reset-demo`).
+The platform includes a dedicated idempotent reset tool: `ops/scripts/reset_demo.py` (accessible via `make reset-demo`).
 
 ### 3.1 What Reset Does
 1. **Flushes Redis:** Wipes all online keys in `redis://redis.data.svc:6379/0`.
@@ -229,7 +229,7 @@ make reset-demo
 
 ## 4. Secret Rotation Procedures
 
-All platform secrets are managed in Kubernetes secrets (`data` and `serving` namespaces) and OpenTofu variables.
+All platform secrets are managed in Kubernetes secrets (`data` and `serving` namespaces) and Terraform variables.
 
 ### 4.1 Rotating PostgreSQL Application Credentials
 1. Generate new password:
@@ -298,7 +298,7 @@ make down && make up && make deploy-all && make e2e
 
 Total wall-clock duration: **18m 46s** (automated, zero human interventions).
 
-1. `make down` (~15s): OpenTofu destroys resources, deletes Kind cluster and local registry.
-2. `make up` (~9m 20s): OpenTofu provisions 3-node Kind cluster, builds & pushes bootstrap `mlflow:dev` image, deploys Postgres, MinIO, Redis, MLflow, metrics-server, and the kube-prometheus stack, Loki, Alloy, and dashboards.
+1. `make down` (~15s): Terraform destroys resources, deletes Kind cluster and local registry.
+2. `make up` (~9m 20s): Terraform provisions the 3-node Kind cluster, builds & pushes bootstrap `mlflow:dev` image, deploys Postgres, MinIO, Redis, MLflow, metrics-server, and the kube-prometheus stack, Loki, Alloy, and dashboards.
 3. `make deploy-all` (~2m 10s): Builds & pushes all service images (`model-api`, `training`, `remediator`, `drift-monitor`, `retrain`), creates namespaces, deploys remediator, seeds Feast offline store, materializes Redis, trains baseline MLflow champion v1 & candidate v2, deploys `model-api`, deploys drift monitor, and resets demo baseline.
 4. `make e2e` (~8m 26s): Runs the full end-to-end test suite (`test_serving_survives_pod_deletion`, `test_model_self_healing_loop`, `test_serving_contract`). All 3 test suites PASS.

@@ -1,6 +1,6 @@
 #!/usr/bin/env bash
 # Delete a random model-api pod during traffic and report recovery.
-# Usage: scripts/chaos_pod.sh [namespace] [release] [base-url]
+# Usage: ops/scripts/chaos_pod.sh [namespace] [release] [base-url]
 set -Eeuo pipefail
 
 readonly NAMESPACE="${1:-serving}"

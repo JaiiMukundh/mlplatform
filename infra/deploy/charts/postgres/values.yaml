@@ -5,7 +5,7 @@ image:
   pullPolicy: IfNotPresent
 
 auth:
-  # When false, credentials come from the existingSecret (managed by OpenTofu).
+  # When false, credentials come from the existingSecret (managed by Terraform).
   createSecret: true
   existingSecret: ""
   secretKeys:

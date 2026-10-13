@@ -4,7 +4,7 @@ set -Eeuo pipefail
 readonly REPO_ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")/../.." && pwd)"
 readonly VERSION_FILE="${REPO_ROOT}/ops/docs/VERSIONS.md"
 
-required=(docker kind kubectl helm tofu python3 uv make git jq yq)
+required=(docker kind kubectl helm terraform python3 uv make git jq yq)
 optional=(gh hey act gitleaks hadolint pre-commit ruff pytest)
 missing=()
 version_lines=()
@@ -21,7 +21,7 @@ tool_version() {
     kind) kind version 2>&1 | first_line ;;
     kubectl) kubectl version --client=true 2>&1 | first_line ;;
     helm) helm version --short 2>&1 | first_line ;;
-    tofu) tofu version 2>&1 | first_line ;;
+    terraform) terraform version 2>&1 | first_line ;;
     python3) python3 --version 2>&1 | first_line ;;
     uv) uv --version 2>&1 | first_line ;;
     make) make --version 2>&1 | first_line ;;

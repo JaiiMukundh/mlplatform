@@ -13,11 +13,11 @@ the `cd.yml` workflow; the laptop runner itself is a HUMAN step, P4.1.)
 5. Rebuilt + pushed a distinct tag and deployed (mirrors `cd.yml` steps):
    `docker build -t localhost:5001/model-api:p4demo`,
    `docker push localhost:5001/model-api:p4demo`,
-   `scripts/deploy.sh model-api serving p4demo` → revision 5, deployed.
+   `ops/scripts/deploy.sh model-api serving p4demo` → revision 5, deployed.
 6. Verified the rollout picked up the new image:
    `kubectl get deploy model-api -n serving -o jsonpath=...image`
    → `localhost:5001/model-api:p4demo`.
-7. `scripts/smoke.sh serving model-api` → `/readyz` 200,
+7. `ops/scripts/smoke.sh serving model-api` → `/readyz` 200,
    `/predict` 3 predictions, `smoke PASS`.
 
 ## Result

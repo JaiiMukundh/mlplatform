@@ -1,6 +1,6 @@
 # docs/demo/alert-drill.md (P5.7)
 
-End-to-end alert drill run 2026-10-02 via `scripts/chaos_alert.sh`
+End-to-end alert drill run 2026-10-02 via `ops/scripts/chaos_alert.sh`
 (RPS 10, latency 500ms, 4-minute traffic window).
 
 ## Observed timeline

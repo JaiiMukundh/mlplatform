@@ -1,0 +1,66 @@
+# Azure AKS Helm values overlay for model-api (straight port of the old AWS overlay).
+# Applied with (ACR_LOGIN and MODEL_API_CLIENT_ID come from terraform outputs):
+#   helm upgrade --install model-api infra/deploy/charts/model-api \
+#     -f infra/deploy/charts/model-api/values.yaml \
+#     -f infra/deploy/charts/model-api/values-azure.yaml \
+#     --set image.repository="${ACR_LOGIN}/mlp-model-api" \
+#     --set serviceAccount.annotations."azure\.workload\.identity/client-id"="${MODEL_API_CLIENT_ID}" \
+#     --namespace serving
+
+image:
+  # Overridden with the ACR repository URL from terraform output `acr_login_server`.
+  repository: "PLACEHOLDER_ACR_LOGIN_SERVER/mlp-model-api"
+  tag: "v1.0.0"
+  pullPolicy: IfNotPresent
+
+service:
+  # LoadBalancer provisions an Azure Load Balancer in front of AKS.
+  type: LoadBalancer
+  port: 8080
+
+serviceAccount:
+  create: true
+  name: "model-api"
+  labels:
+    # Required for the Azure Workload Identity webhook to inject tokens.
+    azure.workload.identity/use: "true"
+  annotations:
+    # User-assigned identity created by infra/modules/iam_azure (Storage Blob Data Reader).
+    azure.workload.identity/client-id: "PLACEHOLDER_MODEL_API_CLIENT_ID"
+
+env:
+  MODEL_NAME: loan-default
+  MODEL_SOURCE: mlflow
+  FEATURE_SOURCE: feast
+  FEATURE_SERVICE: loan_default_v1
+  MLFLOW_TRACKING_URI: http://mlflow.data.svc:5000
+  REDIS_URL: redis://redis.data.svc:6379/0
+  LOG_LEVEL: INFO
+
+database:
+  # Points to Azure Database for PostgreSQL Flexible Server (module.db).
+  # deploy_azure.sh seeds this secret from terraform outputs (db_fqdn + password).
+  enabled: true
+  secretName: azure-postgres-app
+  secretKey: database-url
+
+modelFiles:
+  # File-based MinIO fallback stays disabled on AKS: models come from MLflow
+  # and features from Feast. MinIO remains in-cluster for the Feast offline
+  # store (Feast has no native Blob backend); MLflow artifacts move to Blob
+  # as a follow-up (needs the azure artifact extras in the mlflow image).
+  enabled: false
+
+resources:
+  requests:
+    cpu: 250m
+    memory: 512Mi
+  limits:
+    cpu: 1000m
+    memory: 1Gi
+
+autoscaling:
+  enabled: true
+  minReplicas: 2
+  maxReplicas: 10
+  targetCPUUtilizationPercentage: 70

@@ -1,0 +1,16 @@
+# Azure AKS overlay for mlflow (cloud-native training path).
+# Applied with:
+#   helm upgrade --install mlflow infra/deploy/charts/mlflow \
+#     -f infra/deploy/charts/mlflow/values.yaml \
+#     -f infra/deploy/charts/mlflow/values-azure.yaml \
+#     --set image.repository="${ACR_LOGIN}/mlp-mlflow" \
+#     --namespace data
+# Backend stays on the in-cluster postgres/minio (same DNS as Kind), so the
+# training Jobs need zero app changes. ACR_LOGIN comes from terraform output
+# `acr_login_server`; TAG matches the pushed image tag.
+
+image:
+  # Overridden with the ACR repository URL at deploy time.
+  repository: "PLACEHOLDER_ACR_LOGIN_SERVER/mlp-mlflow"
+  tag: "v1.0.0"
+  pullPolicy: Always

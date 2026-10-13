@@ -28,6 +28,9 @@ COPY --chown=10001:10001 ops/scripts/model_release_local.sh ops/scripts/deploy.s
 COPY --chown=10001:10001 infra/deploy/charts/model-api deploy/charts/model-api
 COPY --chown=10001:10001 infra/deploy/gate deploy/gate
 
+# Pipe is curl-into-tar: a curl failure yields empty stdin, which makes tar
+# exit non-zero and stops the && chain, so failure propagates without pipefail.
+# hadolint ignore=DL4006
 RUN curl -fsSL -o /app/bin/kubectl "https://dl.k8s.io/release/${KUBECTL_VERSION}/bin/linux/amd64/kubectl" \
     && chmod +x /app/bin/kubectl \
     && curl -fsSL "https://get.helm.sh/helm-${HELM_VERSION}-linux-amd64.tar.gz" | tar -xz -C /tmp \

@@ -2,12 +2,12 @@
 
 [![CI Pipeline](https://img.shields.io/badge/CI%2FCD-Passing-brightgreen)]()
 [![Kubernetes](https://img.shields.io/badge/Kubernetes-Kind%20v1.37-blue)]()
-[![OpenTofu](https://img.shields.io/badge/IaC-OpenTofu%20v1.9-purple)]()
+[![Terraform](https://img.shields.io/badge/IaC-Terraform%20v1.9-purple)]()
 [![Feast](https://img.shields.io/badge/Feature%20Store-Feast%20v0.44-orange)]()
 [![MLflow](https://img.shields.io/badge/Registry-MLflow%20v2.18-teal)]()
 [![License](https://img.shields.io/badge/License-Apache%202.0-lightgrey)]()
 
-An enterprise-grade, closed-loop machine learning platform running entirely on Kubernetes with full AWS cloud parity. The platform serves high-throughput loan default predictions with sub-15ms latency, enforces mathematical training-serving feature parity, and provides dual-layer self-healing: automated infrastructure remediation for latency spikes and autonomous retraining when statistical feature drift is detected.
+An enterprise-grade, closed-loop machine learning platform running entirely on Kubernetes with full Azure cloud parity. The platform serves high-throughput loan default predictions with sub-15ms latency, enforces mathematical training-serving feature parity, and provides dual-layer self-healing: automated infrastructure remediation for latency spikes and autonomous retraining when statistical feature drift is detected.
 
 ---
 
@@ -49,14 +49,15 @@ The platform is organized across three decoupled Kubernetes namespaces:
 
 ### 3.1 Host Prerequisites
 * **OS:** Linux or macOS (Target machine: 8 CPU, 16 GB RAM).
-* **CLI Tools:** Docker (or containerd), Kind, OpenTofu (`tofu`), Helm, Python 3.11+, `uv`, `curl`, `jq`.
+* **CLI Tools:** Docker (or containerd), Kind, Terraform (`terraform`), Helm, Python 3.11+, `uv`, `curl`, `jq`.
 * Verify host prerequisites:
   ```bash
-  make check-prereqs
+  make bootstrap
   ```
+* **Azure (cloud path only):** Azure CLI (`az login`) for the `infra/envs/azure` VM host. See [`ops/docs/azure-port.md`](ops/docs/azure-port.md).
 
 ### 3.2 Platform Bootstrap & Deployment
-Provision the local 3-node Kubernetes cluster, OpenTofu data services, observability stack, and deploy all microservices from zero state:
+Provision the local 3-node Kubernetes cluster, Terraform data services, observability stack, and deploy all microservices from zero state:
 ```bash
 make up && make deploy-all
 ```
@@ -114,32 +115,20 @@ make demo-model
 
 ```
 mlplatform/
-├── docker/                 # Production Dockerfiles (non-root 10001:10001)
-├── deploy/
-│   └── charts/             # Helm charts (model-api, remediator, drift-monitor, retrain, postgres, minio, redis)
-├── docs/                   # Full documentation pack
-│   ├── architecture.md     # System architecture, topology, and data models (P10.1)
-│   ├── runbook.md          # Operations, alert triage, secret rotation (P10.2)
-│   ├── TDD.md              # Technical Design Document (P10.3)
-│   ├── contributions.md    # Student contribution matrix (P10.4)
-│   ├── aws-port.md         # AWS cloud port guide and cost estimation (P9.5)
-│   ├── failure-modes.md    # Failure modes matrix and chaos experiments (P9.4)
-│   ├── hardening.md        # Security audit and network policies (P9.3)
-│   └── demo/
-│       └── DEMO.md         # 10-minute live demo run-of-show script (P10.5)
-├── feast_repo/             # Feast Feature Store definitions (entities, feature views, services)
+├── core/                   # Python services (model_api, drift_monitor, retrain, remediator, ml, mlp_common)
+│   └── feature_repo/       # Feast Feature Store definitions (entities, feature views, services)
 ├── infra/
+│   ├── docker/             # Production Dockerfiles (non-root 10001:10001)
+│   ├── deploy/
+│   │   └── charts/         # Helm charts (model-api, remediator, drift-monitor, retrain, postgres, minio, redis)
 │   ├── envs/
-│   │   ├── local/          # OpenTofu Kind cluster and local services
-│   │   └── aws/            # OpenTofu AWS parity environment (EKS, RDS, S3, ECR)
-│   └── modules/            # Reusable OpenTofu infrastructure modules
-├── ml/                     # ML training pipelines (LightGBM, Feast joins, MLflow logging)
-├── mlp_common/             # Shared runtime library (logging, config, drift math, schemas)
-├── model_api/              # FastAPI serving service (Redis online hydration, async logging)
-├── drift_monitor/          # Statistical drift daemon (PSI, KS, Retrain job trigger)
-├── remediator/             # Alertmanager webhook incident response service
-├── retrain/                # Kubernetes batch retrain job orchestration
-├── scripts/                # Automation scripts (deploy_all, chaos, smoke, traffic, reset)
+│   │   ├── local/          # Terraform Kind cluster and local services
+│   │   └── azure/          # Terraform Azure cloud host (VM + VNet + NSG)
+│   └── modules/            # Reusable Terraform infrastructure modules (registry, cluster_kind, platform_services, observability)
+├── ops/
+│   ├── scripts/            # Automation scripts (deploy_all, chaos, smoke, traffic, reset, deploy_azure)
+│   ├── ui/                 # Central Management and Demo Dashboard
+│   └── docs/               # Full documentation pack (see below)
 └── tests/                  # Pytest test suite (unit, parity, e2e)
 ```
 
@@ -178,10 +167,16 @@ make down && make up && make deploy-all && make e2e
 
 ---
 
-## 8. AWS Cloud Port & Cost Governance
+## 8. Azure Cloud Port & Cost Governance
 
-The platform includes full OpenTofu cloud parity modules (`infra/envs/aws`) designed to deploy on AWS with zero code changes:
-* **Storage & Registry:** S3 replaces MinIO; Amazon ECR replaces local registry.
-* **Database & Cache:** Amazon RDS PostgreSQL replaces in-cluster Postgres; AWS IRSA replaces static credentials.
-* **Cost Governance:** Estimated run rate of **~\$0.27 / hour** (~\$0.85 per 3-hour demo window) with strict \$50 monthly budget alarms.
-* Refer to [`docs/aws-port.md`](docs/aws-port.md) for the exact deployment and teardown procedures.
+The platform ports straight to Azure on AKS via `infra/envs/azure` (Terraform `azurerm`), mirroring the old AWS design 1:1 — EKS→AKS, VPC→VNet, S3→Blob Storage, RDS→PostgreSQL Flexible Server, ECR→ACR, IRSA→Workload Identity:
+* **Compute & orchestration:** AKS (OIDC + workload identity, 2× `B2s` nodes); serving deploys via Helm with `infra/deploy/charts/model-api/values-azure.yaml` (ACR image, Azure LoadBalancer, workload-identity ServiceAccount).
+* **Data:** Flexible Server `B1ms` (private VNet) for app data; Blob containers for artifacts/offline features; MinIO stays in-cluster on AKS for the Feast offline store (Feast has no native Blob backend).
+* **Cost Governance:** Estimated **~\$0.15 / hour** (~\$0.45 per 3-hour demo window on the student grant) with a \$50 monthly budget alarm wiring email alerts.
+* **Student sizing:** AKS is 2 × 2-vCPU nodes = the ~4 vCPU edu cap exactly (`Standard_B2s` default, `B2as_v2` fallback if your region retired v1). 1 GB SKUs cannot run AKS — enforced by Terraform validation, checked by `make azure-preflight`.
+* **Kill-switch:** `bash ops/scripts/azure_compute.sh sleep` stops VM billing and keeps everything (registry/state on PVCs + Blob/Flexible); `wake` resumes. Full teardown via `bash ops/scripts/destroy_azure.sh`.
+* **Full training on AKS:** `TAG=v1.0.0 bash ops/scripts/deploy_azure_full.sh` deploys the whole platform (Feast + MLflow + training Jobs) with ACR images — same charts as local.
+* Refer to [`ops/docs/azure-port.md`](ops/docs/azure-port.md) (`make azure-init/validate/plan`, `[HUMAN]` `bash ops/scripts/deploy_azure.sh`, teardown via `bash ops/scripts/destroy_azure.sh`).
+# GitHub migration status
+
+Local functionality is the tested baseline. Azure provisioning remains a human operation; GitHub-hosted deployment replaces the laptop runner in the next migration task. Use `make lint test check-infra secret-scan` to verify repository changes. Use `make github-login` for account authentication and `make github-push` to publish the current branch. Neither target provisions Azure resources.

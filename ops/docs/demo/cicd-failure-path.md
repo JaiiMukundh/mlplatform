@@ -11,7 +11,7 @@ runs on the P4.1 self-hosted runner.)
    `RuntimeError("P4.6 induced startup failure")` (branch-only commit).
 3. Built + pushed `localhost:5001/model-api:broken` (digest recorded).
 4. Deployed to staging (mirrors `cd.yml` staging step, short timeout):
-   `helm upgrade --install model-api-staging deploy/charts/model-api
+   `helm upgrade --install model-api-staging infra/deploy/charts/model-api
    --namespace staging --set image.tag=broken
    --set service.nodePort=30081 --atomic --wait --timeout 2m`
    → `Error: release model-api-staging failed, and has been uninstalled

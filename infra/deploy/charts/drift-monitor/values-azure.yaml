@@ -1,0 +1,16 @@
+# Azure AKS overlay for drift-monitor (cloud-native training path).
+# Applied with:
+#   helm upgrade --install drift-monitor infra/deploy/charts/drift-monitor \
+#     -f infra/deploy/charts/drift-monitor/values.yaml \
+#     -f infra/deploy/charts/drift-monitor/values-azure.yaml \
+#     --set image.repository="${ACR_LOGIN}/mlp-drift-monitor" \
+#     --namespace observability
+# Watches the same in-cluster postgres prediction_log and spawns retrain Jobs
+# on AKS. ACR_LOGIN comes from terraform output `acr_login_server`.
+
+image:
+  # Overridden with the ACR repository URL at deploy time.
+  repository: "PLACEHOLDER_ACR_LOGIN_SERVER/mlp-drift-monitor"
+  tag: "v1.0.0"
+  # Always: the ACR tag is reused across builds (same convention as local).
+  pullPolicy: Always

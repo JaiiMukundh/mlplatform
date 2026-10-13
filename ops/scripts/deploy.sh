@@ -15,7 +15,7 @@ shift 3
 
 echo "deploying ${RELEASE} into ${NAMESPACE} with image tag ${IMAGE_TAG}"
 
-# Mirror the MinIO credentials (source of truth: tofu-managed secret in data)
+# Mirror the MinIO credentials (source of truth: terraform-managed secret in data)
 # into the release namespace so the model-files init container can authenticate.
 MINIO_USER="$(kubectl -n data get secret minio-auth -o jsonpath='{.data.root-user}' | base64 -d)"
 MINIO_PASS="$(kubectl -n data get secret minio-auth -o jsonpath='{.data.root-password}' | base64 -d)"
@@ -25,7 +25,7 @@ kubectl -n "${NAMESPACE}" create secret generic minio-model \
   --from-literal=root-password="${MINIO_PASS}" \
   --dry-run=client -o yaml | kubectl apply -f -
 
-# Mirror the Postgres app credentials (source of truth: tofu-managed secret in
+# Mirror the Postgres app credentials (source of truth: terraform-managed secret in
 # data) as a full SQLAlchemy URL so prediction rows reach prediction_log (P6.7).
 PG_USER="$(kubectl -n data get secret postgres-auth -o jsonpath='{.data.username}' | base64 -d)"
 PG_PASS="$(kubectl -n data get secret postgres-auth -o jsonpath='{.data.postgres-password}' | base64 -d)"
@@ -35,9 +35,12 @@ kubectl -n "${NAMESPACE}" create secret generic postgres-app \
 
 REPO_ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")/../.." && pwd)"
 CHART_DIR="${REPO_ROOT}/infra/deploy/charts/model-api"
-[[ ! -d "${CHART_DIR}" ]] && CHART_DIR="deploy/charts/model-api"
+# In-image flattened layout (retrain Job): deploy/ sits beside scripts/ under
+# the /app workdir, so the repo-rooted path misses. Same fallback pattern as
+# run_gate.sh / model_release_local.sh.
+[[ -d "${CHART_DIR}" ]] || CHART_DIR="deploy/charts/model-api"
 SMOKE_SCRIPT="${REPO_ROOT}/ops/scripts/smoke.sh"
-[[ ! -f "${SMOKE_SCRIPT}" ]] && SMOKE_SCRIPT="scripts/smoke.sh"
+[[ -f "${SMOKE_SCRIPT}" ]] || SMOKE_SCRIPT="scripts/smoke.sh"
 
 helm upgrade --install "${RELEASE}" "${CHART_DIR}" \
   --namespace "${NAMESPACE}" --create-namespace \

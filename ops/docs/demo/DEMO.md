@@ -88,11 +88,11 @@ Execute in Terminal Pane 1:
 ```bash
 make demo-infra
 ```
-*(Runs `scripts/chaos_alert.sh`)*
+*(Runs `ops/scripts/chaos_alert.sh`)*
 
 **What Happens Under the Hood:**
 1. The script injects artificial latency into `model-api` pods (`/debug/latency?ms=500`).
-2. Concurrent load is generated via `scripts/traffic.py` (10 RPS).
+2. Concurrent load is generated via `ops/scripts/traffic.py` (10 RPS).
 3. Prometheus detects P95 latency exceeding 300ms SLA and fires `HighP95Latency`.
 4. Alertmanager calls the `remediator` webhook (`POST /alert`).
 5. Remediator dynamically patches the HPA `minReplicas` from 2 to 4.
@@ -127,7 +127,7 @@ make demo-model
 3. **Automated Kubernetes Retrain Job:**
    * Look at Terminal Pane 2 (Watch pane): A new pod appears: `retrain-2-<timestamp>-...` in `data` namespace.
    * Explain: *"The drift monitor detected consecutive breaches and triggered a Kubernetes batch job using Feast point-in-time historical joins—guaranteeing zero future data leakage."*
-4. **Quality Gates & Staging Validation (`scripts/gate.py`):**
+4. **Quality Gates & Staging Validation (`ops/scripts/gate.py`):**
    * The retrain job registers a new candidate version in MLflow.
    * The pipeline verifies:
      * AUC $\ge 0.70$ (quality floor).

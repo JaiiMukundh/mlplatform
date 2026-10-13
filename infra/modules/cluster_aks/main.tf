@@ -1,0 +1,122 @@
+# Azure parity for "cluster": Azure Kubernetes Service (AKS) with
+# OIDC issuer enabled, Azure Workload Identity enabled, and burstable B-series nodes.
+
+resource "azurerm_kubernetes_cluster" "this" {
+  name                = var.cluster_name
+  location            = var.location
+  resource_group_name = var.resource_group_name
+  dns_prefix          = var.cluster_name
+  kubernetes_version  = var.kubernetes_version
+
+  oidc_issuer_enabled       = true
+  workload_identity_enabled = true
+
+  node_provisioning_profile {
+    mode = "Manual"
+  }
+
+  default_node_pool {
+    name            = "default"
+    node_count      = var.node_count
+    vm_size         = var.vm_size
+    vnet_subnet_id  = var.vnet_subnet_id
+    os_disk_size_gb = 30
+  }
+
+  identity {
+    type = "SystemAssigned"
+  }
+
+  network_profile {
+    network_plugin    = "kubenet"
+    load_balancer_sku = "standard"
+  }
+
+  tags = var.tags
+}
+
+# Attach AKS Kubelet identity to ACR for pulling images without imagePullSecrets.
+resource "azurerm_role_assignment" "acr_pull" {
+  count = var.acr_id != "" ? 1 : 0
+
+  principal_id                     = azurerm_kubernetes_cluster.this.kubelet_identity[0].object_id
+  role_definition_name             = "AcrPull"
+  scope                            = var.acr_id
+  skip_service_principal_aad_check = true
+}
+
+variable "cluster_name" {
+  description = "AKS cluster name (also used as DNS prefix)."
+  type        = string
+}
+
+variable "location" {
+  description = "Azure region."
+  type        = string
+}
+
+variable "resource_group_name" {
+  description = "Resource group holding the cluster."
+  type        = string
+}
+
+variable "kubernetes_version" {
+  description = "Kubernetes version for the control plane and nodes."
+  type        = string
+  default     = "1.30"
+}
+
+variable "node_count" {
+  description = "Node count in the default (system + workload) pool."
+  type        = number
+  default     = 2
+}
+
+variable "vm_size" {
+  description = "VM SKU for the default node pool."
+  type        = string
+  default     = "Standard_B2s"
+}
+
+variable "vnet_subnet_id" {
+  description = "Subnet ID for the AKS node pool (VNet-integrated)."
+  type        = string
+}
+
+variable "acr_id" {
+  description = "ACR resource ID for the AcrPull role assignment (empty skips it)."
+  type        = string
+  default     = ""
+}
+
+variable "tags" {
+  description = "Tags applied to the cluster."
+  type        = map(string)
+  default     = {}
+}
+
+output "cluster_name" {
+  description = "AKS cluster name (for az aks get-credentials)."
+  value       = azurerm_kubernetes_cluster.this.name
+}
+
+output "oidc_issuer_url" {
+  description = "OIDC issuer URL for Workload Identity federated credentials."
+  value       = azurerm_kubernetes_cluster.this.oidc_issuer_url
+}
+
+output "kubelet_object_id" {
+  description = "Object ID of the kubelet managed identity."
+  value       = azurerm_kubernetes_cluster.this.kubelet_identity[0].object_id
+}
+
+terraform {
+  required_version = ">= 1.9.0"
+
+  required_providers {
+    azurerm = {
+      source  = "hashicorp/azurerm"
+      version = "5.9.0"
+    }
+  }
+}

@@ -25,7 +25,7 @@ mlplatform/
 ├── 🏗️ 2. infra/               (The Kubernetes & Cloud Plumbing)
 │   ├── deploy/           ──> Kubernetes manifests & Helm charts (Redis, Postgres, MLflow)
 │   ├── docker/           ──> 6 multi-stage Dockerfiles (one per microservice)
-│   ├── envs/             ──> OpenTofu environments (local Kind & AWS EKS)
+│   ├── envs/             ──> Terraform environments (local Kind & Azure cloud host)
 │   └── modules/          ──> Reusable infrastructure modules
 │
 └── 🛠️ 3. ops/                 (Operations, UI & Documentation)
@@ -53,7 +53,7 @@ If an evaluator points to *any* folder in your sidebar, here is your 1-sentence 
 | **`core/feature_repo/`** | *"Our Feast feature store repo defining offline S3 parquet files and online Redis feature views."* |
 | **`infra/deploy/`** | *"Production Helm charts that declare how each service runs in Kubernetes with resource limits and health checks."* |
 | **`infra/docker/`** | *"Hardened, non-root, multi-stage Dockerfiles for building minimal, reproducible container images."* |
-| **`infra/envs/`** | *"Infrastructure-as-Code (OpenTofu) that provisions our 3-node Kind Kubernetes cluster and networks."* |
+| **`infra/envs/`** | *"Infrastructure-as-Code (Terraform) provisioning our Azure cloud host, Kubernetes cluster, and cloud networks."* |
 | **`ops/scripts/`** | *"Day-2 operational automation scripts for traffic generation, drift simulation, and disaster reset."* |
 | **`ops/ui/`** | *"Our central operations dashboard allowing visual inspection of live PSI, pod health, and borrower scoring."* |
 | **`ops/docs/`** | *"Complete documentation including the plain-English architecture guide, viva prep, and runbooks."* |

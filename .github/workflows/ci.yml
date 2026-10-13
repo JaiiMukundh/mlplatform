@@ -15,7 +15,7 @@ jobs:
   lint:
     runs-on: ubuntu-latest
     steps:
-      # Majors verified 2026-10-02 (checkout v7.0.1, setup-opentofu v2.0.2).
+      # Majors verified 2026-10-02 (checkout v7.0.1, setup-terraform v3.1.2).
       - uses: actions/checkout@v7
       - name: Install Python tools
         run: |
@@ -27,11 +27,11 @@ jobs:
         run: ruff format --check .
       - name: yamllint
         run: |
-          yamllint deploy/ infra/ .github/ --no-parsable || true
+          yamllint infra/ .github/ --no-parsable || true
       - name: hadolint
         uses: hadolint/hadolint-action@v3.3.0
         with:
-          dockerfile: docker/model_api.Dockerfile
+          dockerfile: infra/docker/model_api.Dockerfile
 
   test:
     runs-on: ubuntu-latest
@@ -52,17 +52,17 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v7
-      - uses: opentofu/setup-opentofu@v2
+      - uses: hashicorp/setup-terraform@v3
         with:
-          tofu_version: 1.13.1
+          terraform_version: 1.9.0
       - name: fmt (local)
-        run: tofu -chdir=infra/envs/local fmt -check -recursive
+        run: terraform -chdir=infra/envs/local fmt -check -recursive
       - name: validate (local)
-        run: tofu -chdir=infra/envs/local init -backend=false && tofu -chdir=infra/envs/local validate
-      - name: fmt (aws)
-        run: tofu -chdir=infra/envs/aws fmt -check -recursive
-      - name: validate (aws)
-        run: tofu -chdir=infra/envs/aws init -backend=false && tofu -chdir=infra/envs/aws validate
+        run: terraform -chdir=infra/envs/local init -backend=false && terraform -chdir=infra/envs/local validate
+      - name: fmt (azure)
+        run: terraform -chdir=infra/envs/azure fmt -check -recursive
+      - name: validate (azure)
+        run: terraform -chdir=infra/envs/azure init -backend=false && terraform -chdir=infra/envs/azure validate
 
   chart:
     runs-on: ubuntu-latest
@@ -73,14 +73,14 @@ jobs:
           version: v3.22.0
       - name: helm lint
         run: |
-          for d in deploy/charts/*; do
+          for d in infra/deploy/charts/*; do
             [ -f "$d/Chart.yaml" ] || continue
             helm lint "$d" || exit 1
           done
       - name: helm template | kubeconform
         run: |
           curl -sL https://github.com/yannh/kubeconform/releases/download/v0.7.1/kubeconform-linux-amd64.tar.gz | tar -xz kubeconform
-          for d in deploy/charts/*; do
+          for d in infra/deploy/charts/*; do
             [ -f "$d/Chart.yaml" ] || continue
             helm template "$d" | ./kubeconform -strict -summary || exit 1
           done

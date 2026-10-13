@@ -3,7 +3,7 @@ name: model-release
 # P7.3 — model-aware CD on the self-hosted laptop runner. Triggered by the
 # retrain service (repository_dispatch from dispatch.py) or manually. Every
 # step delegates to the same scripts P8 and local drills use, so the workflow
-# and `scripts/model_release_local.sh` stay behaviorally identical.
+# and `ops/scripts/model_release_local.sh` stay behaviorally identical.
 
 on:
   repository_dispatch:
@@ -27,7 +27,7 @@ jobs:
     steps:
       - uses: actions/checkout@v7
       - name: Release candidate
-        run: bash scripts/model_release_local.sh "${VERSION}" "${GITHUB_SHA::8}"
+        run: bash ops/scripts/model_release_local.sh "${VERSION}" "${GITHUB_SHA::8}"
       - name: Upload gate report
         if: always()
         uses: actions/upload-artifact@v4

@@ -1,0 +1,17 @@
+# Azure AKS overlay for retrain (cloud-native training path).
+# Applied with:
+#   helm upgrade --install retrain infra/deploy/charts/retrain \
+#     -f infra/deploy/charts/retrain/values.yaml \
+#     -f infra/deploy/charts/retrain/values-azure.yaml \
+#     --set image.repository="${ACR_LOGIN}/mlp-retrain" \
+#     --namespace data
+# Retrain Jobs run on AKS nodes and talk to in-cluster services over the same
+# ClusterIP DNS names as Kind (mlflow/redis/minio/postgres .data.svc), so the
+# release scripts work unchanged. ACR_LOGIN comes from terraform output.
+
+image:
+  # Overridden with the ACR repository URL at deploy time.
+  repository: "PLACEHOLDER_ACR_LOGIN_SERVER/mlp-retrain"
+  tag: "v1.0.0"
+  # Always: the ACR tag is reused across builds (same convention as local).
+  pullPolicy: Always

@@ -1,7 +1,7 @@
 # Model release drills (P7.4) — observed 2026-10-03
 
 All drills ran through the same scripts the workflow uses
-(`scripts/model_release_local.sh` = local twin of
+(`ops/scripts/model_release_local.sh` = local twin of
 `.github/workflows/model-release.yml`). Registry ops use plain MLflow REST
 from the host; anything touching model bytes runs in-cluster (presigned
 artifact URLs are cluster-internal — see `docs/DECISIONS.md`).
@@ -62,5 +62,5 @@ v2; later drills leave prod on v2.
 
 ## Side fix (kept, not reverted)
 
-`scripts/deploy.sh` staging deploys smoke-tested *production's* URL
+`ops/scripts/deploy.sh` staging deploys smoke-tested *production's* URL
 (`smoke.sh` default `:8080`). Staging now smokes `:8081` explicitly.

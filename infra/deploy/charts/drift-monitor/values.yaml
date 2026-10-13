@@ -14,7 +14,7 @@ jobsNamespace: data
 templateConfigMap: retrain-job-template
 
 database:
-  # scripts/deploy_monitor.sh mirrors the tofu-managed postgres-auth
+  # scripts/deploy_monitor.sh mirrors the terraform-managed postgres-auth
   # credentials into the release namespace under this secret.
   secretName: drift-monitor-db
   secretKey: database-url

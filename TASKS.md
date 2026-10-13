@@ -2,6 +2,12 @@
 
 Checkboxes are changed only after the corresponding acceptance check has been observed.
 
+## GitHub and Azure migration — 2026-10-13
+
+- [x] G1 Compact infrastructure files and preserve the working application. Acceptance: `make lint test check-infra secret-scan`.
+- [ ] G2 Replace laptop Actions with pinned GitHub-hosted CI and manually approved Azure CD. Acceptance: `make check-actions check-infra lint test secret-scan` plus cloud deployment script contract tests.
+- [ ] G3 Push the verified repository to GitHub and observe CI. Acceptance: remote commit matches local HEAD and GitHub CI succeeds.
+
 ## P0 — Foundations
 
 - [x] P0.1 Create repository layout and foundational files.
@@ -34,13 +40,13 @@ Checkboxes are changed only after the corresponding acceptance check has been ob
 
 ## P3 — Infrastructure as Code
 
-- [x] P3.1 Implement the kind OpenTofu module.
-- [x] P3.2 Implement the registry OpenTofu module.
+- [x] P3.1 Implement the kind Terraform module.
+- [x] P3.2 Implement the registry Terraform module.
 - [x] P3.3 Create data-service Helm charts.
 - [x] P3.4 Implement the platform-services module.
 - [x] P3.5 Compose the local environment.
-- [x] P3.6 Create AWS-parity modules and environment.
-- [x] P3.7 Add OpenTofu formatting and validation checks.
+- [x] P3.6 Create Azure-parity modules and environment.
+- [x] P3.7 Add Terraform formatting and validation checks.
 - [ ] P3.8 Add report-only infrastructure scanning. (stretch)
 
 ## P4 — CI/CD
@@ -97,14 +103,14 @@ Checkboxes are changed only after the corresponding acceptance check has been ob
 - [ ] P8.9 Add performance monitoring. (stretch)
 - [ ] P8.10 Add score-distribution drift. (stretch)
 
-## P9 — Integration, Hardening, AWS Port
+## P9 — Integration, Hardening, Azure Port
 
 - [x] P9.1 Build end-to-end tests.
 - [x] P9.2 Prove a clean-room rebuild.
 - [x] P9.3 Complete hardening.
 - [x] P9.4 Document and test failure modes.
-- [x] P9.5 Prepare the AWS port.
-- [ ] P9.6 Execute the AWS port. (human)
+- [x] P9.5 Prepare the Azure port.
+- [ ] P9.6 Execute the Azure port. (human)
 
 ## P10 — Documentation and Viva Pack
 

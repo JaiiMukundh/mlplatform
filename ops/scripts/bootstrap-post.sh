@@ -1,14 +1,14 @@
 #!/usr/bin/env bash
-# Post-apply bootstrap for the local OpenTofu stack.
-# Merges the kind provider's kubeconfig into ~/.kube/config and waits until
+# Post-apply bootstrap for the local Terraform stack.
+# Merges the kind cluster kubeconfig into ~/.kube/config and waits until
 # every data-layer workload is ready. Safe to rerun.
 set -Eeuo pipefail
 
-ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
+ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")/../.." && pwd)"
 cd "${ROOT}"
 
-echo "reading kubeconfig path from tofu outputs"
-KUBECONFIG_REL="$(tofu -chdir=infra/envs/local output -raw kubeconfig)"
+echo "reading kubeconfig path from terraform outputs"
+KUBECONFIG_REL="$(terraform -chdir=infra/envs/local output -raw kubeconfig)"
 case "${KUBECONFIG_REL}" in
   /*) KUBECONFIG_FILE="${KUBECONFIG_REL}" ;;
   *) KUBECONFIG_FILE="infra/envs/local/${KUBECONFIG_REL}" ;;
@@ -60,5 +60,5 @@ kubectl rollout status deployment/metrics-server -n kube-system --timeout=300s
 echo "--- pods ---"
 kubectl get pods -A
 echo "--- contract outputs ---"
-tofu -chdir=infra/envs/local output
+terraform -chdir=infra/envs/local output
 echo "bootstrap complete"

@@ -5,7 +5,7 @@
 # (serviceMonitorSelectorNilUsesHelmValues=false) so model-api is scraped.
 # Grafana sidecar loads dashboards/datasources from ConfigMaps
 # (dashboards label grafana_dashboard=1; datasources label grafana_datasource=1).
-# Admin password comes from the tofu-managed `grafana-admin` Secret (never in git).
+# Admin password comes from the terraform-managed `grafana-admin` Secret (never in git).
 # Alertmanager routes critical/warning to the remediator webhook (P5.6).
 
 grafana:

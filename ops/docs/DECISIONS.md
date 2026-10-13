@@ -1,5 +1,9 @@
 # Decisions
 
+## 2026-10-13 — Compact infrastructure and finish GitHub before Azure execution
+
+The human now authorizes repository edits, commits, and GitHub pushes, and asks for fewer files without losing functionality. Keep each Terraform module in one `main.tf` (at most 221 lines), retaining all module interfaces and resource addresses. Retain local functional tests and the local environment as the proven test harness; cloud operation must never depend on a laptop runner. Existing uncommitted Azure migration changes are part of the requested publication; exclude the unrelated synopsis document. Verify and commit this compaction before rewriting CI/CD. Record new stable tool/provider pins from official registries; commit Terraform dependency locks. Azure provisioning remains a human-approved operation under AGENTS.md rule 12.
+
 Architecture and implementation decisions are recorded chronologically.
 
 ## 2026-10-04 — Make E2E runs include the model self-healing demo
@@ -237,3 +241,106 @@ Architecture and implementation decisions are recorded chronologically.
   nothing — recovery is `make feast-rematerialize` (full window). The
   serving reader returns a shaped empty frame on a wiped store, so the API
   answers 404 (`unknown_customers`), never a 500.
+
+## 2026-10-13 — Terraform-only IaC, Azure-only cloud, local kept
+
+- **Terraform can provision locally (proven):** `terraform` v1.16.1 is
+  installed, every `.tf` file is provider-source-agnostic HCL (`hashicorp/*`
+  shorthand, no `tofu`-only syntax), the Makefile already shelled out to
+  `terraform`, and `terraform init/validate` succeeds on `infra/envs/local`.
+  So the whole repo was converted OpenTofu -> Terraform.
+- **State note:** `infra/envs/local/terraform.tfstate` was written by
+  `tofu apply`, so its provider addresses read
+  `registry.opentofu.org/hashicorp/*` and the (gitignored) lockfile keeps
+  both registry stanzas until the next apply. Terraform reads OpenTofu state
+  natively (same format, byte-identical providers); the next
+  `terraform apply` migrates those addresses automatically. State files were
+  deliberately NOT deleted — the local deployment stays live.
+- **Azure-only cloud:** `infra/envs/aws/` and its six AWS-only modules
+  (`cluster_eks`, `network_vpc`, `database`, `object_storage`,
+  `image_registry`, `iam`) were deleted, as were the empty
+  `deploy_aws.sh`/`destroy_aws.sh` stubs, `values-aws.yaml`, and
+  `ops/docs/aws-port.md`. The six unused `*_azure` AKS-parity modules were
+  also deleted: the documented Azure design (`ops/docs/azure-port.md`) is a
+  self-contained VM host in `infra/envs/azure` that runs the identical
+  kind-based stack via `make up`, so the modules had zero references.
+  Replacement: `values-azure.yaml` overlay documenting the VM-host parity.
+- **Compaction:** deleted the untracked byte-identical `deploy/` duplicate
+  of `infra/deploy/` (it was masking a real bug: `platform_services` and
+  `observability` modules pointed chart paths at `../../../deploy/...`,
+  which only resolved because the duplicate existed — fixed to
+  `../../deploy/...`), the `scripts/` symlink farm, the root duplicate of
+  the human guide, and stale `.dockerignore` exceptions. `SPEC.md`,
+  `archive/`, viva prep, and `PROGRESS.md` history intentionally keep their
+  OpenTofu/AWS wording as build records.
+
+## 2026-10-13 — Straight AKS port, VM-host design retired
+
+- **Correction:** the "Azure VM running kind" design preserved zero cloud
+  architecture (a VM pretending to be a laptop) and contradicted the
+  SPEC P3.6/P9.5 straight-port intent. Retired: the VM `main.tf`,
+  `setup_azure_vm.sh`, and the rsync-based `deploy_azure.sh`.
+- **Restored the six `*_azure` modules** deleted in the earlier compaction
+  sweep (`network_azure`, `cluster_aks`, `object_storage_azure`,
+  `database_azure`, `image_registry_azure`, `iam_azure`) and composed them
+  in `infra/envs/azure` mirroring the old AWS env shape: VNet (aks/db/
+  public subnets + NSG) → ACR → AKS (OIDC + workload identity, AcrPull) →
+  Blob account (mlflow-artifacts/feast-offline/ml-data) → Postgres Flexible
+  B1ms (private DNS, generated password) → workload identities (Blob
+  Reader/Contributor) + $50 consumption budget with email alerts.
+- **Honest seam:** MinIO stays in-cluster on AKS for the Feast offline
+  store (Feast has no native Blob backend) and MLflow artifacts move to
+  Blob as a follow-up (needs the Azure artifact extras in the mlflow
+  image). Everything else is native. Chart extended minimally with
+  `serviceAccount.labels` so the workload-identity `use: "true"` label
+  renders; `values-azure.yaml` carries ACR repo, LoadBalancer, WI
+  annotation, and the Flexible-Server secret.
+- **State note:** the live `infra/envs/azure` state still tracks the old
+  deallocated VM RG. The next human `apply` will destroy those orphaned
+  resources and create the AKS stack (`mlp-dev-rg`) — review the plan
+  before approving.
+
+## 2026-10-13 — Clean-room startup fixes: hadolint DL4006 + reset_demo baseline fallback
+
+- **Decision 1:** add `# hadolint ignore=DL4006` (with reason) to the
+  curl-into-tar `RUN` in `infra/docker/retrain.Dockerfile` instead of
+  restructuring the command. A curl failure yields empty stdin, so tar
+  exits non-zero and the `&&` chain stops — failure already propagates,
+  making the rule a false positive here. Follows the file's existing
+  ignore-comment convention.
+- **Reason 1:** `ops/scripts/deploy_monitor.sh` runs hadolint as a gate;
+  the newer local hadolint exits 1 on DL4006, which broke `make deploy-all`
+  at step 6 on a clean checkout.
+- **Decision 2:** `ops/scripts/reset_demo.py` default baseline back to `"2"`
+  (matches its own docstring) plus a `_resolve_version()` fallback: if the
+  requested version is absent from the registry (404), reset uses the live
+  `champion` version. On a clean-room rebuild the registry holds only v1+v2,
+  so the previously hardcoded `v4` 404'd and broke `make deploy-all` step 7.
+- **Reason 2:** keeps `make down && make up && make deploy-all` green from
+  zero state (P9.2 acceptance) without changing reset semantics on iterated
+  registries, where v2 still exists and is used as before.
+
+## 2026-10-13 — Azure move: training on AKS, 4-vCPU sizing, kill-switch
+
+- **Decision:** full Azure path runs the SAME charts/Jobs as Kind on AKS;
+  only image references change (`localhost:5001/*` → ACR via new
+  `values-azure.yaml` overlays for mlflow/retrain/drift-monitor plus the
+  existing model-api one). New `infra/deploy/training/train-job-azure.yaml`
+  sizes training for 2-vCPU student nodes (500m/1Gi req, 1900m/3Gi lim;
+  local 4/4Gi limits would overcommit a B2s). New scripts:
+  `azure_preflight.sh` (read-only quota/SKU/login gate),
+  `deploy_azure_full.sh` (infra → ACR images → data layer → Feast →
+  train v1+v2 on AKS → serving + monitor), `train_azure.sh`,
+  `azure_compute.sh sleep|wake` (`az aks stop/start`).
+- **Reason:** human directive — local Kind proved functionality; the cloud
+  is the target, and training must happen on AKS, not the laptop.
+- **Kill-switch semantics:** `sleep` (stop) zeroes VM billing and keeps
+  EVERYTHING (PVCs hold postgres/MLflow lineage, MinIO artifacts, Redis;
+  ACR/Blob/Flexible persist) — this is the "registry stays" answer. Destroy
+  `-target=module.cluster` is the deeper cut (in-cluster state lost,
+  rehydrate via full deploy); `destroy_azure.sh` zeroes all billing.
+- **Edu sizing:** 2 nodes × 2 vCPU = 4 vCPU cap exactly; terraform
+  validates `node_count` 1–2 and bans 1 GB SKUs (B2ats_v2/B2pts_v2 break
+  AKS kubelets — verified via upstream issue). B2s default with B2as_v2
+  (2/8GB) documented fallback for retiring regions. Student quotas cannot
+  be raised, so preflight fails fast instead.

@@ -21,15 +21,15 @@ jobs:
       - name: Quick checks
         run: |
           ruff check .
-          tofu -chdir=infra/envs/local validate
+          terraform -chdir=infra/envs/local validate
       - name: Build changed images
         run: |
           TAG="${GITHUB_SHA::8}"
-          docker buildx build --no-cache -f docker/model_api.Dockerfile \
+          docker buildx build --no-cache -f infra/docker/model_api.Dockerfile \
             -t "localhost:5001/model-api:${TAG}" -t "localhost:5001/model-api:dev" .
           for svc in drift_monitor retrain remediator; do
-            [ -f "docker/${svc}.Dockerfile" ] && \
-              docker buildx build -f "docker/${svc}.Dockerfile" \
+            [ -f "infra/docker/${svc}.Dockerfile" ] && \
+              docker buildx build -f "infra/docker/${svc}.Dockerfile" \
                 -t "localhost:5001/${svc}:${TAG}" -t "localhost:5001/${svc}:dev" .
           done
           echo "TAG=${TAG}" >> "$GITHUB_ENV"
@@ -46,12 +46,12 @@ jobs:
           docker push "localhost:5001/model-api:dev"
       - name: Deploy staging + smoke
         run: |
-          scripts/deploy.sh model-api-staging staging "${TAG}" --set service.nodePort=30081
-          scripts/smoke.sh staging model-api-staging "http://localhost:8081"
+          ops/scripts/deploy.sh model-api-staging staging "${TAG}" --set service.nodePort=30081
+          ops/scripts/smoke.sh staging model-api-staging "http://localhost:8081"
       - name: Promote to serving + smoke
         run: |
-          scripts/deploy.sh model-api serving "${TAG}"
-          scripts/smoke.sh serving model-api "http://localhost:8080"
+          ops/scripts/deploy.sh model-api serving "${TAG}"
+          ops/scripts/smoke.sh serving model-api "http://localhost:8080"
       - name: Rollout summary
         run: kubectl get deploy -n serving -o wide
       - name: Rollback on failure

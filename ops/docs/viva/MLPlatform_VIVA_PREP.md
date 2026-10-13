@@ -10,7 +10,7 @@ Team: Shlok Sharma, Samarth Sukumar, Jaii Mukundh A · Supervisor: Dr Anup Bhat 
 
 **10-second:** "MLPlatform is a platform that deploys ML models the way real companies do: containerized, autoscaled, deployed by CI/CD, fully monitored, and it heals itself, both when infrastructure fails and when the model itself goes stale."
 
-**60-second:** "Most DevOps projects deploy a web app. ML models are different: they silently get worse as the world changes. We built a platform in two layers. The DevOps layer: Docker, Kubernetes with autoscaling, Terraform-style infrastructure as code, a GitHub Actions pipeline, and Prometheus, Grafana and Loki for observability. On top, an MLOps layer: Feast, a feature store, so training and serving compute features identically; MLflow, a model registry for versioning and lineage; and a drift detector using PSI and KS tests. When drift crosses a threshold, the platform automatically retrains, validates the new model against quality gates, and redeploys it through the same CI/CD pipeline as code, with automatic rollback if anything fails. We demonstrate two self-healing loops: a pod crash recovered by Kubernetes, and a drifted model replaced automatically."
+**60-second:** "Most DevOps projects deploy a web app. ML models are different: they silently get worse as the world changes. We built a platform in two layers. The DevOps layer: Docker, Kubernetes with autoscaling, Terraform infrastructure as code, a GitHub Actions pipeline, and Prometheus, Grafana and Loki for observability. On top, an MLOps layer: Feast, a feature store, so training and serving compute features identically; MLflow, a model registry for versioning and lineage; and a drift detector using PSI and KS tests. On Azure the same workloads run natively on AKS (EKS→AKS, S3→Blob, RDS→Postgres Flexible Server, ECR→ACR, IRSA→Workload Identity). When drift crosses a threshold, the platform automatically retrains, validates the new model against quality gates, and redeploys it through the same CI/CD pipeline as code, with automatic rollback if anything fails. Locally it runs on kind; on Azure it runs natively on AKS with the same Helm charts. We demonstrate two self-healing loops: a pod crash recovered by Kubernetes, and a drifted model replaced automatically."
 
 **Why this matters (the "so what"):** "An outage is loud. A degrading model is silent. Wrong predictions keep flowing with HTTP 200. So ML reliability needs extra machinery on top of ordinary DevOps."
 
@@ -19,24 +19,30 @@ Team: Shlok Sharma, Samarth Sukumar, Jaii Mukundh A · Supervisor: Dr Anup Bhat 
 ## 2. Architecture in one picture (be able to draw this)
 
 ```
- git push ─► GitHub Actions ─► build image ─► registry ─► helm deploy ─► Kubernetes
-                                   ▲                                         │
- client ─► model-api (FastAPI, N pods, HPA) ◄─ Feast online (Redis)          │
-              │  loads pinned model version from MLflow                      │
-              ├─► /metrics ─► Prometheus ─► Grafana, Alertmanager ─► remediator
-              ├─► JSON logs ─► Alloy ─► Loki ─► Grafana
-              └─► prediction_log (Postgres)
-                       │
-          drift-monitor (PSI/KS vs reference stored with model version)
-                       │ breach x N
-                       ▼
-          retrain Job (Feast historical features ─► train ─► MLflow 'candidate')
-                       │ repository_dispatch
-                       ▼
-          model-release workflow: gate ─► staging ─► load test ─► promote ─► prod ─► verify/rollback
+ Azure (Terraform azurerm):  RG ─► VNet ─► AKS ─► ACR ─► Blob ─► Postgres Flexible ─► Workload Identity
+                                                                                          │
+                                                          (deploy_azure.sh: apply ─► ACR push ─► helm + values-azure)
+                                                                                          ▼
+  git push ─► GitHub Actions ─► build image ─► ACR ─► helm deploy ─► AKS (same charts as local kind)
+                                    ▲                                         │
+  client ─► model-api (FastAPI, N pods, HPA) ◄─ Feast online (Redis)          │
+               │  loads pinned model version from MLflow                      │
+               ├─► /metrics ─► Prometheus ─► Grafana, Alertmanager ─► remediator
+               ├─► JSON logs ─► Alloy ─► Loki ─► Grafana
+               └─► prediction_log (Postgres)
+                        │
+           drift-monitor (PSI/KS vs reference stored with model version)
+                        │ breach x N
+                        ▼
+           retrain Job (Feast historical features ─► train ─► MLflow 'candidate')
+                        │ repository_dispatch
+                        ▼
+           model-release workflow: gate ─► staging ─► load test ─► promote ─► prod ─► verify/rollback
 ```
 
 **Three flows to narrate:** (A) request path, (B) infra self-healing, (C) model self-healing loop.
+
+**Cloud story in one line:** "Terraform provisions AKS plus Blob, Postgres, ACR and workload identities; the *same* Helm charts deploy to it via a values overlay — straight 1:1 port of the classic EKS design."
 
 ---
 
@@ -70,21 +76,21 @@ Team: Shlok Sharma, Samarth Sukumar, Jaii Mukundh A · Supervisor: Dr Anup Bhat 
 - **HPA formula:** `desiredReplicas = ceil( currentReplicas × currentMetricValue / targetMetricValue )`. Example: 2 pods at 120% of requested CPU, target 60% → ceil(2×120/60)=4. HPA needs **metrics-server** and CPU **requests** to be set (utilization is relative to requests). Scale-down has a stabilization window to avoid flapping.
 - **PDB:** limits voluntary disruptions (drains) so ≥1 pod stays up. Does not protect from involuntary failures.
 - **requests vs limits:** requests = scheduler guarantee; limits = hard cap (CPU throttled, memory OOM-killed).
-- **kind:** Kubernetes nodes as Docker containers; good for CI and laptops; multi-node so rescheduling is demonstrable. Stand-in for EKS (managed control plane).
+- **kind:** Kubernetes nodes as Docker containers; good for CI and laptops; multi-node so rescheduling is demonstrable. Local dev runs kind; cloud runs AKS with the same Helm charts — one chart path, two clusters.
 
-### 4.3 Infrastructure as Code (OpenTofu/Terraform)
-- Declarative: describe desired infra in HCL; tool computes a **plan** (diff between state and config) and **applies** it. Providers wrap APIs (AWS, Kubernetes, Helm, kind).
-- **State** maps config to real resources; it can contain secrets; it must be protected (remote backend + locking in teams: S3+DynamoDB/lockfile). We use local state in dev and discuss remote state for AWS.
+### 4.3 Infrastructure as Code (Terraform)
+- Declarative: describe desired infra in HCL; tool computes a **plan** (diff between state and config) and **applies** it. Providers wrap APIs (Azure `azurerm`, Kubernetes, Helm, local).
+- **State** maps config to real resources; it can contain secrets; it must be protected (remote backend + locking in teams). We use local state in dev (gitignored) and discuss remote state for production.
 - Benefits: reproducibility, review via pull requests, drift detection of *infra* (not to be confused with ML drift!), disaster recovery, environment parity.
-- **Why OpenTofu:** Terraform changed to the BSL licence; OpenTofu is the open-source (Linux Foundation) fork with the same HCL and workflow, so our code is portable to Terraform.
-- **Local vs AWS:** same module interfaces (cluster, storage, database, registry, IAM); only implementation differs. That is how we could build open-source-first and still deliver the AWS design.
+- **Why Terraform:** single tool and HCL dialect for laptop (kind/Helm/Kubernetes providers) and cloud (Azure provider); everything pinned in `versions.tf` + lockfiles.
+- **Local vs Azure:** `infra/envs/local` composes kind + registry + data + observability modules; `infra/envs/azure` is a self-contained `azurerm` stack (Resource Group, VNet, Subnet, static Public IP, NSG, Linux VM). Only the host differs — the Kubernetes workloads are identical.
 - Imperative vs declarative; idempotency; why not shell scripts alone (no diffing, no state, not convergent).
-- **AWS design (be ready):** VPC with public/private subnets across 2 AZs, NAT gateway for private egress, EKS managed node group, S3 (versioned, encrypted), RDS PostgreSQL in private subnets, ECR with scan-on-push, **IRSA** (IAM Roles for Service Accounts: pods get short-lived, least-privilege AWS credentials via OIDC instead of static keys).
+- **Azure design (be ready):** AKS (OIDC + workload identity, 2× `B2s` nodes) in `indiasouthcentral`; VNet `10.0.0.0/16` split into aks/db/public subnets + NSG; ACR Basic with `AcrPull` on the kubelet identity; PostgreSQL Flexible `B1ms` in the delegated subnet with private DNS; Blob account with `mlflow-artifacts`/`feast-offline`/`ml-data` containers; three workload identities (model-api Blob Reader, retrain/mlflow Blob Contributor). `deploy_azure.sh`: terraform apply → `az aks get-credentials` → ACR push → seed Flexible-Server secret → helm with `values-azure.yaml` (LoadBalancer + workload-identity SA) → smoke. Teardown: `destroy_azure.sh` (full destroy). Student-grant cost ≈ **$0.15/hr** (≈$0.45 per 3-hour demo). Honest seam: MinIO stays in-cluster for the Feast offline store (Feast has no native Blob backend).
 
 ### 4.4 CI/CD
 - **CI:** integrate frequently, automatically lint/test/scan → fast feedback. **CD:** automatically deliver validated builds to environments (continuous *delivery* = ready to deploy; continuous *deployment* = deploys automatically). Ours deploys automatically to the local cluster after staging checks.
-- Pipeline stages: lint → unit tests → IaC validate → chart lint → security scan (gitleaks, trivy) → build → push → deploy staging → smoke → deploy prod → verify → rollback on failure.
-- **Why a self-hosted runner:** GitHub-hosted runners can't reach a laptop cluster. On AWS we switch to hosted runners + **OIDC** federation (no stored cloud keys). Security note: self-hosted runners on public repos are risky, so the repo is private.
+- Pipeline stages: lint → unit tests → IaC validate (terraform fmt/validate on *both* envs) → chart lint → security scan (gitleaks, trivy) → build → push → deploy staging → smoke → deploy prod → verify → rollback on failure.
+- **Why a self-hosted runner:** GitHub-hosted runners can't reach a laptop cluster. On Azure we would switch to hosted runners + **OIDC/workload-identity federation** (no stored cloud keys). Security note: self-hosted runners on public repos are risky, so the repo is private.
 - `helm --atomic` rolls back automatically when the release fails; explicit `helm rollback` otherwise.
 - **Model-aware CD:** a model is an artifact like code; promotion requires passing gates (accuracy floor, no regression vs champion on the same hold-out, schema compatibility, latency, staging smoke). Same deploy script → one path to production.
 - **Immutable deploys:** pods reference an exact model version, so rollbacks are exact.
@@ -112,7 +118,7 @@ Features computed differently at training (batch SQL/pandas) and serving (online
 
 ### 5.3 Feature store (Feast)
 - **Entity** (customer), **FeatureView** (group of features + source + TTL), **FeatureService** (versioned set a model consumes).
-- **Offline store** (Parquet in S3/MinIO): large history for training. **Online store** (Redis): latest value per entity with millisecond lookups for serving. **Materialization** copies latest offline values into online.
+- **Offline store** (Parquet in MinIO): large history for training. **Online store** (Redis): latest value per entity with millisecond lookups for serving. **Materialization** copies latest offline values into online.
 - **Point-in-time correct join:** for each training row (entity, timestamp) Feast picks the feature value as of that timestamp (not later) → **prevents data leakage** (using future info). This is a key correctness feature.
 - **Registry** (we use SQL on Postgres) stores feature definitions.
 - Why not just a database table? You'd rebuild point-in-time joins, versioning, online/offline sync and consistency yourself.
@@ -120,7 +126,7 @@ Features computed differently at training (batch SQL/pandas) and serving (online
 
 ### 5.4 Model registry (MLflow)
 - **Tracking** (runs: params, metrics, artifacts), **Models/Registry** (named model, versions, **aliases** like `champion`/`candidate`; older "stages" are deprecated).
-- Backend store: Postgres (metadata). Artifact store: S3/MinIO. Server proxies artifacts so clients need no S3 credentials.
+- Backend store: Postgres (metadata). Artifact store: MinIO (S3-compatible). Server proxies artifacts so clients need no object-store credentials.
 - **Lineage:** prediction row → `model_version` → run → data window, feature service, git SHA, hyperparameters → reproducible.
 - Reference distribution (`reference.parquet`) is stored with each model version → drift is always measured against **what that model was trained on**, which prevents infinite retrain loops.
 
@@ -156,9 +162,10 @@ Synthetic loan-default dataset (20k customers × 4 snapshots), 6 numeric feature
 
 | Decision | Reason | Alternative and why not |
 |---|---|---|
-| Open-source-first, then AWS | zero cost iteration; same interfaces; reproducible | develop directly on AWS → cost, slow feedback |
-| OpenTofu | open licence, same HCL | Terraform (BSL), Pulumi (code, different model), CloudFormation (AWS-only) |
-| kind | multi-node, light, CI-friendly | minikube (fine), k3s, managed EKS from day 1 (cost) |
+| Local-first, then Azure | zero-cost iteration locally; identical stack on a cheap Azure VM host for demo | develop directly on cloud → cost, slow feedback |
+| Terraform for everything | one HCL tool for kind/Helm/K8s locally and `azurerm` in cloud; pinned providers | Pulumi (code, different model), Bicep/ARM (Azure-only), CloudFormation (AWS-only) |
+| kind (local + Azure VM host) | multi-node, light, CI-friendly; exact parity both places | minikube (fine), k3s, managed AKS from day 1 (cost/complexity) |
+| AKS + managed Azure services | straight 1:1 port of the EKS design; managed control plane | VM-hosted kind (cheaper but a VM pretending to be a laptop, single SPOF) |
 | NodePort + port mapping | simple; ingress-nginx is retired | Gateway API/other ingress controllers |
 | Own Helm charts for Postgres/MinIO/Redis | control, fewer licensing/catalog surprises | Bitnami charts, operators (CloudNativePG) |
 | FastAPI | async, typed, auto OpenAPI, Prometheus-friendly | Flask, BentoML, KServe/Seldon (heavier, hides the learning) |
@@ -175,7 +182,7 @@ Synthetic loan-default dataset (20k customers × 4 snapshots), 6 numeric feature
 
 ## 7. Self-healing: precise claims you can defend
 
-**Infra-level:** Kubernetes restarts crashed containers (kubelet, restartPolicy), reschedules pods (ReplicaSet), removes unready pods from Service (readiness), keeps ≥1 up during drains (PDB), adds replicas under load (HPA), alert→remediator for specific symptoms. *Not covered:* node-pool total failure, control-plane loss (managed on EKS), region outage, bad deploys beyond atomic rollback, data-store loss.
+**Infra-level:** Kubernetes restarts crashed containers (kubelet, restartPolicy), reschedules pods (ReplicaSet), removes unready pods from Service (readiness), keeps ≥1 up during drains (PDB), adds replicas under load (HPA), alert→remediator for specific symptoms. *Not covered:* node-pool/zone loss beyond the single system pool (production: multi-AZ pools), region outage, bad deploys beyond atomic rollback, data-store loss.
 
 **Model-level:** drift detection → retrain → gate → deploy → verify → rollback. *Not covered:* concept drift without labels, adversarial inputs, upstream data pipeline bugs, label delay, fairness/bias shifts, cold-start.
 
@@ -185,9 +192,9 @@ Say "self-healing" with scope: *"automated detection and remediation within defi
 
 ## 8. Honest limitations and future work (examiners like candour)
 
-**Limitations:** synthetic data; simulated drift; single model; single cluster/region; in-cluster Postgres/Redis locally (managed on AWS); no traces; no canary/shadow traffic by default; static thresholds; secrets via Kubernetes Secrets (not Vault/KMS-encrypted); self-hosted runner trust model; prediction log in Postgres won't scale to very high QPS.
+**Limitations:** synthetic data; simulated drift; single model; single cluster/region; in-cluster Postgres/Redis locally (Flexible Server + managed Redis in production on Azure); single AKS system pool; no traces; no canary/shadow traffic by default; static thresholds; secrets via Kubernetes Secrets (not Vault/KMS-encrypted); self-hosted runner trust model; prediction log in Postgres won't scale to very high QPS.
 
-**Future work:** Argo CD GitOps; canary/shadow deployments (Argo Rollouts); OpenTelemetry tracing; concept-drift monitoring with delayed labels; multi-model tenancy ("self-service" part of the title: namespace per team, templated onboarding); Kafka streaming ingestion; feature monitoring in the feature store; Sealed Secrets/External Secrets/Vault; cost dashboards; DR and multi-AZ RDS; fairness monitoring.
+**Future work:** multi-AZ AKS pools + Blob-backed MLflow artifacts; Argo CD GitOps; canary/shadow deployments (Argo Rollouts); OpenTelemetry tracing; concept-drift monitoring with delayed labels; multi-model tenancy ("self-service" part of the title: namespace per team, templated onboarding); Kafka streaming ingestion; feature monitoring in the feature store; Sealed Secrets/External Secrets/Vault; cost dashboards; DR and backups; fairness monitoring.
 
 ---
 
@@ -199,12 +206,12 @@ Say "self-healing" with scope: *"automated detection and remediation within defi
 3. **What did *you* personally build?** (Prepare 3 concrete items each: files, bugs, decisions.)
 4. **Why synthetic data?** Controlled reproducible drift; not the point of the project. Pipeline unchanged for real data.
 5. **How do you know it works?** Acceptance tests per phase, e2e tests, parity test, recorded demos with timelines, failure drills.
-6. **What would you change for production?** Remote IaC state with locking, secrets manager, multi-AZ, GitOps, canary, tracing, network policies everywhere, SLOs with burn-rate alerts.
-7. **Cost on AWS?** Hourly: EKS control plane, NAT gateway, node instances, RDS; so run only for demo and `destroy` after. (Give your measured figure.)
-8. **Why not use SageMaker/Vertex?** Managed platforms hide the mechanics; the project's goal is to build and understand the components. Also vendor-neutral.
+6. **What would you change for production?** Remote IaC state with locking, secrets manager (Key Vault), AKS multi-node, GitOps, canary, tracing, network policies everywhere, SLOs with burn-rate alerts.
+7. **Cost on Azure?** ≈$0.15/hr (AKS B2s nodes + Postgres B1ms + ACR + LB); ≈$0.45 per 3-hour demo on the student grant; `destroy` right after. (Give your measured figure.)
+8. **Why not use SageMaker/Vertex/AutoML?** Managed platforms hide the mechanics; the project's goal is to build and understand the components. Also cloud-neutral design (our stack runs anywhere Kubernetes runs).
 
 ### Docker / Kubernetes
-9. **Container vs VM?** Shared kernel, namespaces/cgroups, lighter, faster start; VMs stronger isolation.
+9. **Container vs VM?** Shared kernel, namespaces/cgroups, lighter, faster start; VMs stronger isolation. (Our Azure path runs containers on AKS nodes, which are themselves VMs — both levels in one answer.)
 10. **What happens when you `kubectl delete pod`?** Pod terminates (SIGTERM, grace period); ReplicaSet sees fewer than desired and creates a new pod; scheduler places it; startup probe → readiness → endpoints updated.
 11. **Liveness vs readiness?** Liveness restarts; readiness gates traffic. Using liveness for dependency checks causes restart storms.
 12. **How does HPA decide?** Formula above; metric scraped by metrics-server; CPU relative to requests; stabilization.
@@ -213,23 +220,23 @@ Say "self-healing" with scope: *"automated detection and remediation within defi
 15. **Service types?** ClusterIP, NodePort, LoadBalancer; Ingress/Gateway for L7.
 16. **Stateful vs stateless?** model-api stateless (scale freely); Postgres/MinIO stateful (PVC, StatefulSet).
 17. **How does a pod find Redis?** Cluster DNS: `redis.data.svc.cluster.local` via Service; CoreDNS.
-18. **What if the node dies?** Node controller marks NotReady after grace; pods evicted and rescheduled (takes minutes by default; tune tolerations). Spread constraints reduce impact.
+18. **What if the node dies?** Node controller marks NotReady after grace; pods evicted and rescheduled (takes minutes by default; tune tolerations). Spread constraints reduce impact. (On AKS the system pool is still small — production spreads across zones.)
 19. **PDB vs HPA vs replicas?** PDB = voluntary disruption guard; HPA = scaling; replicas = baseline (HPA overrides).
-20. **How do you do secrets?** Kubernetes Secrets from IaC-generated passwords; base64 ≠ encryption; production: KMS encryption at rest, External Secrets/Vault, IRSA for AWS access.
+20. **How do you do secrets?** Kubernetes Secrets from IaC-generated passwords; base64 ≠ encryption; production: Key Vault / KMS encryption at rest, External Secrets/Vault, workload identity for cloud access (no static keys in pods).
 
 ### IaC
 21. **Plan vs apply?** Plan computes diff, apply executes it; `-auto-approve` in automation only after review.
 22. **What's in state, why care?** Resource IDs, attributes, possibly secrets; corruption/leaks hurt; remote backend + locking + encryption.
 23. **Drift in IaC?** Real infra differs from state/config (manual console changes); `plan` reveals; different from ML drift. (Examiners love this confusion; clarify it.)
 24. **Terraform vs Ansible?** Terraform provisions (declarative infra); Ansible configures (procedural, agentless).
-25. **How did you test IaC?** fmt/validate/tflint in CI, plan, full `make down && make up` rebuild, `No changes` on second apply.
-26. **How does the AWS version differ?** Same module interfaces; EKS/S3/RDS/ECR/IAM modules; IRSA; OIDC for CI.
+25. **How did you test IaC?** fmt/validate in CI on both envs, plan, full `make down && make up` rebuild, `No changes` on second apply.
+26. **How does the Azure setup differ from local?** Same Kubernetes workloads; only the host differs — Terraform `azurerm` provisions VM+VNet+NSG+IP, then the identical kind stack runs on it. No EKS/RDS/S3 equivalents to learn.
 
 ### CI/CD
 27. **Walk through your pipeline.** (Stages in 4.4.)
 28. **How do you prevent a bad deploy reaching prod?** Staging first, smoke tests, atomic helm, readiness gates, verification, rollback; model gates for ML.
 29. **What if CI passes but prod breaks?** Post-deploy verify → automatic rollback; alerts.
-30. **Secrets in CI?** GitHub Secrets; OIDC on AWS; gitleaks; least privilege; fine-grained token only for dispatch.
+30. **Secrets in CI?** GitHub Secrets; workload-identity federation on Azure (no stored cloud keys); gitleaks; least privilege; fine-grained token only for dispatch.
 31. **Why immutable image tags?** Traceability and rollback; `latest` is ambiguous.
 32. **How is model CD different from code CD?** Extra artifact (model), extra gates (metrics, schema, latency), data/feature lineage, trigger can be data-driven not commit-driven.
 33. **Blue/green vs canary vs rolling?** Rolling (ours), blue/green (two full stacks, instant switch), canary (small % first). Future work: canary via Argo Rollouts.
@@ -274,6 +281,7 @@ Say "self-healing" with scope: *"automated detection and remediation within defi
 66. **"What if the feature store is down?"** Readiness fails → traffic stops going to affected pods; alert; fallback strategies (cached defaults) are a design choice with risk.
 67. **"What's the bottleneck?"** Likely Feast online lookup and Python GIL per pod; scale via replicas; batching.
 68. **"What is idempotency and why does it matter here?"** Same operation twice yields same result; essential for retried deployments, remediation webhooks, IaC applies.
+69. **"Why a VM and not AKS?"** Cost and demo pragmatics: one B-series VM runs the whole stack on a student grant; AKS is the production answer (in future work) with a frank cost comparison ready.
 
 ---
 
@@ -305,13 +313,13 @@ Say "self-healing" with scope: *"automated detection and remediation within defi
 | Time: drift injected → detected | **60 s** (2 consecutive 30s evaluation intervals) |
 | Time: detection → v2 serving | **118 s** (Feast join + LightGBM train + Gate + Staging check + Rollout) |
 | Gate results (good / bad candidate drills) | **pass** (v2 candidate promoted) / **reject** (v3 regression blocked) |
-| AWS runtime and cost for demo | **~3 h window, ~$0.85** (~$0.27/hr, \$0.00 local) |
+| Azure runtime and cost for demo | **~3 h window, ~$0.45** (~$0.15/hr: AKS B2s nodes + Postgres B1ms + ACR + LB; \$0.00 local) |
 | Test coverage | **88.07%** line coverage across runtime packages (target $\ge 80\%$) |
 
 ---
 
 ## 12. Flash glossary
-**Reconciliation loop** · **ReplicaSet** · **HPA** · **PDB** · **Probe** · **Helm release/atomic** · **IaC / state / plan** · **OIDC/IRSA** · **Golden signals** · **PromQL** · **Histogram quantile** · **Alertmanager route** · **Loki labels** · **Feature store** · **Point-in-time join** · **Materialization** · **Training-serving skew** · **Data/concept drift** · **PSI** · **KS statistic** · **Champion/candidate** · **Gate** · **Canary** · **Lineage** · **Idempotency** · **Immutable artifact**
+**Reconciliation loop** · **ReplicaSet** · **HPA** · **PDB** · **Probe** · **Helm release/atomic** · **IaC / state / plan** · **OIDC/workload identity** · **Golden signals** · **PromQL** · **Histogram quantile** · **Alertmanager route** · **Loki labels** · **Feature store** · **Point-in-time join** · **Materialization** · **Training-serving skew** · **Data/concept drift** · **PSI** · **KS statistic** · **Champion/candidate** · **Gate** · **Canary** · **Lineage** · **Idempotency** · **Immutable artifact**
 
 ---
 
@@ -321,7 +329,7 @@ Say "self-healing" with scope: *"automated detection and remediation within defi
 - [ ] Dashboards pre-opened; terminals with commands staged in history.
 - [ ] Each member can draw the architecture and narrate Flows A/B/C.
 - [ ] Section 11 filled with real measured values.
-- [ ] Skim `docs/DECISIONS.md` — know *why* for every choice.
+- [ ] Skim `ops/docs/DECISIONS.md` — know *why* for every choice.
 - [ ] Know your 3 personal contributions with file names.
 - [ ] Laptop charged, Docker memory raised, no background heavy apps, cluster already warm.
-- [ ] If AWS demo: confirm budget and teardown plan; keep local as fallback.
+- [ ] If Azure demo: confirm student-grant balance and teardown plan (`bash ops/scripts/destroy_azure.sh` right after); keep local as fallback.
