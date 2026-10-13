@@ -4,7 +4,7 @@ A credit-risk model platform with live serving, feature storage, model versionin
 monitoring, drift detection, and autonomous retraining. The local system proved
 functionality; Azure is the deployment destination, driven by GitHub Actions.
 
-**Current status:** GitHub migration in progress. Azure has not been deployed.
+**Current status:** GitHub-hosted CI verified. Azure deployment is next.
 The dashboard is still in the local test harness; cloud hosting is the next step.
 
 ## Repository
