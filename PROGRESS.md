@@ -762,3 +762,36 @@ Gitleaks history/staged: no leaks found.
 GitHub OIDC and 14 Azure variables configured; no billable resources created.
 ```
 Next action: push this exact source, wait for CI, and launch Azure deploy.
+
+## 2026-10-13 — A3 first live Azure attempt (deploy failed, kill verified)
+
+Codex dispatched `azure` deploy (run 38444772840) at 18:11Z; it failed in 24s at
+`azure/login`: `AADSTS700213`, no matching federated identity. Configured subject
+was `repo:JaiiMukundh/mlplatform:environment:azure`; GitHub presented
+`repo:JaiiMukundh@192994628/mlplatform@1401415927:environment:azure`.
+Fix (no charge): added `github-azure-ids` federated credential with the exact
+presented subject. Re-dispatched deploy (run 38445315852) on `82cd1a8` after
+confirming exact-commit CI success (run 38443911517).
+
+Deploy reached: OIDC login PASS, exact-commit CI gate PASS, state backend +
+`mlp-test-rg`/`mlp-test-state-rg` created, AKS `mlp-test` 1.36.4 x1 D4as_v4
+Succeeded, ACR `mlpregb3e0c60e` with 7/7 images, prometheus/loki/alloy +
+postgres/minio/redis/mlflow Running, Feast apply/materialize/verify Completed,
+`train-mlflow` Completed. Live interventions (human-approved scale attempt):
+2nd D4as_v4 refused (2 regional vCPUs left), D2as_v4 refused (DASv4 family 0
+left), D2v4 unsupported here; added aux pool x1 B2s (succeeded) and patched
+mlflow memory request 1Gi->256Mi (scheduled, Running). Both were session-local.
+
+Serving `model-api` helm release failed `context deadline exceeded`, atomic
+uninstall at 18:52Z. Contributing causes: serving Service could not sync its
+LoadBalancer (port 8080 already consumed on shared public IP 172.198.79.150 by
+`kube-prometheus-stack-alertmanager` extra port 8080:30194) and startup probes
+logged `connection refused` on :8080/healthz. Failure cleanup ran as designed:
+run completed `failure`; `mlp-test-rg`, `mlp-test-state-rg`, node group deleted,
+`az resource list` 0. Remaining: `mlp-github-identity-rg` (free),
+pre-existing empty `mlp-cloud-rg`, system `NetworkWatcherRG`. No ongoing charge.
+
+Next action: fix `public_service` to drop extra Service ports (alertmanager 8080
+conflict), reduce single-node memory requests or codify the aux pool, register
+both OIDC subjects in `azure.sh connect`, then re-dispatch deploy with fresh
+human confirmation. A3 stays unchecked.
