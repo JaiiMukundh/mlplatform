@@ -50,6 +50,12 @@ EXPIRY_CHECK
 )"
     [[ "${expired}" != true ]] || due=true
   done
+  if [[ "${existing}" == false && -n "${AZURE_NODE_RESOURCE_GROUP:-}" ]]; then
+    if [[ "$(az group exists --name "${AZURE_NODE_RESOURCE_GROUP}")" == true ]]; then
+      echo "Orphaned project node group remains after app/state removal."
+      due=true
+    fi
+  fi
   if [[ "${due}" != true ]]; then
     echo "No expired Azure test session."
     if [[ "${existing}" == false && -n "${GH_TOKEN:-}" ]]; then
@@ -123,6 +129,9 @@ case "${ACTION}" in
   wake) az aks start --resource-group "${RG}" --name "${CLUSTER}"; exit ;;
 esac
 az aks get-credentials --resource-group "${RG}" --name "${CLUSTER}" --overwrite-existing
+export PUBLIC_IP_NAME="$("${TF[@]}" output -raw public_ip_name)"
+export PUBLIC_HOST="$("${TF[@]}" output -raw public_host)"
+export AZURE_RESOURCE_GROUP="${RG}"
 
 verify() {
   kubectl -n serving rollout status deployment/model-api --timeout=180s
@@ -137,6 +146,18 @@ verify() {
   curl --fail --silent --show-error "http://${address}:8080/model-info"
   curl --fail --silent --show-error -H 'Content-Type: application/json' \
     -d '{"customer_ids":[7]}' "http://${address}:8080/predict"
+  kubectl -n observability rollout status deployment/dashboard --timeout=300s
+  password="$(kubectl -n observability get secret grafana-admin -o jsonpath='{.data.admin-password}' | base64 -d)"
+  kubectl -n observability exec deploy/dashboard -- curl --fail --silent --insecure \
+    --user "admin:${password}" https://localhost:8050/api/status > /tmp/mlp-dashboard-status.json
+  python3 - <<'DASHBOARD_CHECK'
+import json
+status = json.load(open("/tmp/mlp-dashboard-status.json"))
+assert status["nodes_ready"] >= 1 and status["serving_model"], status
+assert all(status[key] for key in ["prometheus_online", "mlflow_online", "minio_online"]), status
+print("Dashboard: cluster, serving, metrics, registry, and storage checks passed")
+DASHBOARD_CHECK
+  echo "Dashboard: https://${PUBLIC_HOST}:8050"
   echo "Model API: http://${address}:8080"
   [[ -z "${GITHUB_STEP_SUMMARY:-}" ]] || echo "Model API: http://${address}:8080" >> "${GITHUB_STEP_SUMMARY}"
 }
@@ -157,10 +178,11 @@ print(json.dumps({"apiVersion":"batch/v1", "kind":"Job", "metadata":{"name":"mod
   exit
 fi
 
+export RUNNER_CIDR="$(curl --fail --silent --show-error https://api.ipify.org)/32"
 ACR="$("${TF[@]}" output -raw acr_login_server)"
 TAG="${TAG:-$(git rev-parse HEAD)}"
 az acr login --name "${ACR%%.*}"
-for service in training model-api mlflow remediator drift-monitor retrain; do
+for service in training model-api mlflow remediator drift-monitor retrain dashboard; do
   docker build --file infra/Dockerfile --target "${service}" --tag "${ACR}/mlp-${service}:${TAG}" .
   docker push "${ACR}/mlp-${service}:${TAG}"
 done
@@ -190,6 +212,23 @@ done
 helm_apply redis data infra/charts/redis
 helm_apply mlflow data infra/charts/mlflow --set "image.repository=${ACR}/mlp-mlflow,image.tag=${TAG}"
 
+public_service() {
+  local namespace="$1" name="$2" port="$3"
+  kubectl -n "${namespace}" get service "${name}" -o json | python3 -c '
+import json,os,sys
+service=json.load(sys.stdin)
+service["metadata"].setdefault("annotations",{}).update({"service.beta.kubernetes.io/azure-pip-name":os.environ["PUBLIC_IP_NAME"],"service.beta.kubernetes.io/azure-load-balancer-resource-group":os.environ["AZURE_RESOURCE_GROUP"]})
+spec=service["spec"]
+spec["type"]="LoadBalancer"
+spec["loadBalancerSourceRanges"]=[os.environ["AZURE_ALLOWED_CIDR"],os.environ["RUNNER_CIDR"]]
+spec["ports"][0]["port"]=int(sys.argv[1])
+print(json.dumps(service))' "${port}" | kubectl replace -f -
+}
+public_service observability kube-prometheus-stack-grafana 3000
+public_service observability kube-prometheus-stack-alertmanager 9093
+public_service data mlflow 5000
+public_service data minio-external 9000
+
 # Port-forwards exist only on the ephemeral Actions runner, never on the laptop.
 PF_PIDS=()
 cleanup() { for pid in "${PF_PIDS[@]}"; do kill "${pid}" 2>/dev/null || true; done; }
@@ -213,6 +252,11 @@ if [[ -z "${CHAMPION}" ]]; then
   bash scripts/train_mlflow.sh
   CHAMPION="$(curl --fail --silent 'http://localhost:5000/api/2.0/mlflow/registered-models/alias?name=loan-default&alias=champion' | python3 -c 'import json,sys; print(json.load(sys.stdin)["model_version"]["version"])')"
 fi
+if ! curl --fail --silent 'http://localhost:5000/api/2.0/mlflow/registered-models/alias?name=loan-default&alias=baseline' >/dev/null; then
+  curl --fail --silent --show-error -H 'Content-Type: application/json' \
+    -d "{\"name\":\"loan-default\",\"alias\":\"baseline\",\"version\":\"${CHAMPION}\"}" \
+    http://localhost:5000/api/2.0/mlflow/registered-models/alias
+fi
 SKIP_SMOKE=1 DEPLOY_TARGET=azure MODEL_API_REPOSITORY="${ACR}/mlp-model-api" \
   bash scripts/deploy.sh model-api serving "${TAG}" --set "model.version=${CHAMPION}"
 helm_apply remediator observability infra/charts/remediator --set "image.repository=${ACR}/mlp-remediator,image.tag=${TAG}"
@@ -221,6 +265,27 @@ PG_PASS="$(kubectl -n data get secret postgres-auth -o jsonpath='{.data.postgres
 kubectl -n observability create secret generic drift-monitor-db \
   --from-literal=database-url="postgresql+psycopg://${PG_USER}:${PG_PASS}@postgres.data.svc:5432/mlp" --dry-run=client -o yaml | kubectl apply -f -
 helm_apply retrain data infra/charts/retrain --set "image.repository=${ACR}/mlp-retrain,image.tag=${TAG}" \
-  --set "env.MODEL_API_REPOSITORY=${ACR}/mlp-model-api,env.TRAINING_IMAGE=${TRAINING_IMAGE},env.IMAGE_TAG=${TAG},env.DEPLOY_TARGET=azure"
+  --set "env.MODEL_API_REPOSITORY=${ACR}/mlp-model-api,env.TRAINING_IMAGE=${TRAINING_IMAGE},env.IMAGE_TAG=${TAG},env.DEPLOY_TARGET=azure,env.PUBLIC_IP_NAME=${PUBLIC_IP_NAME},env.AZURE_RESOURCE_GROUP=${RG},env.AZURE_ALLOWED_CIDR=${AZURE_ALLOWED_CIDR}"
 helm_apply drift-monitor observability infra/charts/drift-monitor --set "image.repository=${ACR}/mlp-drift-monitor,image.tag=${TAG}"
+MINIO_USER="$(kubectl -n data get secret minio-auth -o jsonpath='{.data.root-user}' | base64 -d)"
+MINIO_PASS="$(kubectl -n data get secret minio-auth -o jsonpath='{.data.root-password}' | base64 -d)"
+kubectl -n observability create secret generic dashboard-data \
+  --from-literal=access-key="${MINIO_USER}" --from-literal=secret-key="${MINIO_PASS}" --dry-run=client -o yaml | kubectl apply -f -
+if ! kubectl -n observability get secret dashboard-tls >/dev/null 2>&1; then
+  tls_dir="$(mktemp -d)"
+  openssl req -x509 -nodes -newkey rsa:2048 -days 2 \
+    -subj "/CN=${PUBLIC_HOST}" -addext "subjectAltName=DNS:${PUBLIC_HOST}" \
+    -keyout "${tls_dir}/tls.key" -out "${tls_dir}/tls.crt" >/dev/null 2>&1
+  kubectl -n observability create secret tls dashboard-tls --cert="${tls_dir}/tls.crt" --key="${tls_dir}/tls.key"
+  rm -rf "${tls_dir}"
+fi
+export DASHBOARD_IMAGE="${ACR}/mlp-dashboard:${TAG}" CLUSTER_NAME="${CLUSTER}" IMAGE_TAG="${TAG}" MODEL_API_REPOSITORY="${ACR}/mlp-model-api"
+python3 - <<'DASHBOARD_RENDER' | kubectl apply -f -
+import os,re
+from pathlib import Path
+manifest=Path("infra/dashboard.yaml").read_text()
+values={**os.environ,"RESOURCE_GROUP":os.environ["AZURE_RESOURCE_GROUP"],"ALLOWED_CIDR":os.environ["AZURE_ALLOWED_CIDR"]}
+print(re.sub(r"__([A-Z_]+)__",lambda match:values[match[1]],manifest))
+DASHBOARD_RENDER
+
 verify

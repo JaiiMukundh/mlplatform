@@ -9,25 +9,64 @@ from __future__ import annotations
 import asyncio
 import json
 import logging
+import os
+import secrets
+import sys
 import time
 import uuid
 from datetime import UTC, datetime
 from pathlib import Path
-from typing import Any
+from typing import Annotated, Any
 
 import httpx
 import pandas as pd
-from fastapi import FastAPI, HTTPException
+from fastapi import Depends, FastAPI, HTTPException, Request
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import HTMLResponse, PlainTextResponse, StreamingResponse
+from fastapi.security import HTTPBasic, HTTPBasicCredentials
+from mlp_common.logging import JsonFormatter
 from pydantic import BaseModel
 
 logger = logging.getLogger("ui")
-logging.basicConfig(
-    level=logging.INFO, format="%(asctime)s [%(levelname)s] %(message)s"
-)
+handler = logging.StreamHandler(sys.stdout)
+handler.setFormatter(JsonFormatter("dashboard"))
+logger.handlers = [handler]
+logger.setLevel(logging.INFO)
+logger.propagate = False
 
-app = FastAPI(title="MLPlatform Control Plane", version="1.0.0")
+security = HTTPBasic(auto_error=False)
+
+
+async def authenticate_dashboard(
+    request: Request,
+    credentials: Annotated[HTTPBasicCredentials | None, Depends(security)],
+) -> None:
+    """Require the configured test-session credential before running operations."""
+    if request.url.path == "/healthz":
+        return
+    password = os.environ.get("DASHBOARD_PASSWORD", "")
+    if not password:
+        if os.environ.get("DEPLOY_TARGET") == "azure":
+            raise HTTPException(status_code=503, detail="Dashboard credential missing")
+        return
+    valid = (
+        credentials is not None
+        and secrets.compare_digest(credentials.username.encode(), b"admin")
+        and secrets.compare_digest(credentials.password.encode(), password.encode())
+    )
+    if not valid:
+        raise HTTPException(
+            status_code=401,
+            detail="Dashboard login required",
+            headers={"WWW-Authenticate": "Basic"},
+        )
+
+
+app = FastAPI(
+    dependencies=[Depends(authenticate_dashboard)],
+    title="MLPlatform Control Plane",
+    version="1.0.0",
+)
 
 app.add_middleware(
     CORSMiddleware,
@@ -46,6 +85,45 @@ ACTIVE_DRIFT_QUERY = (
 
 # Track running jobs
 RUNNING_JOBS: dict[str, dict[str, Any]] = {}
+
+MODEL_API_URL = os.environ.get("MODEL_API_URL", "http://localhost:8080")
+PROMETHEUS_URL = os.environ.get("PROMETHEUS_URL", "http://localhost:9090")
+MLFLOW_URL = os.environ.get("MLFLOW_TRACKING_URI", "http://localhost:5000")
+MINIO_URL = os.environ.get("MINIO_ENDPOINT", "http://localhost:9000")
+BASELINE_VERSION = "local"
+
+
+def load_cloud_demo_data() -> str:
+    """Fetch real demo data and the initial model at runtime, never bake them in."""
+    import boto3
+    import joblib
+    import mlflow.sklearn
+    from mlflow.tracking import MlflowClient
+
+    data = BASE_DIR / "data"
+    artifacts = BASE_DIR / "artifacts"
+    data.mkdir(exist_ok=True)
+    artifacts.mkdir(exist_ok=True)
+    storage = boto3.client("s3", endpoint_url=MINIO_URL)
+    for source, target in [
+        ("customer_features.parquet", "features.parquet"),
+        ("labels.parquet", "labels.parquet"),
+    ]:
+        storage.download_file("feast-offline", source, str(data / target))
+    frame = pd.read_parquet(data / "features.parquet")
+    frame.loc[frame.event_timestamp == frame.event_timestamp.max()].to_parquet(
+        data / "features_latest.parquet", index=False
+    )
+    version = MlflowClient(MLFLOW_URL).get_model_version_by_alias(
+        "loan-default", "baseline"
+    )
+    model = mlflow.sklearn.load_model(f"models:/loan-default/{version.version}")
+    joblib.dump(model, artifacts / "model.joblib")
+    return str(version.version)
+
+
+if os.environ.get("DEPLOY_TARGET") == "azure":
+    BASELINE_VERSION = load_cloud_demo_data()
 
 BASELINE_MODEL = None
 try:
@@ -96,6 +174,18 @@ ACTION_COMMANDS: dict[str, str] = {
 }
 
 
+if os.environ.get("DEPLOY_TARGET") == "azure":
+    for action, command in ACTION_COMMANDS.items():
+        command = command.replace("uv run python", "python")
+        if action not in {"chaos_latency_inject", "chaos_latency_clear"}:
+            command = command.replace("http://localhost:8080", MODEL_API_URL)
+        ACTION_COMMANDS[action] = command
+    ACTION_COMMANDS["reset_demo"] += f" --version {BASELINE_VERSION}"
+    ACTION_COMMANDS["e2e_tests"] = (
+        f"bash scripts/smoke.sh serving model-api {MODEL_API_URL}"
+    )
+
+
 class PredictRequest(BaseModel):
     customer_id: str | int = "1"
     env: str = "clean"
@@ -105,13 +195,23 @@ class ActionRequest(BaseModel):
     action: str
 
 
+@app.get("/healthz")
+async def dashboard_health() -> dict[str, str]:
+    """Provide the credential-free Kubernetes readiness check."""
+    return {"status": "ok"}
+
+
 @app.get("/", response_class=HTMLResponse)
 async def serve_index() -> HTMLResponse:
     """Serve the single-page application dashboard."""
     index_file = TEMPLATES_DIR / "index.html"
     if not index_file.exists():
         raise HTTPException(status_code=404, detail="Dashboard template not found.")
-    return HTMLResponse(content=index_file.read_text(encoding="utf-8"))
+    page = index_file.read_text(encoding="utf-8")
+    public_host = os.environ.get("PUBLIC_HOST", "")
+    if public_host:
+        page = page.replace("http://localhost:", f"http://{public_host}:")
+    return HTMLResponse(content=page)
 
 
 @app.get("/api/status")
@@ -153,14 +253,18 @@ async def get_system_status() -> dict[str, Any]:
                         ready_count += 1
                         break
             status["nodes_ready"] = ready_count
-            status["cluster"] = "Kind (mlp)" if ready_count > 0 else "degraded"
+            status["cluster"] = (
+                os.environ.get("CLUSTER_NAME", "Kind (mlp)")
+                if ready_count > 0
+                else "degraded"
+            )
     except Exception as exc:
         logger.debug("Failed querying nodes: %s", exc)
 
     # 2. Model API
     async with httpx.AsyncClient(timeout=1.5) as client:
         try:
-            resp = await client.get("http://localhost:8080/model-info")
+            resp = await client.get(f"{MODEL_API_URL}/model-info")
             if resp.status_code == 200:
                 status["serving_model"] = resp.json()
         except Exception:
@@ -168,21 +272,21 @@ async def get_system_status() -> dict[str, Any]:
 
         # 3. Prometheus
         try:
-            resp = await client.get("http://localhost:9090/-/healthy")
+            resp = await client.get(f"{PROMETHEUS_URL}/-/healthy")
             status["prometheus_online"] = resp.status_code == 200
         except Exception:
             status["prometheus_online"] = False
 
         # 4. MLflow
         try:
-            resp = await client.get("http://localhost:5000/health")
+            resp = await client.get(f"{MLFLOW_URL}/health")
             status["mlflow_online"] = resp.status_code == 200
         except Exception:
             status["mlflow_online"] = False
 
         # 5. MinIO
         try:
-            resp = await client.get("http://localhost:9000/minio/health/live")
+            resp = await client.get(f"{MINIO_URL}/minio/health/live")
             status["minio_online"] = resp.status_code == 200
         except Exception:
             status["minio_online"] = False
@@ -190,7 +294,7 @@ async def get_system_status() -> dict[str, Any]:
         # 6. Drift Flag from Prometheus
         try:
             resp = await client.get(
-                "http://localhost:9090/api/v1/query",
+                f"{PROMETHEUS_URL}/api/v1/query",
                 params={"query": ACTIVE_DRIFT_QUERY},
             )
             if resp.status_code == 200:
@@ -232,7 +336,7 @@ async def get_metrics() -> dict[str, Any]:
         async def prom_scalar(query: str, default: float = 0.0) -> float:
             try:
                 r = await client.get(
-                    "http://localhost:9090/api/v1/query", params={"query": query}
+                    f"{PROMETHEUS_URL}/api/v1/query", params={"query": query}
                 )
                 if r.status_code == 200:
                     res = r.json().get("data", {}).get("result", [])
@@ -296,7 +400,7 @@ async def get_metrics() -> dict[str, Any]:
         # Query PSI per feature if available
         try:
             r = await client.get(
-                "http://localhost:9090/api/v1/query",
+                f"{PROMETHEUS_URL}/api/v1/query",
                 params={"query": "model_feature_psi"},
             )
             if r.status_code == 200:
@@ -383,7 +487,7 @@ async def get_pods() -> list[dict[str, Any]]:
                     )
                     async with httpx.AsyncClient(timeout=1.0) as client:
                         r = await client.get(
-                            "http://localhost:9090/api/v1/query",
+                            f"{PROMETHEUS_URL}/api/v1/query",
                             params={"query": pod_query},
                         )
                         if r.status_code == 200:
@@ -501,7 +605,7 @@ async def execute_burst_test(
         async def single_call(cid: int):
             try:
                 r = await client.post(
-                    "http://localhost:8080/predict", json={"customer_ids": [str(cid)]}
+                    f"{MODEL_API_URL}/predict", json={"customer_ids": [str(cid)]}
                 )
                 return r.status_code == 200
             except Exception:
@@ -554,7 +658,9 @@ async def execute_predict(req: PredictRequest) -> dict[str, Any]:
                     return {
                         "status": "success",
                         "customer_id": str(req.customer_id),
-                        "model_version": "Baseline v4 (Clean Unshifted Data)",
+                        "model_version": (
+                            f"Baseline v{BASELINE_VERSION} (Clean Unshifted Data)"
+                        ),
                         "default_probability": round(prob, 4),
                         "prediction": label,
                         "risk_level": risk,
@@ -601,7 +707,8 @@ async def execute_predict(req: PredictRequest) -> dict[str, Any]:
                         "status": "success",
                         "customer_id": str(req.customer_id),
                         "model_version": (
-                            "Baseline v4 (Un-retrained on Covariate Shift)"
+                            f"Baseline v{BASELINE_VERSION} "
+                            "(Un-retrained on Covariate Shift)"
                         ),
                         "default_probability": round(prob, 4),
                         "prediction": label,
@@ -618,7 +725,7 @@ async def execute_predict(req: PredictRequest) -> dict[str, Any]:
         try:
             cid_int = int(req.customer_id)
             resp = await client.post(
-                "http://localhost:8080/predict",
+                f"{MODEL_API_URL}/predict",
                 json={"customer_ids": [cid_int]},
             )
             elapsed_ms = round((time.perf_counter() - t0) * 1000, 2)
@@ -820,7 +927,7 @@ async def get_score_diagnostic(customer_id: int) -> dict[str, Any]:
         try:
             async with httpx.AsyncClient(timeout=1.5) as client:
                 resp = await client.post(
-                    "http://localhost:8080/predict",
+                    f"{MODEL_API_URL}/predict",
                     json={"customer_ids": [customer_id]},
                 )
                 if resp.status_code == 200:
@@ -959,7 +1066,7 @@ async def get_retrain_status() -> dict[str, Any]:
     try:
         async with httpx.AsyncClient(timeout=1.5) as client:
             r = await client.get(
-                "http://localhost:5000/api/2.0/mlflow/registered-models/get?name=loan-default"
+                f"{MLFLOW_URL}/api/2.0/mlflow/registered-models/get?name=loan-default"
             )
             if r.status_code == 200:
                 aliases = r.json().get("registered_model", {}).get("aliases", [])
@@ -974,7 +1081,7 @@ async def get_retrain_status() -> dict[str, Any]:
     # 3. Live Serving Version
     try:
         async with httpx.AsyncClient(timeout=1.5) as client:
-            r = await client.get("http://localhost:8080/model-info")
+            r = await client.get(f"{MODEL_API_URL}/model-info")
             if r.status_code == 200:
                 status["serving_version"] = r.json().get("version", "unknown")
     except Exception as e:

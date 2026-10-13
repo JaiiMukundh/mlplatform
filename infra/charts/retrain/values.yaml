@@ -13,6 +13,9 @@ releaseNamespaces:
   - staging
 
 env:
+  PUBLIC_IP_NAME: ""
+  AZURE_RESOURCE_GROUP: ""
+  AZURE_ALLOWED_CIDR: ""
   MLFLOW_TRACKING_URI: http://mlflow.data.svc:5000
   FEAST_S3_ENDPOINT_URL: http://minio.data.svc:9000
   TRIGGER_MODE: local

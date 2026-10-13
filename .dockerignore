@@ -19,5 +19,4 @@ infra/envs
 infra/modules
 # Rendered Feast config contains the Postgres password: never bake it into an image.
 core/feature_repo/feature_store.yaml
-ui
 infra/vendor

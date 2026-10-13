@@ -42,14 +42,17 @@ jobs:
       ARM_SUBSCRIPTION_ID: ${{ vars.AZURE_SUBSCRIPTION_ID }}
       TF_IN_AUTOMATION: "true"
       TF_INPUT: "false"
+      AZURE_ALLOWED_CIDR: ${{ vars.AZURE_ALLOWED_CIDR }}
       AZURE_RESOURCE_GROUP: ${{ vars.AZURE_RESOURCE_GROUP }}
       AZURE_NODE_RESOURCE_GROUP: ${{ vars.AZURE_NODE_RESOURCE_GROUP }}
       TF_STATE_RESOURCE_GROUP: ${{ vars.TF_STATE_RESOURCE_GROUP }}
       TF_STATE_ACCOUNT: ${{ vars.TF_STATE_ACCOUNT }}
       TF_VAR_subscription_id: ${{ vars.AZURE_SUBSCRIPTION_ID }}
+      TF_VAR_project: ${{ vars.AZURE_PROJECT || 'mlp' }}
+      TF_VAR_environment: ${{ vars.AZURE_ENVIRONMENT || 'test' }}
       TF_VAR_location: ${{ vars.AZURE_LOCATION || 'indiasouthcentral' }}
       TF_VAR_kubernetes_version: ${{ vars.AZURE_KUBERNETES_VERSION }}
-      TF_VAR_vm_size: ${{ vars.AZURE_VM_SIZE || 'Standard_B2as_v2' }}
+      TF_VAR_vm_size: ${{ vars.AZURE_VM_SIZE || 'Standard_D4as_v4' }}
       TF_VAR_budget_email: ${{ vars.AZURE_BUDGET_EMAIL }}
       TAG: ${{ github.sha }}
     steps:

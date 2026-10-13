@@ -1,10 +1,11 @@
 # Azure parity for kind-registry / ECR: Azure Container Registry (ACR) Basic SKU
 # with mapped repositories for all service images.
 
+data "azurerm_client_config" "current" {}
+
 locals {
   # ACR name must be alphanumeric only, 5-50 characters.
-  sanitized_name = substr(replace(lower("${var.project}reg"), "/[^a-z0-9]/", ""), 0, 50)
-  images         = ["model-api", "drift-monitor", "retrain", "remediator", "mlflow"]
+  sanitized_name = substr(replace(lower("${var.project}reg${substr(replace(data.azurerm_client_config.current.subscription_id, "-", ""), 0, 8)}"), "/[^a-z0-9]/", ""), 0, 50)
 }
 
 resource "azurerm_container_registry" "this" {
@@ -12,7 +13,7 @@ resource "azurerm_container_registry" "this" {
   resource_group_name = var.resource_group_name
   location            = var.location
   sku                 = "Basic"
-  admin_enabled       = true
+  admin_enabled       = false
   tags                = var.tags
 }
 

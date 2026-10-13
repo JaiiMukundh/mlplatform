@@ -13,7 +13,9 @@ from __future__ import annotations
 import argparse
 import datetime as dt
 import json
+import os
 import subprocess
+import sys
 import urllib.request
 from pathlib import Path
 
@@ -59,7 +61,7 @@ def _resolve_version(requested: str) -> str:
 def _mlflow(path: str, method: str = "GET", payload: bytes | None = None) -> bytes:
     """Call the MLflow tracking server from the host (registry APIs only)."""
     request = urllib.request.Request(
-        f"http://localhost:5000{path}",
+        f"{os.environ.get('MLFLOW_TRACKING_URI', 'http://localhost:5000')}{path}",
         data=payload,
         headers={"content-type": "application/json"},
         method=method,
@@ -148,9 +150,7 @@ def main() -> int:
 
     subprocess.run(
         [
-            "uv",
-            "run",
-            "python",
+            sys.executable,
             "-m",
             "ml.data.generate",
             "--out",
@@ -208,7 +208,7 @@ def main() -> int:
             str(deploy_sh),
             "model-api",
             "serving",
-            "dev",
+            os.environ.get("IMAGE_TAG", "dev"),
             "--set",
             f"model.version={version}",
         ],

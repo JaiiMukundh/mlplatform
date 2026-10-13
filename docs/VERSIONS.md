@@ -108,3 +108,10 @@ Official source: https://hub.docker.com/_/python (tag API checked 2026-10-13).
 scaffolding described in the historical P3.6 row. Current Azure topology is
 AKS/network/ACR/budget; application storage is in-cluster MinIO/PostgreSQL.
 Vendored chart/schema archives now live in `infra/vendor/`. No pins changed.
+
+2026-10-13 cloud dashboard: official PyPI latest stable HTTPX 0.28.1 and
+Kubernetes Python client 37.0.1 added to the fully pinned training/UI environment.
+The existing runtime lock retains its separate Kubernetes 36.0.3 dependency.
+Regional AKS API latest creatable stable patch: 1.36.4. B-series system nodes
+are unsupported under current Microsoft AKS documentation; use a quota-supported
+non-burstable size for the test environment.

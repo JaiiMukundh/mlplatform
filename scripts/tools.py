@@ -119,10 +119,17 @@ def check_charts() -> None:
                         path.write_text(
                             json.dumps(version["schema"]["openAPIV3Schema"])
                         )
-        for chart in sorted(Path("infra/charts").iterdir()):
-            manifest = subprocess.run(
-                ["helm", "template", str(chart)], check=True, capture_output=True
-            ).stdout
+        for chart in [
+            *sorted(Path("infra/charts").iterdir()),
+            Path("infra/dashboard.yaml"),
+        ]:
+            manifest = (
+                subprocess.run(
+                    ["helm", "template", str(chart)], check=True, capture_output=True
+                ).stdout
+                if chart.is_dir()
+                else chart.read_bytes()
+            )
             subprocess.run(
                 [
                     "kubeconform",

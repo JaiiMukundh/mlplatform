@@ -6,12 +6,12 @@
 # and put it below (do not reuse the placeholder id).
 subscription_id    = "00000000-0000-0000-0000-000000000000"
 project            = "mlp"
-environment        = "dev"
+environment        = "test"
 location           = "indiasouthcentral"
 vnet_cidr          = "10.0.0.0/16"
-kubernetes_version = "REPLACE_WITH_SUPPORTED_PATCH_VERSION"
-node_count         = 2
-vm_size            = "Standard_B2as_v2"
+kubernetes_version = "1.36.4"
+node_count         = 1
+vm_size            = "Standard_D4as_v4"
 budget_limit_usd   = 50
 budget_email       = "you@university.edu"
 budget_start_date  = "2026-10-01T00:00:00Z"

@@ -77,11 +77,6 @@ ARG KUBECTL_SHA256=65691ff77eb6fa44c908b77a1082c9f092c3b9733b5cefabec0d1104890e2
 ARG HELM_SHA256=1e4ab49e429626cf6c6958d914248b78c9730803c2751b87627e171dc800e7bb
 ENV KUBECTL_VERSION=${KUBECTL_VERSION} HELM_VERSION=${HELM_VERSION}
 
-COPY --chown=10001:10001 core/retrain/ retrain/
-COPY --chown=10001:10001 scripts/model_release_local.sh scripts/deploy.sh scripts/smoke.sh scripts/loadcheck.py scripts/run_gate.sh scripts/run_job.sh scripts/
-COPY --chown=10001:10001 infra/charts/model-api infra/charts/model-api
-COPY --chown=10001:10001 infra/jobs/gate-job.yaml infra/jobs/gate-job.yaml
-
 SHELL ["/bin/bash", "-o", "pipefail", "-c"]
 RUN curl -fsSL --retry 3 --retry-all-errors --connect-timeout 20 --max-time 180 -o /app/bin/kubectl "https://dl.k8s.io/release/${KUBECTL_VERSION}/bin/linux/amd64/kubectl" \
     && echo "${KUBECTL_SHA256}  /app/bin/kubectl" | sha256sum -c - \
@@ -93,7 +88,21 @@ RUN curl -fsSL --retry 3 --retry-all-errors --connect-timeout 20 --max-time 180 
     && chmod +x /app/bin/helm \
     && rm -rf /tmp/linux-amd64
 
+COPY --chown=10001:10001 core/retrain/ retrain/
+COPY --chown=10001:10001 scripts/model_release_local.sh scripts/deploy.sh scripts/smoke.sh scripts/loadcheck.py scripts/run_gate.sh scripts/run_job.sh scripts/
+COPY --chown=10001:10001 infra/charts/model-api infra/charts/model-api
+COPY --chown=10001:10001 infra/jobs/gate-job.yaml infra/jobs/gate-job.yaml
+
+
 USER 10001:10001
 
 FROM training AS mlflow
 EXPOSE 5000
+
+FROM retrain AS dashboard
+COPY --chown=10001:10001 ui/ ui/
+COPY --chown=10001:10001 scripts/ scripts/
+COPY --chown=10001:10001 infra/jobs/ infra/jobs/
+COPY --chown=10001:10001 Makefile ./
+EXPOSE 8050
+CMD ["uvicorn", "ui.app:app", "--host", "0.0.0.0", "--port", "8050", "--ssl-keyfile", "/app/tls/tls.key", "--ssl-certfile", "/app/tls/tls.crt"]

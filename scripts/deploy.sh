@@ -41,6 +41,14 @@ HELM_ARGS=()
 if [[ "${DEPLOY_TARGET:-local}" == azure ]]; then
   HELM_ARGS+=(-f "${CHART_DIR}/values-azure.yaml")
   [[ "${NAMESPACE}" != staging ]] || HELM_ARGS+=(--set service.type=ClusterIP)
+  if [[ -n "${PUBLIC_IP_NAME:-}" ]]; then
+    annotations="$(python3 -c 'import json,os; print(json.dumps({"service.beta.kubernetes.io/azure-pip-name":os.environ["PUBLIC_IP_NAME"],"service.beta.kubernetes.io/azure-load-balancer-resource-group":os.environ["AZURE_RESOURCE_GROUP"]}))')"
+    HELM_ARGS+=(--set-json "service.annotations=${annotations}")
+  fi
+  if [[ -n "${AZURE_ALLOWED_CIDR:-}" ]]; then
+    ranges="$(python3 -c 'import json,os; print(json.dumps([x for x in [os.environ["AZURE_ALLOWED_CIDR"],os.environ.get("RUNNER_CIDR", "")] if x]))')"
+    HELM_ARGS+=(--set-json "service.loadBalancerSourceRanges=${ranges}")
+  fi
 fi
 if [[ -n "${MODEL_API_REPOSITORY:-}" ]]; then
   HELM_ARGS+=(--set "image.repository=${MODEL_API_REPOSITORY}")

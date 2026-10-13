@@ -1,3 +1,4 @@
+DOCKER_NETWORK ?= default
 SHELL := /usr/bin/env bash
 .DEFAULT_GOAL := help
 
@@ -42,16 +43,16 @@ check-charts: ## Validate rendered Kubernetes manifests and vendored CRD schemas
 .PHONY: check-images
 check-images: ## Build and import-smoke all six container targets without deploying.
 	@hadolint infra/Dockerfile
-	@for service in model-api drift-monitor remediator training retrain mlflow; do \
-		docker build --file infra/Dockerfile --target "$$service" --tag "mlp-check-$$service" . || exit 1; \
+	@for service in model-api drift-monitor remediator training retrain mlflow dashboard; do \
+		docker build --network "$(DOCKER_NETWORK)" --file infra/Dockerfile --target "$$service" --tag "mlp-check-$$service" . || exit 1; \
 	done
 	@$(MAKE) smoke-images
 
 .PHONY: smoke-images
 smoke-images: ## Import real service entry points and ensure models/data are absent.
-	@for service in model-api drift-monitor remediator training retrain mlflow; do \
+	@for service in model-api drift-monitor remediator training retrain mlflow dashboard; do \
 		module="$${service//-/_}.main"; \
-		case "$$service" in training) module="feast, ml.train";; mlflow) module=mlflow;; esac; \
+		case "$$service" in training) module="feast, ml.train";; mlflow) module=mlflow;; dashboard) module=ui.app;; esac; \
 		docker run --rm --entrypoint python "mlp-check-$$service" -c "import $$module; print('$$service entry point OK')" || exit 1; \
 	done
 	@docker run --rm --entrypoint sh mlp-check-model-api -c 'test ! -e /app/data/features.parquet && test ! -e /app/artifacts/model.joblib'
@@ -93,12 +94,12 @@ lock-training: ## Refresh the fully pinned training environment while preserving
 
 build: ## Build local service images.
 	@hadolint infra/Dockerfile
-	@docker build --file infra/Dockerfile --target model-api \
+	@docker build --network "$(DOCKER_NETWORK)" --file infra/Dockerfile --target model-api \
 		--tag localhost:5001/model-api:dev .
 
 build-training: ## Build and push the training/Feast image.
 	@hadolint infra/Dockerfile
-	@docker build --file infra/Dockerfile --target training \
+	@docker build --network "$(DOCKER_NETWORK)" --file infra/Dockerfile --target training \
 		--tag localhost:5001/training:dev .
 	@docker push localhost:5001/training:dev
 
@@ -137,7 +138,7 @@ up: ## Build the complete local platform from scratch.
 	@terraform -chdir=infra/envs/local init
 	@terraform -chdir=infra/envs/local apply -auto-approve \
 		-target=module.registry -target=module.cluster
-	@docker build --file infra/Dockerfile --target mlflow --tag localhost:5001/mlflow:dev . && docker push localhost:5001/mlflow:dev
+	@docker build --network "$(DOCKER_NETWORK)" --file infra/Dockerfile --target mlflow --tag localhost:5001/mlflow:dev . && docker push localhost:5001/mlflow:dev
 	@terraform -chdir=infra/envs/local apply -auto-approve
 	@bash scripts/bootstrap-post.sh
 

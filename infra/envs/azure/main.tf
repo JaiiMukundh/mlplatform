@@ -99,3 +99,13 @@ resource "azurerm_consumption_budget_resource_group" "monthly" {
     contact_emails = [var.budget_email]
   }
 }
+
+resource "azurerm_public_ip" "ingress" {
+  name                = "${local.name}-ingress"
+  location            = var.location
+  resource_group_name = azurerm_resource_group.this.name
+  allocation_method   = "Static"
+  sku                 = "Standard"
+  domain_name_label   = "${local.name}-${substr(replace(var.subscription_id, "-", ""), 0, 8)}"
+  tags                = local.tags
+}

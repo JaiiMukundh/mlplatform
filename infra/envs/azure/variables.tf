@@ -37,35 +37,22 @@ variable "kubernetes_version" {
 }
 
 variable "node_count" {
-  description = "AKS default node-pool count."
+  description = "Single 4-vCPU/16-GiB system node for the temporary test session."
   type        = number
-  default     = 2
-
-  # Edu/Students cap: Total Regional vCPUs is typically 4, and every node
-  # SKU allowed here is 2 vCPU, so more than 2 nodes cannot be scheduled.
-  # Quota increases are NOT available on student subscriptions.
+  default     = 1
   validation {
-    condition     = var.node_count >= 1 && var.node_count <= 2
-    error_message = "node_count must be 1-2: student subscriptions cap Total Regional vCPUs (2 vCPU per node)."
+    condition     = var.node_count == 1
+    error_message = "This student test environment uses one node within its 4-vCPU family quota."
   }
 }
 
 variable "vm_size" {
-  description = "AKS node VM SKU."
+  description = "Available non-burstable AKS system-node SKU verified against regional quota."
   type        = string
-  default     = "Standard_B2s"
-
-  # AKS needs >=2 vCPU and realistically >=4 GB RAM per node for kube-system
-  # plus platform pods. Standard_B2ats_v2 (2 vCPU / 1 GB) is deliberately
-  # excluded: kubelet fails with 0 allocatable memory on 1 GB nodes.
-  # B-series v1 (B2s) is retiring in some regions; if the preflight reports
-  # NotAvailableForSubscription, switch to Standard_B2as_v2 (2 vCPU / 8 GB).
+  default     = "Standard_D4as_v4"
   validation {
-    condition = contains(
-      ["Standard_B2s", "Standard_B2as_v2", "Standard_B2als_v2"],
-      var.vm_size,
-    )
-    error_message = "vm_size must be a 2-vCPU burstable SKU with >=4 GB RAM (Standard_B2s, Standard_B2as_v2, Standard_B2als_v2). 1 GB SKUs (B2ats_v2/B2pts_v2) cannot run AKS kubelets."
+    condition     = var.vm_size == "Standard_D4as_v4"
+    error_message = "Use the verified Standard_D4as_v4 size; B-series system nodes are unsupported."
   }
 }
 

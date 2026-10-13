@@ -8,8 +8,8 @@
 set -Eeuo pipefail
 
 LOCATION="${AZURE_LOCATION:-indiasouthcentral}"
-VM_SIZE="${AZURE_VM_SIZE:-Standard_B2s}"
-NODE_COUNT="${AZURE_NODE_COUNT:-2}"
+VM_SIZE="${AZURE_VM_SIZE:-Standard_D4as_v4}"
+NODE_COUNT="${AZURE_NODE_COUNT:-1}"
 
 need() { command -v "$1" >/dev/null || { echo "MISSING: $1 not installed" >&2; exit 1; }; }
 need az
@@ -29,7 +29,7 @@ echo "location: ${LOCATION}  vm_size: ${VM_SIZE}  nodes: ${NODE_COUNT}"
 
 echo "== resource providers =="
 for provider in Microsoft.ContainerService Microsoft.ContainerRegistry \
-  Microsoft.Storage Microsoft.DBforPostgreSQL Microsoft.Insights; do
+  Microsoft.Storage Microsoft.Insights; do
   state="$(az provider show --namespace "${provider}" --query registrationState -o tsv)"
   echo "${provider}: ${state}"
   [[ "${state}" == "Registered" ]] || {
@@ -45,8 +45,8 @@ restrictions="$(az vm list-skus --location "${LOCATION}" \
   --query "[].restrictions[].reason" -o tsv 2>/dev/null || true)"
 if [[ -n "${restrictions}" ]]; then
   echo "FAIL: ${VM_SIZE} is blocked here (${restrictions})." >&2
-  echo "B-series v1 retires per region; try AZURE_VM_SIZE=Standard_B2as_v2" >&2
-  echo "(2 vCPU / 8 GB, burstable) or another allowed region." >&2
+  echo "Check another region if the verified size is unavailable; use AZURE_VM_SIZE=Standard_D4as_v4" >&2
+  echo "(4 vCPU / 16 GB, non-burstable) or another allowed region." >&2
   echo "List options with:" >&2
   echo "  az vm list-skus --location ${LOCATION} --resource-type virtualMachines \\" >&2
   echo "    --query \"[?contains(name,'B2')].{sku:name,rest:restrictions}\" -o table" >&2
@@ -61,12 +61,9 @@ echo "== vCPU quota =="
 az vm list-usage --location "${LOCATION}" \
   --query "[?contains(name.value, 'cores') || contains(name.value, 'amily')].{family:name.value, used:currentValue, limit:limit}" \
   -o table
-case "${VM_SIZE}" in
-  Standard_B2s) FAMILY="standardBSFamily" ;;
-  Standard_B2as_v2 | Standard_B2als_v2) FAMILY="standardBasv2Family" ;;
-  *) echo "FAIL: preflight only models 2-vCPU B-series SKUs" >&2 && exit 1 ;;
-esac
-needed=$((NODE_COUNT * 2))
+[[ "${VM_SIZE}" == Standard_D4as_v4 ]] || { echo "Use the verified 4-vCPU non-burstable system node" >&2; exit 1; }
+FAMILY="standardDASv4Family"
+needed=$((NODE_COUNT * 4))
 usage="$(az vm list-usage --location "${LOCATION}" \
   --query "{cores: [?name.value=='cores'] | [0], family: [?name.value=='${FAMILY}'] | [0]}" \
   -o json)"

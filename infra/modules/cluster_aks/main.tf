@@ -1,12 +1,15 @@
 # Azure parity for "cluster": Azure Kubernetes Service (AKS) with
-# OIDC issuer enabled, Azure Workload Identity enabled, and burstable B-series nodes.
+# OIDC issuer and a supported, quota-verified system-node size.
 
 resource "azurerm_kubernetes_cluster" "this" {
-  name                = var.cluster_name
-  location            = var.location
-  resource_group_name = var.resource_group_name
-  dns_prefix          = var.cluster_name
-  kubernetes_version  = var.kubernetes_version
+  name                    = var.cluster_name
+  location                = var.location
+  resource_group_name     = var.resource_group_name
+  dns_prefix              = var.cluster_name
+  node_resource_group     = "${var.cluster_name}-nodes-rg"
+  sku_tier                = "Free"
+  node_os_upgrade_channel = "None"
+  kubernetes_version      = var.kubernetes_version
 
   oidc_issuer_enabled       = true
   workload_identity_enabled = true
@@ -21,20 +24,42 @@ resource "azurerm_kubernetes_cluster" "this" {
     vm_size         = var.vm_size
     vnet_subnet_id  = var.vnet_subnet_id
     os_disk_size_gb = 30
+    max_pods        = 50
   }
 
   identity {
-    type = "SystemAssigned"
+    type         = "UserAssigned"
+    identity_ids = [azurerm_user_assigned_identity.cluster.id]
   }
 
   network_profile {
-    network_plugin    = "kubenet"
-    load_balancer_sku = "standard"
-    service_cidr      = "10.100.0.0/16"
-    dns_service_ip    = "10.100.0.10"
+    network_plugin      = "azure"
+    network_plugin_mode = "overlay"
+    network_data_plane  = "cilium"
+    pod_cidr            = "10.244.0.0/16"
+    load_balancer_sku   = "standard"
+    service_cidr        = "10.100.0.0/16"
+    dns_service_ip      = "10.100.0.10"
   }
 
-  tags = var.tags
+  tags       = var.tags
+  depends_on = [azurerm_role_assignment.network]
+}
+
+data "azurerm_client_config" "current" {}
+
+resource "azurerm_user_assigned_identity" "cluster" {
+  name                = "${var.cluster_name}-control-plane"
+  location            = var.location
+  resource_group_name = var.resource_group_name
+  tags                = var.tags
+}
+
+resource "azurerm_role_assignment" "network" {
+  principal_id                     = azurerm_user_assigned_identity.cluster.principal_id
+  role_definition_name             = "Network Contributor"
+  scope                            = "/subscriptions/${data.azurerm_client_config.current.subscription_id}/resourceGroups/${var.resource_group_name}"
+  skip_service_principal_aad_check = true
 }
 
 # Attach AKS Kubelet identity to ACR for pulling images without imagePullSecrets.
@@ -66,19 +91,19 @@ variable "resource_group_name" {
 variable "kubernetes_version" {
   description = "Kubernetes version for the control plane and nodes."
   type        = string
-  default     = "1.30"
+  default     = "1.36.4"
 }
 
 variable "node_count" {
   description = "Node count in the default (system + workload) pool."
   type        = number
-  default     = 2
+  default     = 1
 }
 
 variable "vm_size" {
   description = "VM SKU for the default node pool."
   type        = string
-  default     = "Standard_B2s"
+  default     = "Standard_D4as_v4"
 }
 
 variable "vnet_subnet_id" {

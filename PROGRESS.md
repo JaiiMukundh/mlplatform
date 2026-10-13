@@ -699,3 +699,39 @@ vCPUs and 10 Basv2-family vCPUs free, but official AKS docs prohibit B-series
 system nodes. A2/A3 must replace that old scaffold size with a supported SKU.
 Next action: implement cloud dashboard/runtime paths, then configure OIDC/backend
 and provision from GitHub Actions with the kill switch ready.
+
+## 2026-10-13 — A2 cloud dashboard and supported AKS configuration
+
+Dashboard is a seventh target of the shared Dockerfile. It loads real datasets
+and the registered baseline model at runtime, uses in-cluster service addresses,
+and preserves demo/reset/retrain operations with immutable cloud image tags.
+Added admin login, HTTPS with a self-signed test certificate, scoped tester
+network access, and one shared public IP across native tools. The dashboard
+manifest has requests/limits and is included in strict schema validation.
+
+Use one quota-supported Standard_D4as_v4 node (4 vCPU/16 GiB); preserve two API
+replicas. Official docs prohibit B-series system nodes. Live API verifies four
+family vCPUs and six regional vCPUs free. AKS patch 1.36.4 is latest creatable
+stable in this region. Use CNI overlay/Cilium with the real control-plane identity
+network grant before cluster creation. Remove redundant subnet NSG and old
+registry admin credential; AKS manages node NSG/source-range rules. Registry
+name includes subscription suffix to avoid the generic global-name collision.
+
+Actual acceptance output:
+```text
+make lint test: 105 passed, 3 skipped; coverage 84.29%; Ruff checks passed.
+make check-infra: local/Azure Terraform valid; 9 charts lint; shell syntax passed.
+make check-actions check-charts: actionlint passed; 53 valid resources, no errors/skips.
+make azure-preflight: cores 0/6 (need 4), family 0/4 (need 4); PREFLIGHT PASS.
+make check-images DOCKER_NETWORK=host: 7 builds and 7 entry points OK.
+Retrain image chart/job/script checks passed; models/data absent from runtime image.
+make secret-scan: no leaks in history or staged changes.
+```
+
+Local Docker bridge TLS downloads failed despite bounded retries. The identical
+image checks passed through explicit host build networking; GitHub keeps its
+default network. Python/UI checks and images are verified, not a live deployment
+yet. Discovered and fixed expiry orphan-node handling so partial group removal
+cannot disable cleanup while node resources remain. Next action: configure
+GitHub OIDC, make startup recreate its private backend and two-hour expiry,
+then provision and verify live Azure through Actions.

@@ -12,6 +12,17 @@ export FEAST_MINIO_PASSWORD="$(kubectl -n data get secret minio-auth -o jsonpath
 export FEAST_MINIO_ENDPOINT="${ENDPOINT}"
 export FEAST_MINIO_BUCKET="${BUCKET}"
 
+if [[ "${DEPLOY_TARGET:-local}" == azure ]]; then
+  python - <<'UPLOAD'
+import boto3, os
+storage = boto3.client("s3", endpoint_url=os.environ["FEAST_MINIO_ENDPOINT"], aws_access_key_id=os.environ["FEAST_MINIO_USER"], aws_secret_access_key=os.environ["FEAST_MINIO_PASSWORD"])
+for source, key in [("features.parquet", "customer_features.parquet"), ("labels.parquet", "labels.parquet")]:
+    storage.upload_file("data/" + source, os.environ["FEAST_MINIO_BUCKET"], key)
+UPLOAD
+  echo "publish_feast_data: uploaded from cloud dashboard"
+  exit
+fi
+
 # Pass credentials as environment, never interpolate them into executable code.
 docker run --rm --network host -v "${PWD}:/work:ro" -w /work \
   -e FEAST_MINIO_USER -e FEAST_MINIO_PASSWORD -e FEAST_MINIO_ENDPOINT \

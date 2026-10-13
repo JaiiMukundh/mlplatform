@@ -17,3 +17,15 @@ output "acr_login_server" {
   description = "ACR login server (image repository prefix)."
   value       = module.registry.login_server
 }
+
+output "public_ip_name" {
+  value = azurerm_public_ip.ingress.name
+}
+
+output "public_ip_address" {
+  value = azurerm_public_ip.ingress.ip_address
+}
+
+output "public_host" {
+  value = azurerm_public_ip.ingress.fqdn
+}

@@ -12,7 +12,7 @@ The dashboard is still in the local test harness; cloud hosting is the next step
 | Directory | Responsibility |
 |---|---|
 | `core/` | Model API, data/training, shared code, Feast, drift monitor, retraining, remediation |
-| `infra/` | Local/Azure Terraform, Helm charts, one Dockerfile with six image targets |
+| `infra/` | Local/Azure Terraform, Helm charts, one Dockerfile with seven image targets |
 | `scripts/` | Shared local/cloud operations and demo tools |
 | `ui/` | Operations dashboard |
 | `docs/` | Specification, decisions, explanations, runbooks, and measured evidence |
@@ -98,3 +98,7 @@ For a full cost shutdown, use the GitHub **azure** workflow with action **kill**
 and confirmation **KILL**. The two-hour expiry workflow is a backup, checked
 every 15 minutes; GitHub scheduling can run late. Full kill deletes test data
 and model history as well as compute, disks, images, and state storage.
+
+If local Docker bridge networking cannot download pinned build dependencies,
+`make check-images DOCKER_NETWORK=host` runs the same checks using host networking.
+Cloud workflows use their GitHub runner network.

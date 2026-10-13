@@ -25,7 +25,8 @@ The private repository's current GitHub plan does not support required
 reviewer protection rules (GitHub returned HTTP 422 on 2026-10-13). Manual
 workflow selection plus explicit confirmation is the available human approval
 mechanism. Add required reviewers to the `azure` environment if the account
-plan later supports them. The agent must not trigger billable operations.
+plan later supports them. The user explicitly authorized this test deployment on 2026-10-13; see the
+scoped AGENTS.md exception.
 
 ## One-time Azure setup — next cloud phase
 
@@ -76,11 +77,11 @@ and object-store credentials live in Kubernetes Secrets and are reused on reruns
 
 ## Cloud topology and current limits
 
-Terraform provisions the AKS network, AKS, ACR, and budget notifications. AKS uses two 2-vCPU
-nodes. VM-family quota and regional availability must be checked for the actual
+Terraform provisions the AKS network, AKS, ACR, and budget notifications. AKS uses one supported 4-vCPU/16-GiB Standard_D4as_v4
+node for the test session; model API retains two replicas. VM-family quota and regional availability must be checked for the actual
 subscription; `make azure-preflight` is read-only when authenticated.
 
-The deployment builds all six named targets from `infra/Dockerfile`,
+The deployment builds all seven named targets from `infra/Dockerfile`,
 pushes commit-tagged ACR images, installs the same Helm charts as the proven
 local environment, and installs Prometheus/Grafana/Loki/Alloy before ServiceMonitors.
 It seeds Feast and trains the initial MLflow champion only when no champion
@@ -94,9 +95,10 @@ in-cluster PostgreSQL. Unused managed Blob/PostgreSQL resources and workload ide
 removed. Application storage remains the same proven MinIO/PostgreSQL setup;
 the separate Blob account for Terraform state is still required.
 
-Dashboard hosting and browser access to monitoring are still part of the next
-Azure rollout task. Current dashboard/demo functionality remains available in
-the local test harness. The dataset is real UCI Taiwan credit data; repeated
+The dashboard runs inside AKS over HTTPS on port 8050 with admin login.
+Its temporary certificate is self-signed. Native tool ports share the same
+static public IP and are restricted to the configured tester network.
+Local dashboard/demo operation remains available as a functional harness. The dataset is real UCI Taiwan credit data; repeated
 snapshot timestamps and injected drift are demonstrations, not real outcomes
 observed over time.
 
@@ -115,7 +117,7 @@ same repeatable interface is available through Make when authenticated:
 | `make azure ACTION=wake CONFIRMATION=WAKE` | Restart AKS nodes |
 | `make azure ACTION=destroy CONFIRMATION=DESTROY` | Destroy application infrastructure; retain bootstrap state storage |
 | `make lint test check-infra check-actions check-charts secret-scan` | Verify repository without cloud deployment |
-| `make check-images` | Build and import-smoke all six container targets without Azure |
+| `make check-images` | Build and import-smoke all seven container targets without Azure |
 
 A budget alert is a notification, not an automatic spending stop. Destroy only
 after the demo/data are no longer needed; in-cluster PVCs and lineage are lost
@@ -141,3 +143,8 @@ The OIDC app and repository remain: neither is a running Azure resource.
 Stopping AKS keeps disks and other charges. Terraform `destroy` retains the
 state storage account. Only full `kill` removes all project-owned billable
 resources; charges already incurred can appear later in Cost Management.
+
+Dashboard credentials are the `grafana-admin` Kubernetes secret (username admin).
+The deployment records its URL and deadline in the GitHub Actions summary; it
+does not print the password. The initial tester network is AZURE_ALLOWED_CIDR
+in GitHub environment azure; update it when testing from a different network.

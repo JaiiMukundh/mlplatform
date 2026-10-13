@@ -435,3 +435,22 @@ it. Start a deadline at provisioning and renew it to two hours after successful
 startup, so failed startup is also covered. Retain the manual kill operation
 for immediate teardown. Deletion permanently loses test data/models/history.
 Keep unrelated Azure resources and the no-cost GitHub OIDC identity untouched.
+
+## 2026-10-13 — AKS dashboard and supported test-node topology
+
+Use one Standard_D4as_v4 system node (4 vCPU/16 GiB): live regional SKU and
+quota APIs confirm availability and exactly four family vCPUs. The old B-series
+plan is unsupported for AKS system nodes. Keep two model API replicas; this
+temporary single-node session provides pod resilience, not VM-level HA. Pin
+AKS to the latest creatable stable regional patch 1.36.4. Use Azure CNI overlay
+with Cilium and grant the actual control-plane identity Network Contributor
+before cluster creation, including access to the shared public IP.
+
+Serve the existing dashboard as one extra target of the same Dockerfile, with
+all dependencies frozen. Fetch its datasets and baseline model from MinIO/MLflow
+at startup; no model/data baked into images. Preserve demo commands with
+in-cluster endpoints and cloud image tags. Require dashboard login over HTTPS
+with a temporary self-signed certificate; scope external tools to the configured
+tester network and deployment runner. Share one static public IP across distinct
+service ports. One compact dashboard manifest holds its required Kubernetes
+resources; validate it alongside chart renders. Local operation remains available.

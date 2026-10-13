@@ -154,6 +154,7 @@ def test_dashboard_serves_page_and_runs_commands_from_repository(
         "expired",
         "not_expired",
         "bad_expiry",
+        "orphaned_nodes",
     ],
 )
 def test_full_kill_is_state_independent_and_checks_ownership(
@@ -172,6 +173,9 @@ def test_full_kill_is_state_independent_and_checks_ownership(
     }
     if scenario == "partial":
         groups.pop("test-app")
+    if scenario == "orphaned_nodes":
+        groups.pop("test-app")
+        groups.pop("test-state")
     if scenario == "unowned":
         groups["test-state"] = {"repository": "another/repository"}
     for group in groups.values():
@@ -228,7 +232,9 @@ def test_full_kill_is_state_independent_and_checks_ownership(
         "SCENARIO": scenario,
     }
     action = (
-        "expired" if scenario in {"expired", "not_expired", "bad_expiry"} else "kill"
+        "expired"
+        if scenario in {"expired", "not_expired", "bad_expiry", "orphaned_nodes"}
+        else "kill"
     )
     command = ["bash", "scripts/azure.sh", action]
     result = subprocess.run(
@@ -263,3 +269,57 @@ def test_kill_requires_explicit_confirmation_but_no_terraform_backend() -> None:
     }
     assert check("kill", **variables).returncode != 0
     assert check("kill", CONFIRMATION="KILL", **variables).returncode == 0
+
+
+def test_dashboard_requires_configured_login_and_keeps_health_public(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    """Cloud operations must be authenticated while Kubernetes probes stay usable."""
+    from fastapi.testclient import TestClient
+
+    from ui.app import app
+
+    monkeypatch.setenv("DASHBOARD_PASSWORD", "demo-test-password")
+    with TestClient(app) as client:
+        assert client.get("/healthz").status_code == 200
+        assert client.get("/").status_code == 401
+        assert client.get("/", auth=("admin", "wrong")).status_code == 401
+        assert client.get("/", auth=("admin", "demo-test-password")).status_code == 200
+
+
+def test_dashboard_prediction_uses_cloud_service_endpoint(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    """Predictions go to the configured service rather than dashboard localhost."""
+    import httpx
+    from fastapi.testclient import TestClient
+
+    from ui import app as dashboard
+
+    original = httpx.AsyncClient
+    calls = []
+
+    def predict(request: httpx.Request) -> httpx.Response:
+        calls.append(str(request.url))
+        return httpx.Response(
+            200,
+            json={
+                "model_version": "1",
+                "predictions": [{"default_probability": 0.2, "label": 0}],
+            },
+        )
+
+    monkeypatch.setattr(dashboard, "MODEL_API_URL", "http://model-api.serving.svc:8080")
+    monkeypatch.setattr(
+        dashboard.httpx,
+        "AsyncClient",
+        lambda **kwargs: original(transport=httpx.MockTransport(predict), **kwargs),
+    )
+    with TestClient(dashboard.app) as client:
+        result = client.post(
+            "/api/predict", json={"customer_id": "7", "env": "retrained"}
+        )
+        assert result.status_code == 200
+        assert result.json()["status"] == "success"
+        assert result.json()["default_probability"] == 0.2
+    assert calls == ["http://model-api.serving.svc:8080/predict"]
