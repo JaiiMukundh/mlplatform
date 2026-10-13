@@ -82,6 +82,7 @@ COPY --chown=10001:10001 scripts/model_release_local.sh scripts/deploy.sh script
 COPY --chown=10001:10001 infra/charts/model-api infra/charts/model-api
 COPY --chown=10001:10001 infra/jobs/gate-job.yaml infra/jobs/gate-job.yaml
 
+SHELL ["/bin/bash", "-o", "pipefail", "-c"]
 RUN curl -fsSL --retry 3 --retry-all-errors --connect-timeout 20 --max-time 180 -o /app/bin/kubectl "https://dl.k8s.io/release/${KUBECTL_VERSION}/bin/linux/amd64/kubectl" \
     && echo "${KUBECTL_SHA256}  /app/bin/kubectl" | sha256sum -c - \
     && chmod +x /app/bin/kubectl \

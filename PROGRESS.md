@@ -648,3 +648,10 @@ retries resolved it and the full image acceptance then passed. Azure lockfile
 was regenerated with init only to remove its unused random provider. No Azure
 resources were created, modified, or destroyed. User synopsis and ignored state
 remain untouched. Next action: push cleanup and observe GitHub CI before C1 closes.
+
+C1 CI follow-up: run 38434077853 passed Python/infrastructure/Actions/secret and
+security checks, then rejected Dockerfile lint DL4006. Removing the old lint
+exception overlooked the checksum pipes. Enable Bash pipefail explicitly; do
+not weaken hadolint. `make check-images` now passes Dockerfile lint, all six
+builds/imports, and retrain chart/job/script smoke on the corrected Dockerfile.
+Next action: publish the correction and observe CI before closing C1.
