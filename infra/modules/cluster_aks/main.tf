@@ -30,6 +30,8 @@ resource "azurerm_kubernetes_cluster" "this" {
   network_profile {
     network_plugin    = "kubenet"
     load_balancer_sku = "standard"
+    service_cidr      = "10.100.0.0/16"
+    dns_service_ip    = "10.100.0.10"
   }
 
   tags = var.tags
@@ -37,7 +39,8 @@ resource "azurerm_kubernetes_cluster" "this" {
 
 # Attach AKS Kubelet identity to ACR for pulling images without imagePullSecrets.
 resource "azurerm_role_assignment" "acr_pull" {
-  count = var.acr_id != "" ? 1 : 0
+  # The environment always provisions ACR. Keep count known before its ID exists.
+  count = 1
 
   principal_id                     = azurerm_kubernetes_cluster.this.kubelet_identity[0].object_id
   role_definition_name             = "AcrPull"

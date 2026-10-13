@@ -1,68 +1,89 @@
-name: cd
-
-# P4.3 — continuous deployment on the self-hosted laptop runner.
-# Triggered on push to main; re-runs quick CI checks first, then builds,
-# scans, publishes, deploys to staging, smokes, and rolls out to serving.
+name: azure
 on:
-  push:
-    branches: [main]
+  repository_dispatch:
+    types: [model-candidate-ready]
   workflow_dispatch:
-
+    inputs:
+      action:
+        description: "Plan is read-only; deploy creates billable Azure resources"
+        type: choice
+        options: [plan, deploy, verify, release, sleep, wake, destroy]
+        default: plan
+        required: true
+      version:
+        description: "MLflow candidate version (release only)"
+        type: string
+        default: ""
+      confirmation:
+        description: "For deploy/wake/destroy, type the action in uppercase to confirm"
+        type: string
+        default: ""
+permissions:
+  contents: read
+  actions: read
+  id-token: write
 concurrency:
-  group: cd-main
+  group: azure-platform
   cancel-in-progress: false
-
 jobs:
-  deploy:
-    runs-on: [self-hosted, mlp-local]
+  platform:
+    if: github.ref == 'refs/heads/main'
+    runs-on: ubuntu-24.04
+    environment: azure
+    timeout-minutes: 90
+    env:
+      ACTION: ${{ github.event_name == 'repository_dispatch' && 'release' || inputs.action }}
+      VERSION: ${{ github.event.client_payload.version || inputs.version }}
+      CONFIRMATION: ${{ inputs.confirmation }}
+      ARM_USE_OIDC: "true"
+      ARM_USE_AZUREAD: "true"
+      ARM_CLIENT_ID: ${{ vars.AZURE_CLIENT_ID }}
+      ARM_TENANT_ID: ${{ vars.AZURE_TENANT_ID }}
+      ARM_SUBSCRIPTION_ID: ${{ vars.AZURE_SUBSCRIPTION_ID }}
+      TF_IN_AUTOMATION: "true"
+      TF_INPUT: "false"
+      TF_STATE_ACCOUNT: ${{ vars.TF_STATE_ACCOUNT }}
+      TF_VAR_subscription_id: ${{ vars.AZURE_SUBSCRIPTION_ID }}
+      TF_VAR_location: ${{ vars.AZURE_LOCATION || 'indiasouthcentral' }}
+      TF_VAR_kubernetes_version: ${{ vars.AZURE_KUBERNETES_VERSION }}
+      TF_VAR_vm_size: ${{ vars.AZURE_VM_SIZE || 'Standard_B2as_v2' }}
+      TF_VAR_budget_email: ${{ vars.AZURE_BUDGET_EMAIL }}
+      TAG: ${{ github.sha }}
     steps:
-      - uses: actions/checkout@v7
-      - uses: astral-sh/setup-uv@v7
-      - name: Quick checks
-        run: |
-          ruff check .
-          terraform -chdir=infra/envs/local validate
-      - name: Build changed images
-        run: |
-          TAG="${GITHUB_SHA::8}"
-          docker buildx build --no-cache -f infra/docker/model_api.Dockerfile \
-            -t "localhost:5001/model-api:${TAG}" -t "localhost:5001/model-api:dev" .
-          for svc in drift_monitor retrain remediator; do
-            [ -f "infra/docker/${svc}.Dockerfile" ] && \
-              docker buildx build -f "infra/docker/${svc}.Dockerfile" \
-                -t "localhost:5001/${svc}:${TAG}" -t "localhost:5001/${svc}:dev" .
-          done
-          echo "TAG=${TAG}" >> "$GITHUB_ENV"
-      - name: trivy image scan
-        uses: aquasecurity/trivy-action@v0.34.0
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
         with:
-          image-ref: "localhost:5001/model-api:${{ env.TAG }}"
-          scan-type: image
-          severity: CRITICAL
-          exit-code: "1"
-      - name: Push to local registry
-        run: |
-          docker push "localhost:5001/model-api:${TAG}"
-          docker push "localhost:5001/model-api:dev"
-      - name: Deploy staging + smoke
-        run: |
-          ops/scripts/deploy.sh model-api-staging staging "${TAG}" --set service.nodePort=30081
-          ops/scripts/smoke.sh staging model-api-staging "http://localhost:8081"
-      - name: Promote to serving + smoke
-        run: |
-          ops/scripts/deploy.sh model-api serving "${TAG}"
-          ops/scripts/smoke.sh serving model-api "http://localhost:8080"
-      - name: Rollout summary
-        run: kubectl get deploy -n serving -o wide
-      - name: Rollback on failure
-        if: failure()
-        run: |
-          helm rollback model-api -n serving || true
-          helm rollback model-api-staging -n staging || true
-          kubectl get pods -n serving
-      - name: Upload logs on failure
-        if: failure()
-        uses: actions/upload-artifact@v4
+          persist-credentials: false
+      - name: Check configuration and explicit confirmation
+        run: make azure-check
+      - uses: azure/login@a641126d1b8aa4d1fa005f4f92df94a3a4c4c906 # v3.1.0
         with:
-          name: deploy-logs
-          path: /tmp/*.log
+          client-id: ${{ vars.AZURE_CLIENT_ID }}
+          tenant-id: ${{ vars.AZURE_TENANT_ID }}
+          subscription-id: ${{ vars.AZURE_SUBSCRIPTION_ID }}
+      - uses: astral-sh/setup-uv@1c37ad07a6a961277cf70c0d37d6f313000f5884 # v10.3.0
+        with:
+          version: "0.13.0"
+          python-version: "3.11.17"
+      - uses: hashicorp/setup-terraform@dfe3c3f87815947d99a8997f908cb6525fc44e9e # v4.0.1
+        with:
+          terraform_version: "1.16.5"
+          terraform_wrapper: false
+      - uses: azure/setup-helm@9bc31f4ebc9c6b171d7bfbaa5d006ae7abdb4310 # v5.0.1
+        with:
+          version: "v3.22.0"
+      - name: Install verified GitHub and Kubernetes clients
+        run: |
+          make tools TOOLSET="gh kubectl"
+          echo "$HOME/.local/bin" >> "$GITHUB_PATH"
+      - name: Install locked application dependencies
+        if: inputs.action == 'deploy'
+        run: uv sync --frozen
+      - name: Require successful CI for this exact commit
+        if: inputs.action == 'deploy'
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          conclusion="$(gh api "repos/$GITHUB_REPOSITORY/actions/workflows/ci.yml/runs?head_sha=$GITHUB_SHA&status=completed" --jq '.workflow_runs[0].conclusion')"
+          test "$conclusion" = success || { echo "CI must succeed for $GITHUB_SHA before deployment" >&2; exit 1; }
+      - name: Run the selected cloud operation
+        run: make azure

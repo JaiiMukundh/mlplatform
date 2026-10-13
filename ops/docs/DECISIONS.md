@@ -344,3 +344,51 @@ Architecture and implementation decisions are recorded chronologically.
   AKS kubelets — verified via upstream issue). B2s default with B2as_v2
   (2/8GB) documented fallback for retiring regions. Student quotas cannot
   be raised, so preflight fails fast instead.
+
+## 2026-10-13 — One deployment implementation and cloud-hosted automation
+
+Replace three laptop workflows with two GitHub-hosted workflows. One 148-line
+Azure script replaces five separate lifecycle/deployment scripts; one Dockerfile
+reuses common stages for six image targets; one training Job and script support
+both registries. Remove three image-only Azure overlays and the duplicate train
+manifest. Keep cloud release images/tag/config explicit in retrain Jobs so
+staging/prod never reset to localhost registries or NodePort production service.
+The local UI/demo harness remains functional and cloud UI hosting is the next
+Azure phase. Consolidate duplicate Azure architecture/runbook material into the
+port guide, preserving topology, state/identity setup, and honest storage seams.
+
+GitHub's private-repository plan rejected required-reviewer protection (HTTP
+422). Use a main-only environment and manual workflow selection with explicit
+uppercase confirmation for deploy/wake/destroy; never claim reviewer protection
+exists. Deployment requires successful CI for the exact commit. Optional model
+repository dispatches only launch the existing in-cluster release path. Terraform
+uses private Blob backend state rather than ephemeral runner files or public
+artifacts. Environment identities/backend still require the human Azure bootstrap.
+
+Fix parity tests' dependence on an ignored laptop data file by using deterministic
+synthetic Parquet encoding fixtures; retain captured real Feast bytes and all
+bit-exact assertions. All real-data training tests remain unchanged. Remove unused
+private synthetic-label generation helpers; real UCI data generation is retained.
+Runtime environments install from frozen locks. Helm 3 is retained deliberately
+for the proven atomic-deploy semantics while other new CI tools/actions use latest
+stable versions verified from official release/registry sources.
+
+A clean checkout also exposed a pre-existing ignore-rule bug: `data/` hid
+`core/ml/data/`, leaving its three source files untracked. Anchor generated-data
+ignores at repository root and narrow Ruff's generated-directory exclusions so
+the package is both versioned and linted. Vendor stable Kubernetes JSON schemas
+in one compressed bundle to keep strict checks independent of live schema
+downloads; operator schemas still come from the exact chart being installed.
+
+The model-api image scan identified five critical Debian 12 findings, including
+unfixed SQLite/zlib packages. Use the official digest-pinned Python 3.11.17 slim
+Trixie image (Debian 13), whose base scan has zero critical findings, and retain
+the model-api image vulnerability gate. Do not add blanket vulnerability ignores
+or relax the security acceptance check. All six targets must rebuild/import-smoke
+and model-api must pass the full image scan on the new base. Python remains 3.11.
+
+Keep the mandatory ACR attachment's count static so a fresh Terraform plan does
+not depend on a registry ID that is only known after creation. Preserve its
+indexed resource address. Give AKS a service CIDR outside the VNet address space
+instead of relying on overlapping Azure defaults. Azure execution is still
+unverified and reserved for the next cloud phase.

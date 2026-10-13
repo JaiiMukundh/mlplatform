@@ -69,5 +69,8 @@ def dispatch_candidate(
             )
         return "github"
     LOGGER.info("running local release", extra={"version": str(version), "mode": mode})
-    subprocess.run(["bash", release_script, str(version)], check=True, cwd=workdir)
+    command = ["bash", release_script, str(version)]
+    if image_tag := os.environ.get("IMAGE_TAG"):
+        command.append(image_tag)
+    subprocess.run(command, check=True, cwd=workdir)
     return "local"

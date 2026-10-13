@@ -5,7 +5,7 @@ Checkboxes are changed only after the corresponding acceptance check has been ob
 ## GitHub and Azure migration — 2026-10-13
 
 - [x] G1 Compact infrastructure files and preserve the working application. Acceptance: `make lint test check-infra secret-scan`.
-- [ ] G2 Replace laptop Actions with pinned GitHub-hosted CI and manually approved Azure CD. Acceptance: `make check-actions check-infra lint test secret-scan` plus cloud deployment script contract tests.
+- [x] G2 Replace laptop Actions with pinned GitHub-hosted CI and manually approved Azure CD. Acceptance: `make check-actions check-infra lint test secret-scan` plus cloud deployment script contract tests.
 - [ ] G3 Push the verified repository to GitHub and observe CI. Acceptance: remote commit matches local HEAD and GitHub CI succeeds.
 
 ## P0 — Foundations

@@ -16,15 +16,16 @@ data:
           "name": "retrain",
           "image": "{{ .Values.image.repository }}:{{ .Values.image.tag }}",
           "imagePullPolicy": "{{ .Values.image.pullPolicy }}",
-          "resources": {
-            "requests": {"cpu": "500m", "memory": "1Gi"},
-            "limits": {"cpu": "4", "memory": "4Gi"}
-          },
+          "resources": {{ .Values.resources | toJson }},
           "env": [
             {"name": "MLFLOW_TRACKING_URI", "value": {{ .Values.env.MLFLOW_TRACKING_URI | quote }} },
             {"name": "FEAST_S3_ENDPOINT_URL", "value": {{ .Values.env.FEAST_S3_ENDPOINT_URL | quote }} },
             {"name": "TRIGGER", "value": "drift"},
             {"name": "TRIGGER_MODE", "value": {{ .Values.env.TRIGGER_MODE | quote }} },
+            {"name": "DEPLOY_TARGET", "value": {{ .Values.env.DEPLOY_TARGET | quote }} },
+            {"name": "MODEL_API_REPOSITORY", "value": {{ .Values.env.MODEL_API_REPOSITORY | quote }} },
+            {"name": "TRAINING_IMAGE", "value": {{ .Values.env.TRAINING_IMAGE | quote }} },
+            {"name": "IMAGE_TAG", "value": {{ .Values.env.IMAGE_TAG | quote }} },
             {"name": "STAGING_URL", "value": {{ .Values.env.STAGING_URL | quote }} },
             {"name": "PROD_URL", "value": {{ .Values.env.PROD_URL | quote }} },
             {"name": "STAGING_SMOKE_URL", "value": {{ .Values.env.STAGING_SMOKE_URL | quote }} },

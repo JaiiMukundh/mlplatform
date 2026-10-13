@@ -51,3 +51,55 @@ Observed cluster versions (kind v0.33.0): Kubernetes v1.37.0, containerd 2.3.4, 
 Debian GNU/Linux 13 (trixie) node images.
 | mlflow server | `mlflow 3.16.1`, `psycopg[binary] 3.3.6`, `boto3 1.43.107` (image `localhost:5001/mlflow:dev`) | P6.1 |
 | training/feast image | `feast 0.66.0`, `mlflow 3.16.1`, `scikit-learn 1.9.1`, `pyarrow 25.0.1`, `joblib 1.6.0`, `boto3 1.43.106` (compatible with aiobotocore 3.9.2; PyPI checked 2026-10-03), `redis 8.1.0`, `s3fs 2026.9.0`, `psycopg[binary] 3.3.6` (image `localhost:5001/training:dev`; transitive lock `requirements/training.txt`) | P6.2 |
+
+## GitHub migration pins — verified 2026-10-13
+
+Action tags and commit SHAs were resolved from each maintainer's GitHub Releases
+and Git refs API, not inferred from training data. CLI assets were verified
+against the official release SHA256 digests. Existing runtime package/image pins
+are retained to preserve the tested model stack; training transitives are locked.
+
+| Action | Stable tag | Exact commit |
+|---|---|---|
+| [actions/checkout](https://github.com/actions/checkout/releases/tag/v7.0.1) | `v7.0.1` | `3d3c42e5aac5ba805825da76410c181273ba90b1` |
+| [astral-sh/setup-uv](https://github.com/astral-sh/setup-uv/releases/tag/v10.3.0) | `v10.3.0` | `1c37ad07a6a961277cf70c0d37d6f313000f5884` |
+| [hashicorp/setup-terraform](https://github.com/hashicorp/setup-terraform/releases/tag/v4.0.1) | `v4.0.1` | `dfe3c3f87815947d99a8997f908cb6525fc44e9e` |
+| [azure/setup-helm](https://github.com/azure/setup-helm/releases/tag/v5.0.1) | `v5.0.1` | `9bc31f4ebc9c6b171d7bfbaa5d006ae7abdb4310` |
+| [azure/login](https://github.com/azure/login/releases/tag/v3.1.0) | `v3.1.0` | `a641126d1b8aa4d1fa005f4f92df94a3a4c4c906` |
+
+| CLI | Exact version | Official source |
+|---|---|---|
+| Terraform | 1.16.5 (Actions) | https://github.com/hashicorp/terraform/releases/tag/v1.16.5 |
+| uv | 0.13.0 (Actions and image builder) | https://github.com/astral-sh/uv/releases/tag/0.13.0 |
+| Helm | 3.22.0 | https://github.com/helm/helm/releases/tag/v3.22.0 |
+| GitHub CLI | 2.102.0 (local auth/push) | https://github.com/cli/cli/releases/tag/v2.102.0 |
+| gitleaks | v8.30.1 | https://github.com/gitleaks/gitleaks/releases/download/v8.30.1/gitleaks_8.30.1_linux_x64.tar.gz |
+| actionlint | v1.7.12 | https://github.com/rhysd/actionlint/releases/download/v1.7.12/actionlint_1.7.12_linux_amd64.tar.gz |
+| hadolint | v2.15.1 | https://github.com/hadolint/hadolint/releases/download/v2.15.1/hadolint-linux-x86_64 |
+| kubeconform | v0.8.0 | https://github.com/yannh/kubeconform/releases/download/v0.8.0/kubeconform-linux-amd64.tar.gz |
+| trivy | v0.75.0 | https://github.com/aquasecurity/trivy/releases/download/v0.75.0/trivy_0.75.0_Linux-64bit.tar.gz |
+
+Helm 4.3.0 is the newest stable major; 3.22.0 is the maintained Helm 3 stable
+release used here because the proven charts/scripts rely on Helm 3's atomic
+upgrade behavior. Its pin is deliberate. GitHub-hosted Ubuntu uses the fixed
+`ubuntu-24.04` OS label; GitHub manages runner image patch updates. AKS has no
+hardcoded version: `AZURE_KUBERNETES_VERSION` must be an exact region-supported
+patch version selected before provisioning. No cloud version was guessed.
+
+Kubernetes JSON schemas are vendored as one bundle for offline strict validation:
+`infra/charts/kubernetes-schemas-1.34.12.tgz` from the latest stable schema catalog
+at [commit 817113f21a2643311cbc3e992bb44ffe1c416c54](https://github.com/yannh/kubernetes-json-schema/tree/817113f21a2643311cbc3e992bb44ffe1c416c54/v1.34.12-standalone-strict).
+Bundle SHA256: `23954750784317c54e3f744c8c290d24173b522e6766d9e7eaf5b183c0ce4abf`. Operator CRD schemas come directly from the vendored
+Prometheus chart. No resources are skipped for missing schemas.
+
+Cloud kubectl is pinned to v1.37.1; its SHA256 (`65691ff77eb6fa44c908b77a1082c9f092c3b9733b5cefabec0d1104890e21a8`)
+was retrieved from the official dl.k8s.io release. Retrain's Helm archive SHA256
+(`1e4ab49e429626cf6c6958d914248b78c9730803c2751b87627e171dc800e7bb`)
+was retrieved from get.helm.sh. Both are verified in the image build. GitHub CLI
+and kubectl are installed from the same checksum-pinned tool interface on Actions.
+
+Container security scan found five critical Debian findings in the previous
+Python 3.11.15 base. Docker Hub's official `library/python` tags API verified the
+latest maintained 3.11 release: `python:3.11.17-slim-trixie@sha256:e88e9763f943ec1834f992a4b51e0f24500486803e8bc534e5767af9ea65f6ce`.
+All images and CI now use Python 3.11.17. Application dependency pins are retained.
+Official source: https://hub.docker.com/_/python (tag API checked 2026-10-13).

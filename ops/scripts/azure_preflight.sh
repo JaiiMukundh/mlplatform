@@ -94,4 +94,4 @@ if problems:
 EOF
 echo "quota clear."
 
-echo "PREFLIGHT PASS: safe to run the human apply (bash ops/scripts/deploy_azure_full.sh)"
+echo "PREFLIGHT PASS: safe to run the human apply (CONFIRMATION=DEPLOY make azure ACTION=deploy)"

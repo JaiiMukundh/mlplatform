@@ -15,7 +15,9 @@ GATE_YAML="${REPO_ROOT}/infra/deploy/gate/gate-job.yaml"
 RUN_JOB_SCRIPT="${REPO_ROOT}/ops/scripts/run_job.sh"
 [[ ! -f "${RUN_JOB_SCRIPT}" ]] && RUN_JOB_SCRIPT="scripts/run_job.sh"
 
-sed -e "s/__CANDIDATE__/${VERSION}/" "${GATE_YAML}" >"${RENDERED}"
+sed -e "s/__CANDIDATE__/${VERSION}/" \
+  -e "s|localhost:5001/training:dev|${TRAINING_IMAGE:-localhost:5001/training:dev}|g" \
+  "${GATE_YAML}" >"${RENDERED}"
 LOGS="$(mktemp)"
 trap 'rm -f "${LOGS}"' EXIT
 if JOB_TIMEOUT_SECONDS="${JOB_TIMEOUT_SECONDS:-900}" bash "${RUN_JOB_SCRIPT}" \

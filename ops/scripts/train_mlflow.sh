@@ -19,7 +19,8 @@ TRAIN_YAML="${REPO_ROOT}/infra/deploy/training/train-job.yaml"
 RUN_JOB_SCRIPT="${REPO_ROOT}/ops/scripts/run_job.sh"
 [[ ! -f "${RUN_JOB_SCRIPT}" ]] && RUN_JOB_SCRIPT="scripts/run_job.sh"
 
-sed -e "s/__TRIGGER__/${TRIGGER}/" -e "s/__GIT_SHA__/${GIT_SHA}/" \
+sed -e "s|localhost:5001/training:dev|${TRAINING_IMAGE:-localhost:5001/training:dev}|g" \
+  -e "s/__TRIGGER__/${TRIGGER}/" -e "s/__GIT_SHA__/${GIT_SHA}/" \
   -e "s/__SHUFFLE_FLAG__/${SHUFFLE_FLAG}/" \
   "${TRAIN_YAML}" >"${RENDERED}"
 JOB_TIMEOUT_SECONDS="${JOB_TIMEOUT_SECONDS:-1200}" bash "${RUN_JOB_SCRIPT}" \

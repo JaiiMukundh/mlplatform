@@ -29,7 +29,46 @@ fmt: ## Format all implemented Python code.
 test: ## Run the unit test suite and coverage gate.
 	@uv run pytest --cov=mlp_common --cov=model_api --cov-report=term-missing
 
-.PHONY: check-infra secret-scan github-login github-push
+.PHONY: check-infra secret-scan github-login github-push tools check-actions check-charts security azure azure-check
+tools: ## Install checksum-verified Linux CI tools (TOOLSET="...").
+	@python3 ops/scripts/tools.py $(or $(TOOLSET),actionlint gitleaks hadolint kubeconform trivy)
+
+check-actions: ## Validate GitHub Actions workflows.
+	@actionlint -shellcheck=""
+
+check-charts: ## Validate rendered Kubernetes manifests and vendored CRD schemas.
+	@uv run python ops/scripts/tools.py check-charts
+
+.PHONY: check-images
+check-images: ## Build and import-smoke all six container targets without deploying.
+	@hadolint infra/docker/Dockerfile
+	@for service in model-api drift-monitor remediator training retrain mlflow; do \
+		docker build --file infra/docker/Dockerfile --target "$$service" --tag "mlp-check-$$service" . || exit 1; \
+	done
+	@$(MAKE) smoke-images
+
+.PHONY: smoke-images
+smoke-images: ## Import real service entry points and ensure models/data are absent.
+	@for service in model-api drift-monitor remediator training retrain mlflow; do \
+		module="$${service//-/_}.main"; \
+		case "$$service" in training) module="feast, ml.train";; mlflow) module=mlflow;; esac; \
+		docker run --rm --entrypoint python "mlp-check-$$service" -c "import $$module; print('$$service entry point OK')" || exit 1; \
+	done
+	@docker run --rm --entrypoint sh mlp-check-model-api -c 'test ! -e /app/data/features.parquet && test ! -e /app/artifacts/model.joblib'
+
+security: ## Reject critical dependency vulnerabilities; report IaC findings.
+	@trivy fs --scanners vuln --file-patterns "pip:training.txt" --severity CRITICAL --exit-code 1 --skip-dirs .venv,.terraform --skip-files PROGRESS.md .
+	@trivy config --severity HIGH,CRITICAL --exit-code 0 infra
+
+.PHONY: image-scan
+image-scan: ## Reject critical vulnerabilities in the model-api smoke-test image.
+	@trivy image --scanners vuln --severity CRITICAL --exit-code 1 mlp-check-model-api
+
+azure-check: ## Check cloud workflow configuration and human confirmation without Azure calls.
+	@bash ops/scripts/azure.sh check
+
+azure: ## Run a manually selected cloud operation (ACTION=plan by default).
+	@bash ops/scripts/azure.sh $(or $(ACTION),plan)
 check-infra: ## Validate Terraform, Helm charts, and shell syntax without deploying.
 	@terraform fmt -check -recursive infra
 	@for env in local azure; do terraform -chdir=infra/envs/$$env init -backend=false -input=false -lockfile=readonly && terraform -chdir=infra/envs/$$env validate || exit 1; done
@@ -47,14 +86,18 @@ github-login: ## Authenticate GitHub CLI and Git without sharing credentials.
 github-push: ## Push the verified current branch to origin without force.
 	@git push --set-upstream origin HEAD
 
+.PHONY: lock-training
+lock-training: ## Refresh the fully pinned training environment while preserving constraints.
+	@uv pip compile core/requirements/training.in --python-version 3.11 --constraint core/requirements/training.txt --no-header --no-annotate --output-file core/requirements/training.txt
+
 build: ## Build local service images.
-	@hadolint infra/docker/model_api.Dockerfile
-	@docker build --file infra/docker/model_api.Dockerfile \
+	@hadolint infra/docker/Dockerfile
+	@docker build --file infra/docker/Dockerfile --target model-api \
 		--tag localhost:5001/model-api:dev .
 
 build-training: ## Build and push the training/Feast image.
-	@hadolint infra/docker/training.Dockerfile
-	@docker build --file infra/docker/training.Dockerfile \
+	@hadolint infra/docker/Dockerfile
+	@docker build --file infra/docker/Dockerfile --target training \
 		--tag localhost:5001/training:dev .
 	@docker push localhost:5001/training:dev
 
@@ -77,10 +120,10 @@ train-mlflow: build-training ## Train via Feast and register in MLflow (P6.4).
 	@bash ops/scripts/train_mlflow.sh
 
 gate-candidate: build-training ## Score a candidate version (VERSION=N) in-cluster (P7.1).
-	@VERSION="${VERSION:?set VERSION=N}" bash ops/scripts/run_gate.sh
+	@VERSION="$${VERSION:?set VERSION=N}" bash ops/scripts/run_gate.sh
 
 model-release-local: ## Release a candidate to prod (VERSION=N, TAG=dev) (P7.3).
-	@bash ops/scripts/model_release_local.sh "${VERSION:?set VERSION=N}" "${TAG:-dev}"
+	@bash ops/scripts/model_release_local.sh "$${VERSION:?set VERSION=N}" "$${TAG:-dev}"
 
 deploy-monitor: ## Build and deploy the drift monitor and retrain platform (P8).
 	@bash ops/scripts/deploy_monitor.sh
@@ -93,7 +136,7 @@ up: ## Build the complete local platform from scratch.
 	@terraform -chdir=infra/envs/local init
 	@terraform -chdir=infra/envs/local apply -auto-approve \
 		-target=module.registry -target=module.cluster
-	@docker build --file infra/docker/mlflow.Dockerfile --tag localhost:5001/mlflow:dev . && docker push localhost:5001/mlflow:dev
+	@docker build --file infra/docker/Dockerfile --target mlflow --tag localhost:5001/mlflow:dev . && docker push localhost:5001/mlflow:dev
 	@terraform -chdir=infra/envs/local apply -auto-approve
 	@bash ops/scripts/bootstrap-post.sh
 
@@ -111,7 +154,7 @@ deploy: ## Deploy model-api to the local cluster.
 forward: ## Open local port-forwards when NodePorts are unavailable.
 	@bash ops/scripts/forward.sh
 
-seed-data: ## Generate deterministic synthetic model data.
+seed-data: ## Prepare deterministic UCI Taiwan feature snapshots.
 	@uv run python -m ml.data.generate --out data --seed 42
 
 train: ## Train and evaluate a model locally.
@@ -142,58 +185,29 @@ azure-validate: ## Validate Terraform Azure configuration syntax.
 	@terraform -chdir=infra/envs/azure validate
 
 azure-plan: ## Run Terraform plan against Azure (requires Azure credentials or az login).
-	@terraform -chdir=infra/envs/azure plan
+	@$(MAKE) azure ACTION=plan
 
-azure-apply: ## [HUMAN] Apply Azure infrastructure (creates billable resources).
-	@echo "========================================================================"
-	@echo "STOP: Azure apply creates billable cloud resources."
-	@echo "Per AGENTS.md Rule 12 and P9.6, this step must be run by a HUMAN."
-	@echo "Follow the step-by-step checklist in ops/docs/azure-port.md."
-	@echo "When ready, execute manually: bash ops/scripts/deploy_azure.sh"
-	@echo "========================================================================"
-	@exit 1
+# Compatibility targets share the single Azure operations script.
+azure-apply deploy-azure deploy-azure-full: ## [HUMAN] Deploy Azure (CONFIRMATION=DEPLOY).
+	@$(MAKE) azure ACTION=deploy
 
-azure-destroy: ## Tear down complete Azure infrastructure to stop billing.
-	@bash ops/scripts/destroy_azure.sh
+azure-destroy destroy-azure: ## [HUMAN] Destroy Azure (CONFIRMATION=DESTROY).
+	@$(MAKE) azure ACTION=destroy
 
-deploy-azure: ## Run complete Azure deployment (Terraform + rsync + kind).
-	@bash ops/scripts/deploy_azure.sh
-
-destroy-azure: ## Tear down complete Azure deployment to stop billing.
-	@bash ops/scripts/destroy_azure.sh
-
-azure-preflight: ## Read-only Azure eligibility check (needs az login, spends nothing).
+azure-preflight: ## Read-only Azure eligibility check; spends nothing.
 	@bash ops/scripts/azure_preflight.sh
 
-deploy-azure-full: ## [HUMAN] Full platform on AKS incl. training (billable).
-	@echo "========================================================================"
-	@echo "STOP: Full AKS deployment creates billable cloud resources."
-	@echo "Per AGENTS.md Rule 12 this step must be run by a HUMAN."
-	@echo "First: make azure-preflight (or bash ops/scripts/azure_preflight.sh)."
-	@echo "When ready, execute manually: TAG=v1.0.0 bash ops/scripts/deploy_azure_full.sh"
-	@echo "========================================================================"
-	@exit 1
+train-azure: ## Train on the connected AKS cluster using the shared training Job.
+	@TRAINING_IMAGE="$${TRAINING_IMAGE:?set TRAINING_IMAGE to the deployed ACR training image and tag}" bash ops/scripts/train_mlflow.sh
 
-train-azure: ## [HUMAN] Train on AKS via Feast+MLflow (needs AKS context).
-	@echo "STOP: runs a training Job on billable AKS. Execute manually:"
-	@echo "  TAG=v1.0.0 TRIGGER=manual bash ops/scripts/train_azure.sh"
-	@exit 1
+azure-sleep: ## [HUMAN] Stop AKS; disks and managed services still bill.
+	@$(MAKE) azure ACTION=sleep
 
-azure-sleep: ## [HUMAN] Stop AKS (compute ~$$0/hr, registry/state kept).
-	@echo "STOP: changes billable state. Execute manually:"
-	@echo "  bash ops/scripts/azure_compute.sh sleep"
-	@exit 1
+azure-wake: ## [HUMAN] Start AKS (CONFIRMATION=WAKE).
+	@$(MAKE) azure ACTION=wake
 
-azure-wake: ## [HUMAN] Start AKS again after sleep.
-	@echo "STOP: changes billable state. Execute manually:"
-	@echo "  bash ops/scripts/azure_compute.sh wake"
-	@exit 1
-
-azure-kill-compute: ## [HUMAN] Destroy AKS only (ACR/Blob/DB persist).
-	@echo "STOP: destroys the cluster; in-cluster state is lost (see azure-port.md)."
-	@echo "Execute manually after reviewing the plan:"
-	@echo "  terraform -chdir=infra/envs/azure plan -destroy -target=module.cluster"
-	@echo "  terraform -chdir=infra/envs/azure destroy -target=module.cluster"
+azure-kill-compute: ## Explain the safer whole-cluster sleep option.
+	@echo "Use make azure-sleep to retain in-cluster data; targeted destruction is not automated."
 	@exit 1
 
 ui: ## Launch the Central Management and Demo Dashboard (http://localhost:8050).

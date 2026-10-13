@@ -581,9 +581,26 @@ Only observed command output is recorded here.
 - ORPHAN CLEANUP (2026-10-13) — deleted orphaned NIC + unattached OS disk in MLP-CLOUD-RG per human request. Old RG is now completely empty (verified via az resource list).
 - AZURE ARCHITECTURE LOCKED (2026-10-13) — `ops/docs/azure-architecture.md`: full cloud setup (account/quotas, VNet/NSG, AKS fit math ~2.2/3.8 CPU, namespace map, 4 flows, OIDC CD decisions, kill-switch matrix, cost table, access map, 5 honest seams). No code touched.
 
-- G1 PASS (2026-10-13) — Published migration preparation and compacted Terraform modules from 38 HCL files to 10, preserving module interfaces/resource addresses. Existing Azure-only changes included; unrelated `MLPlatform_Synopsis.docx` excluded. AzureRM 5.9.0 pinned from official registry; migrated AKS provisioning profile, DNS identity/link fields, and subnet endpoint schema. Terraform locks now tracked; rendered Feast secret path corrected in gitignore.
+- G1 PASS (2026-10-13) — Committed migration preparation and compacted Terraform modules from 39 HCL files to 10, preserving module interfaces/resource addresses. Existing Azure-only changes included; unrelated `MLPlatform_Synopsis.docx` excluded. AzureRM 5.9.0 pinned from official registry; migrated AKS provisioning profile, DNS identity/link fields, and subnet endpoint schema. Terraform locks now tracked; rendered Feast secret path corrected in gitignore.
   - `make lint`: All checks passed; 94 files already formatted.
   - `make test`: 83 passed, 3 skipped (cluster e2e intentionally disabled); coverage 84.29% >= 80%.
   - `make check-infra`: local and Azure Terraform validation Success; fmt clean; 9 Helm charts linted, zero failed; shell syntax clean.
   - `make secret-scan`: 84 commits and staged changes scanned; no leaks. Ignored local Terraform backups contain credentials and were never staged.
   - Next action: consolidate GitHub CI/CD and overlapping Azure deployment scripts, then push and observe cloud CI. No Azure resource creation executed.
+
+- G2 INTERIM (2026-10-13) — Two GitHub-hosted workflows prepared; Azure environment exists with a main-only branch policy and read-only default Actions token permissions. Reviewer/wait-timer rules are unavailable on this private repo's plan (HTTP 422), so cloud changes use manual action confirmation.
+  - Python 3.11.17 checks: 90 passed, 3 cluster e2e skipped; coverage 84.29%; 98 Python files formatted/linted.
+  - Clean staged Git snapshot: 90 passed, 3 skipped, 84.29% coverage; recovered three source files formerly hidden by unanchored data ignore.
+  - Terraform local/Azure validation Success; 9 charts linted; all 48 rendered resources strictly valid, zero skipped, using vendored standard/operator schemas.
+  - Trivy dependency scan: root uv.lock and training lock both zero critical vulnerabilities. IaC is report-only and still has findings; do not call this production hardened.
+  - All six initial shared-Dockerfile images imported successfully. Image scan found five critical Debian 12 base findings; latest official Python 3.11.17 slim Trixie base has zero critical findings. Rebuilding all targets on that base before committing.
+  - Next action: finish final six-target rebuild and model-api image scan, commit G2, then push and observe GitHub CI. No Azure provisioning/deployment executed.
+
+- G2 PASS (2026-10-13) — Consolidated six Dockerfiles into one (six targets), five Azure scripts into one operations script plus the shared training path, two training manifests into one, and three workflows into two GitHub-hosted workflows. Removed image-only overlays and duplicate Azure docs; preserved local scripts and the in-cluster gate/release pipeline. Tracked file count is 224 vs 250 at turn start, including new tests, locked providers, schema bundle, and recovered source files.
+  - `make lint test`: 98 files formatted/linted; 91 passed, 3 cluster e2e skipped; coverage 84.29% >= 80%. Fresh staged Git snapshot also passed without laptop data.
+  - `make check-infra check-actions check-charts`: both Terraform envs valid; 9 charts linted; 48 strict manifests valid, zero skipped; Actions and shell syntax clean.
+  - `make check-images` and `make smoke-images`: all six rebuilt on digest-pinned Python 3.11.17/Trixie; all real service entry points + Feast/training imported; image carries no baked-in model/data.
+  - `make image-scan`: zero critical model-api image vulnerabilities; five old Debian 12 findings fixed via the base upgrade, no blanket ignores.
+  - `make security`: uv.lock and training.txt each zero critical dependency findings; infrastructure findings remain report-only. `make secret-scan`: Git history/staged changes clean.
+  - GitHub environment azure: main-only branch policy confirmed; default workflow token read-only. Reviewer/wait-timer protection unavailable on account plan; explicit manual confirmation documented. OIDC/state variables are intentionally not fabricated.
+  - Next action: commit/push the verified code to GitHub, then observe actual CI. Azure bootstrap, dashboard hosting, and cloud e2e are next-phase work; no Azure resources created.

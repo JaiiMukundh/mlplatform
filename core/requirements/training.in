@@ -7,3 +7,5 @@ boto3==1.43.106
 redis==8.1.0
 s3fs==2026.9.0
 psycopg[binary]==3.3.6
+pydantic==2.13.5
+pydantic-settings==2.15.0

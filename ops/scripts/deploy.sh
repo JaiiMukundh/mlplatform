@@ -42,13 +42,24 @@ CHART_DIR="${REPO_ROOT}/infra/deploy/charts/model-api"
 SMOKE_SCRIPT="${REPO_ROOT}/ops/scripts/smoke.sh"
 [[ -f "${SMOKE_SCRIPT}" ]] || SMOKE_SCRIPT="scripts/smoke.sh"
 
+HELM_ARGS=()
+if [[ "${DEPLOY_TARGET:-local}" == azure ]]; then
+  HELM_ARGS+=(-f "${CHART_DIR}/values-azure.yaml")
+  [[ "${NAMESPACE}" != staging ]] || HELM_ARGS+=(--set service.type=ClusterIP)
+fi
+if [[ -n "${MODEL_API_REPOSITORY:-}" ]]; then
+  HELM_ARGS+=(--set "image.repository=${MODEL_API_REPOSITORY}")
+fi
+
 helm upgrade --install "${RELEASE}" "${CHART_DIR}" \
   --namespace "${NAMESPACE}" --create-namespace \
   --set "image.tag=${IMAGE_TAG}" \
+  "${HELM_ARGS[@]}" \
   "$@" \
   --atomic --wait --timeout 5m
 
 echo "release ${RELEASE} deployed; running smoke checks"
+[[ "${SKIP_SMOKE:-0}" != 1 ]] || exit 0
 if [[ "${RELEASE}" == "model-api-staging" ]]; then
   # The staging release serves host port 8081 (NodePort 30081); the default
   # smoke URL would silently test production instead. Overridable for

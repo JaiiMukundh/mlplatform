@@ -29,9 +29,23 @@ from model_api.providers.feast_features import (
 )
 
 REPO_ROOT = Path(__file__).resolve().parents[1]
-LATEST_PATH = REPO_ROOT / "data" / "features_latest.parquet"
 
 FEATURE_VIEW = "customer_features"
+
+
+@pytest.fixture
+def snapshot(tmp_path: Path) -> pd.DataFrame:
+    """Use deterministic synthetic encoding fixtures, independent of local data."""
+    rng = np.random.default_rng(42)
+    frame = pd.DataFrame(
+        rng.normal(0, 100_000, size=(250, len(MODEL_FEATURES))),
+        columns=MODEL_FEATURES,
+    )
+    frame.insert(0, "customer_id", np.arange(1, 251))
+    path = tmp_path / "features_latest.parquet"
+    frame.to_parquet(path, index=False)
+    return pd.read_parquet(path)
+
 
 #: Raw hash bytes captured live for customer 1 (2026-10-03), with the values
 #: Feast's own reader returned for the same entity.
@@ -161,9 +175,9 @@ def test_decode_value_rejects_unknown_tags() -> None:
         decode_value(bytes.fromhex("481234"))
 
 
-def test_reader_matches_offline_snapshot() -> None:
+def test_reader_matches_offline_snapshot(snapshot: pd.DataFrame) -> None:
     """200 random customers: serving decode equals the snapshot bit-for-bit."""
-    latest = pd.read_parquet(LATEST_PATH)
+    latest = snapshot
     sample = latest.sample(n=200, random_state=42).sort_values("customer_id")
     source = FeastFeatureSource(FakeRedis(_canned_store(sample)))
 
@@ -178,9 +192,9 @@ def test_reader_matches_offline_snapshot() -> None:
             assert actual == np.float32(expected)
 
 
-def test_unknown_ids_are_excluded_not_fabricated() -> None:
+def test_unknown_ids_are_excluded_not_fabricated(snapshot: pd.DataFrame) -> None:
     """IDs absent from the online store come back missing for the 404 path."""
-    latest = pd.read_parquet(LATEST_PATH).head(3)
+    latest = snapshot.head(3)
     source = FeastFeatureSource(FakeRedis(_canned_store(latest)))
     known = int(latest.iloc[0]["customer_id"])
 

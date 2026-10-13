@@ -16,6 +16,10 @@ env:
   MLFLOW_TRACKING_URI: http://mlflow.data.svc:5000
   FEAST_S3_ENDPOINT_URL: http://minio.data.svc:9000
   TRIGGER_MODE: local
+  DEPLOY_TARGET: local
+  MODEL_API_REPOSITORY: localhost:5001/model-api
+  TRAINING_IMAGE: localhost:5001/training:dev
+  IMAGE_TAG: dev
   # In-cluster service URLs for the release scripts (host NodePorts outside).
   STAGING_URL: http://model-api-staging.staging.svc:8080
   PROD_URL: http://model-api.serving.svc:8080
@@ -27,5 +31,5 @@ resources:
     cpu: 500m
     memory: 1Gi
   limits:
-    cpu: "4"
-    memory: 4Gi
+    cpu: 1900m
+    memory: 3Gi

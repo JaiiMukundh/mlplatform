@@ -28,9 +28,12 @@ variable "vnet_cidr" {
 }
 
 variable "kubernetes_version" {
-  description = "AKS Kubernetes version."
+  description = "Exact supported AKS patch version, selected from the target region before deployment."
   type        = string
-  default     = "1.30"
+  validation {
+    condition     = can(regex("^[0-9]+\\.[0-9]+\\.[0-9]+$", var.kubernetes_version))
+    error_message = "Set an exact AKS patch version supported in your region; no obsolete or floating default is selected."
+  }
 }
 
 variable "node_count" {

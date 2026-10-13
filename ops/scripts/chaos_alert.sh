@@ -21,7 +21,7 @@ done
 
 echo "[0s] starting traffic (${RPS} rps) in background"
 source .venv/bin/activate 2>/dev/null || true
-python scripts/traffic.py --rps "${RPS}" --duration "${WAIT_SECONDS}" --url http://localhost:8080 --max-error-rate 1.0 > /tmp/chaos-traffic.log 2>&1 &
+python ops/scripts/traffic.py --rps "${RPS}" --duration "${WAIT_SECONDS}" --url http://localhost:8080 --max-error-rate 1.0 > /tmp/chaos-traffic.log 2>&1 &
 TRAFFIC_PID=$!
 
 fired_at=""

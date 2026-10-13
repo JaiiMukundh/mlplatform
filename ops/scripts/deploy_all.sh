@@ -7,22 +7,22 @@ ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")/../.." && pwd)"
 cd "${ROOT}"
 
 echo "=== 1. Building and pushing local service images ==="
-docker build --file infra/docker/model_api.Dockerfile --tag localhost:5001/model-api:dev .
+docker build --file infra/docker/Dockerfile --target model-api --tag localhost:5001/model-api:dev .
 docker push localhost:5001/model-api:dev
 
-docker build --file infra/docker/training.Dockerfile --tag localhost:5001/training:dev .
+docker build --file infra/docker/Dockerfile --target training --tag localhost:5001/training:dev .
 docker push localhost:5001/training:dev
 
-docker build --file infra/docker/mlflow.Dockerfile --tag localhost:5001/mlflow:dev .
+docker build --file infra/docker/Dockerfile --target mlflow --tag localhost:5001/mlflow:dev .
 docker push localhost:5001/mlflow:dev
 
-docker build --file infra/docker/remediator.Dockerfile --tag localhost:5001/remediator:dev .
+docker build --file infra/docker/Dockerfile --target remediator --tag localhost:5001/remediator:dev .
 docker push localhost:5001/remediator:dev
 
-docker build --file infra/docker/drift_monitor.Dockerfile --tag localhost:5001/drift-monitor:dev .
+docker build --file infra/docker/Dockerfile --target drift-monitor --tag localhost:5001/drift-monitor:dev .
 docker push localhost:5001/drift-monitor:dev
 
-docker build --file infra/docker/retrain.Dockerfile --tag localhost:5001/retrain:dev .
+docker build --file infra/docker/Dockerfile --target retrain --tag localhost:5001/retrain:dev .
 docker push localhost:5001/retrain:dev
 
 echo "=== 2. Creating target namespaces and deploying remediator ==="

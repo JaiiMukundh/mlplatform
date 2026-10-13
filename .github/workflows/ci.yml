@@ -1,99 +1,54 @@
 name: ci
-
-# P4.2 — full continuous integration (lint, test, iac, chart, security).
-# Local-quality wiring (iac/chart) is keep from P3.7; P4 adds the rest and pins.
 on:
-  pull_request:
   push:
     branches: [main]
-
+  pull_request:
+  workflow_dispatch:
+permissions:
+  contents: read
 concurrency:
   group: ci-${{ github.ref }}
   cancel-in-progress: true
-
 jobs:
-  lint:
-    runs-on: ubuntu-latest
+  quality:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 30
     steps:
-      # Majors verified 2026-10-02 (checkout v7.0.1, setup-terraform v3.1.2).
-      - uses: actions/checkout@v7
-      - name: Install Python tools
-        run: |
-          python -m pip install --upgrade pip
-          pip install ruff==0.15.0 yamllint==1.37.1
-      - name: ruff check
-        run: ruff check .
-      - name: ruff format --check
-        run: ruff format --check .
-      - name: yamllint
-        run: |
-          yamllint infra/ .github/ --no-parsable || true
-      - name: hadolint
-        uses: hadolint/hadolint-action@v3.3.0
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
         with:
-          dockerfile: infra/docker/model_api.Dockerfile
-
-  test:
-    runs-on: ubuntu-latest
-    steps:
-      - uses: actions/checkout@v7
-      - uses: astral-sh/setup-uv@v7
-      - name: Install deps
-        run: uv sync --frozen
-      - name: pytest + coverage gate
-        run: uv run pytest --cov --cov-report=xml --cov-report=term
-      - name: Coverage artifact
-        uses: actions/upload-artifact@v4
+          fetch-depth: 0
+          persist-credentials: false
+      - uses: astral-sh/setup-uv@1c37ad07a6a961277cf70c0d37d6f313000f5884 # v10.3.0
         with:
-          name: coverage
-          path: coverage.xml
-
-  iac:
-    runs-on: ubuntu-latest
-    steps:
-      - uses: actions/checkout@v7
-      - uses: hashicorp/setup-terraform@v3
+          version: "0.13.0"
+          python-version: "3.11.17"
+          enable-cache: true
+      - uses: hashicorp/setup-terraform@dfe3c3f87815947d99a8997f908cb6525fc44e9e # v4.0.1
         with:
-          terraform_version: 1.9.0
-      - name: fmt (local)
-        run: terraform -chdir=infra/envs/local fmt -check -recursive
-      - name: validate (local)
-        run: terraform -chdir=infra/envs/local init -backend=false && terraform -chdir=infra/envs/local validate
-      - name: fmt (azure)
-        run: terraform -chdir=infra/envs/azure fmt -check -recursive
-      - name: validate (azure)
-        run: terraform -chdir=infra/envs/azure init -backend=false && terraform -chdir=infra/envs/azure validate
-
-  chart:
-    runs-on: ubuntu-latest
-    steps:
-      - uses: actions/checkout@v7
-      - uses: azure/setup-helm@v4
+          terraform_version: "1.16.5"
+          terraform_wrapper: false
+      - uses: azure/setup-helm@9bc31f4ebc9c6b171d7bfbaa5d006ae7abdb4310 # v5.0.1
         with:
-          version: v3.22.0
-      - name: helm lint
+          version: "v3.22.0"
+      - name: Install locked dependencies and verified tools
         run: |
-          for d in infra/deploy/charts/*; do
-            [ -f "$d/Chart.yaml" ] || continue
-            helm lint "$d" || exit 1
-          done
-      - name: helm template | kubeconform
-        run: |
-          curl -sL https://github.com/yannh/kubeconform/releases/download/v0.7.1/kubeconform-linux-amd64.tar.gz | tar -xz kubeconform
-          for d in infra/deploy/charts/*; do
-            [ -f "$d/Chart.yaml" ] || continue
-            helm template "$d" | ./kubeconform -strict -summary || exit 1
-          done
-
+          uv sync --frozen
+          make tools TOOLSET="actionlint gitleaks hadolint kubeconform trivy"
+          echo "$HOME/.local/bin" >> "$GITHUB_PATH"
+      - name: Python, infrastructure, Actions, and credential checks
+        run: make lint test check-infra check-actions check-charts secret-scan
+      - name: Build and smoke all image targets
+        run: make check-images image-scan
   security:
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-24.04
+    timeout-minutes: 15
     steps:
-      - uses: actions/checkout@v7
-      - name: gitleaks
-        uses: gitleaks/gitleaks-action@v2
-      - name: trivy fs
-        uses: aquasecurity/trivy-action@v0.34.0
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
         with:
-          scan-type: fs
-          severity: CRITICAL
-          exit-code: "1"
+          persist-credentials: false
+      - name: Install verified vulnerability scanner
+        run: |
+          make tools TOOLSET=trivy
+          echo "$HOME/.local/bin" >> "$GITHUB_PATH"
+      - name: Scan dependency vulnerabilities and configuration
+        run: make security

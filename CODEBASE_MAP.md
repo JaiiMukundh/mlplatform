@@ -24,7 +24,7 @@ mlplatform/
 │
 ├── 🏗️ 2. infra/               (The Kubernetes & Cloud Plumbing)
 │   ├── deploy/           ──> Kubernetes manifests & Helm charts (Redis, Postgres, MLflow)
-│   ├── docker/           ──> 6 multi-stage Dockerfiles (one per microservice)
+│   ├── docker/           ──> 1 shared Dockerfile with 6 named service targets
 │   ├── envs/             ──> Terraform environments (local Kind & Azure cloud host)
 │   └── modules/          ──> Reusable infrastructure modules
 │

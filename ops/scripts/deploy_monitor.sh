@@ -5,14 +5,14 @@
 set -Eeuo pipefail
 
 echo "building drift-monitor image"
-hadolint infra/docker/drift_monitor.Dockerfile
-docker build --file infra/docker/drift_monitor.Dockerfile \
+hadolint infra/docker/Dockerfile
+docker build --file infra/docker/Dockerfile --target drift-monitor \
   --tag localhost:5001/drift-monitor:dev .
 docker push localhost:5001/drift-monitor:dev
 
 echo "building retrain image"
-hadolint infra/docker/retrain.Dockerfile
-docker build --file infra/docker/retrain.Dockerfile \
+hadolint infra/docker/Dockerfile
+docker build --file infra/docker/Dockerfile --target retrain \
   --tag localhost:5001/retrain:dev .
 docker push localhost:5001/retrain:dev
 

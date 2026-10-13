@@ -17,9 +17,9 @@ build/
 !.env.example
 
 # Generated ML data and artifacts
-data/
-artifacts/
-mlruns/
+/data/
+/artifacts/
+/mlruns/
 
 # Rendered Feast config (contains the Postgres password; see feature_repo/)
 core/feature_repo/feature_store.yaml
