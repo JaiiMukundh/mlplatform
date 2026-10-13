@@ -1,5 +1,5 @@
 # Local platform: registry -> kind cluster -> data services.
-# The model-api release itself stays in ops/scripts/deploy.sh (same as CI uses).
+# The model-api release itself stays in scripts/deploy.sh (same as CI uses).
 module "registry" {
   source        = "../../modules/registry"
   registry_port = var.registry_port

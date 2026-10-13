@@ -54,42 +54,6 @@ module "cluster" {
   tags                = local.tags
 }
 
-module "storage" {
-  source = "../../modules/object_storage_azure"
-
-  bucket_prefix       = local.name
-  location            = var.location
-  resource_group_name = azurerm_resource_group.this.name
-  tags                = local.tags
-}
-
-module "db" {
-  source = "../../modules/database_azure"
-
-  identifier          = replace("${local.name}pg", "-", "")
-  location            = var.location
-  resource_group_name = azurerm_resource_group.this.name
-  vnet_id             = module.network.vnet_id
-  delegated_subnet_id = module.network.db_subnet_id
-  sku_name            = var.db_sku_name
-  tags                = local.tags
-}
-
-module "api_access" {
-  source = "../../modules/iam_azure"
-
-  project                   = var.project
-  location                  = var.location
-  resource_group_name       = azurerm_resource_group.this.name
-  oidc_issuer_url           = module.cluster.oidc_issuer_url
-  storage_account_id        = module.storage.storage_account_id
-  namespace                 = "serving"
-  service_account_model_api = "model-api"
-  service_account_retrain   = "retrain"
-  service_account_mlflow    = "mlflow"
-  tags                      = local.tags
-}
-
 # Cost guardrail for the demo window (P9.6 tears everything down).
 resource "azurerm_monitor_action_group" "budget" {
   name                = "${local.name}-budget-ag"

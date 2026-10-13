@@ -8,6 +8,10 @@ Checkboxes are changed only after the corresponding acceptance check has been ob
 - [x] G2 Replace laptop Actions with pinned GitHub-hosted CI and manually approved Azure CD. Acceptance: `make check-actions check-infra lint test secret-scan` plus cloud deployment script contract tests.
 - [x] G3 Push the verified repository to GitHub and observe CI. Acceptance: remote commit matches local HEAD and GitHub CI succeeds.
 
+## Deletion and directory cleanup — 2026-10-13
+
+- [ ] C1 Delete obsolete files and flatten wrapper directories without changing runtime features. Acceptance: `make lint test check-infra check-actions check-charts secret-scan check-images` and GitHub CI.
+
 ## P0 — Foundations
 
 - [x] P0.1 Create repository layout and foundational files.

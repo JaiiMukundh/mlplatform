@@ -1,8 +1,0 @@
-# P4.7 — local dry-run of ci.yml with `act`.
-# Usage (requires act + the self-hosted runner NOT needed for lint/test/iac/chart/security):
-#   act pull_request -W .github/workflows/ci.yml -j lint
-#   act pull_request -W .github/workflows/ci.yml -j test
---container-architecture linux/amd64
---reuse
---rm
--P ubuntu-latest=catthehacker/ubuntu:act-latest

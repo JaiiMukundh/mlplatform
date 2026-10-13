@@ -1,5 +1,4 @@
-# Azure parity for "network": Virtual Network with subnets for AKS,
-# PostgreSQL Flexible Server, and public ingress, plus a Network Security Group.
+# AKS network and Network Security Group.
 
 resource "azurerm_virtual_network" "this" {
   name                = "${var.name}-vnet"
@@ -14,31 +13,6 @@ resource "azurerm_subnet" "aks" {
   resource_group_name  = var.resource_group_name
   virtual_network_name = azurerm_virtual_network.this.name
   address_prefixes     = [cidrsubnet(var.vnet_cidr, 8, 1)]
-}
-
-resource "azurerm_subnet" "db" {
-  name                 = "db-subnet"
-  resource_group_name  = var.resource_group_name
-  virtual_network_name = azurerm_virtual_network.this.name
-  address_prefixes     = [cidrsubnet(var.vnet_cidr, 8, 2)]
-  service_endpoint {
-    service = "Microsoft.Storage"
-  }
-
-  delegation {
-    name = "postgresql-flexible-server-delegation"
-    service_delegation {
-      name    = "Microsoft.DBforPostgreSQL/flexibleServers"
-      actions = ["Microsoft.Network/virtualNetworks/subnets/join/action"]
-    }
-  }
-}
-
-resource "azurerm_subnet" "public" {
-  name                 = "public-subnet"
-  resource_group_name  = var.resource_group_name
-  virtual_network_name = azurerm_virtual_network.this.name
-  address_prefixes     = [cidrsubnet(var.vnet_cidr, 8, 3)]
 }
 
 resource "azurerm_network_security_group" "this" {
@@ -129,7 +103,7 @@ variable "resource_group_name" {
 }
 
 variable "vnet_cidr" {
-  description = "Address space for the VNet (a /16 is split into aks/db/public subnets)."
+  description = "Address space for the VNet (a /16 provides the AKS subnet)."
   type        = string
   default     = "10.0.0.0/16"
 }
@@ -148,16 +122,6 @@ output "vnet_id" {
 output "aks_subnet_id" {
   description = "ID of the AKS node-pool subnet."
   value       = azurerm_subnet.aks.id
-}
-
-output "db_subnet_id" {
-  description = "ID of the PostgreSQL delegated subnet."
-  value       = azurerm_subnet.db.id
-}
-
-output "public_subnet_id" {
-  description = "ID of the public ingress subnet."
-  value       = azurerm_subnet.public.id
 }
 
 output "nsg_id" {

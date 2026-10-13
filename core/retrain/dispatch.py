@@ -28,17 +28,7 @@ def dispatch_candidate(
 ) -> str:
     """Announce a candidate version; return how it was released."""
     if release_script is None:
-        target_dir = workdir or "."
-        ops_path = os.path.join(target_dir, "ops/scripts/model_release_local.sh")
-        std_path = os.path.join(target_dir, "scripts/model_release_local.sh")
-        if os.path.exists(ops_path):
-            release_script = "ops/scripts/model_release_local.sh"
-        elif os.path.exists(std_path):
-            release_script = "scripts/model_release_local.sh"
-        elif os.path.exists("ops/scripts/model_release_local.sh"):
-            release_script = "ops/scripts/model_release_local.sh"
-        else:
-            release_script = "scripts/model_release_local.sh"
+        release_script = "scripts/model_release_local.sh"
     mode = trigger_mode or os.environ.get("TRIGGER_MODE", "local")
     if mode == "github":
         repo = github_repo or os.environ.get("GITHUB_REPO", "")

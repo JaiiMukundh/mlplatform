@@ -26,15 +26,15 @@ resource "kubernetes_secret_v1" "grafana_admin" {
   depends_on = [kubernetes_namespace_v1.observability]
 }
 
-# All three upstream charts are vendored under infra/charts/ (see
+# All three upstream charts are vendored under infra/vendor/ (see
 # docs/DECISIONS.md): the asset host times out for helm/terraform downloads.
 resource "helm_release" "kube_prometheus_stack" {
   name      = "kube-prometheus-stack"
-  chart     = "${path.module}/../../../infra/charts/kube-prometheus-stack-91.8.2.tgz"
+  chart     = "${path.module}/../../../infra/vendor/kube-prometheus-stack-91.8.2.tgz"
   namespace = kubernetes_namespace_v1.observability.metadata[0].name
 
   values = [
-    file("${path.module}/../../deploy/charts/observability/values-prometheus.yaml"),
+    file("${path.module}/../../charts/observability/values-prometheus.yaml"),
   ]
 
   wait    = true
@@ -45,13 +45,13 @@ resource "helm_release" "kube_prometheus_stack" {
 
 resource "helm_release" "loki" {
   name  = "loki"
-  chart = "${path.module}/../../../infra/charts/loki-7.3.0.tgz"
+  chart = "${path.module}/../../../infra/vendor/loki-7.3.0.tgz"
   # Vendored (see docs/DECISIONS.md): the upstream asset host times out
   # for helm/terraform downloads, while the pinned .tgz is byte-identical.
   namespace = kubernetes_namespace_v1.observability.metadata[0].name
 
   values = [
-    file("${path.module}/../../deploy/charts/observability/values-loki.yaml"),
+    file("${path.module}/../../charts/observability/values-loki.yaml"),
   ]
 
   wait    = true
@@ -62,11 +62,11 @@ resource "helm_release" "loki" {
 
 resource "helm_release" "alloy" {
   name      = "alloy"
-  chart     = "${path.module}/../../../infra/charts/alloy-1.13.0.tgz"
+  chart     = "${path.module}/../../../infra/vendor/alloy-1.13.0.tgz"
   namespace = kubernetes_namespace_v1.observability.metadata[0].name
 
   values = [
-    file("${path.module}/../../deploy/charts/observability/values-alloy.yaml"),
+    file("${path.module}/../../charts/observability/values-alloy.yaml"),
   ]
 
   wait    = true
@@ -77,7 +77,7 @@ resource "helm_release" "alloy" {
 
 resource "helm_release" "observability_content" {
   name      = "observability-content"
-  chart     = "${path.module}/../../deploy/charts/observability"
+  chart     = "${path.module}/../../charts/observability"
   namespace = kubernetes_namespace_v1.observability.metadata[0].name
 
   wait    = true

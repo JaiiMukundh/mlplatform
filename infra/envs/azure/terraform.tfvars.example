@@ -12,7 +12,6 @@ vnet_cidr          = "10.0.0.0/16"
 kubernetes_version = "REPLACE_WITH_SUPPORTED_PATCH_VERSION"
 node_count         = 2
 vm_size            = "Standard_B2as_v2"
-db_sku_name        = "B_Standard_B1ms"
 budget_limit_usd   = 50
 budget_email       = "you@university.edu"
 budget_start_date  = "2026-10-01T00:00:00Z"

@@ -29,7 +29,7 @@ def check(action: str, **overrides: str) -> subprocess.CompletedProcess[str]:
         **overrides,
     }
     return subprocess.run(
-        ["bash", "ops/scripts/azure.sh", "check"],
+        ["bash", "scripts/azure.sh", "check"],
         cwd=ROOT,
         env=environment,
         capture_output=True,
@@ -84,7 +84,7 @@ def test_cloud_retrain_keeps_acr_images_and_immutable_tag() -> None:
             "helm",
             "template",
             "retrain",
-            "infra/deploy/charts/retrain",
+            "infra/charts/retrain",
             "--set",
             "image.repository=demo.azurecr.io/mlp-retrain,image.tag=abc123",
             "--set",
@@ -122,3 +122,22 @@ def test_dispatch_forwards_cloud_image_tag(
     script.write_text('printf "%s\\n" "$1" "$2" > result.txt\n')
     dispatch_candidate("9", release_script=str(script), workdir=str(tmp_path))
     assert result.read_text().splitlines() == ["9", "abc123"]
+
+
+def test_dashboard_serves_page_and_runs_commands_from_repository(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    """Moving the UI must preserve its template and command working directory."""
+    from fastapi.testclient import TestClient
+
+    from ui.app import ACTION_COMMANDS, app
+
+    monkeypatch.chdir(tmp_path)
+    monkeypatch.setitem(ACTION_COMMANDS, "verify-layout", "make help")
+    with TestClient(app) as client:
+        page = client.get("/")
+        assert page.status_code == 200
+        assert "<html" in page.text.lower()
+        output = client.get("/api/stream/verify-layout")
+        assert "MLPlatform targets:" in output.text
+        assert "COMPLETED SUCCESSFULLY (EXIT 0)" in output.text

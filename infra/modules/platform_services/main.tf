@@ -50,7 +50,7 @@ resource "kubernetes_secret_v1" "minio_auth" {
 
 resource "helm_release" "metrics_server" {
   name  = "metrics-server"
-  chart = "${path.module}/../../../infra/charts/metrics-server-3.14.0.tgz"
+  chart = "${path.module}/../../../infra/vendor/metrics-server-3.14.0.tgz"
   # Vendored (see docs/DECISIONS.md): the asset host times out for helm/terraform.
   namespace = "kube-system"
 
@@ -66,7 +66,7 @@ resource "helm_release" "metrics_server" {
 
 resource "helm_release" "postgres" {
   name      = "postgres"
-  chart     = "${path.module}/../../deploy/charts/postgres"
+  chart     = "${path.module}/../../charts/postgres"
   namespace = kubernetes_namespace_v1.data.metadata[0].name
 
   set = [
@@ -88,7 +88,7 @@ resource "helm_release" "postgres" {
 
 resource "helm_release" "minio" {
   name      = "minio"
-  chart     = "${path.module}/../../deploy/charts/minio"
+  chart     = "${path.module}/../../charts/minio"
   namespace = kubernetes_namespace_v1.data.metadata[0].name
 
   set = [
@@ -110,7 +110,7 @@ resource "helm_release" "minio" {
 
 resource "helm_release" "redis" {
   name      = "redis"
-  chart     = "${path.module}/../../deploy/charts/redis"
+  chart     = "${path.module}/../../charts/redis"
   namespace = kubernetes_namespace_v1.data.metadata[0].name
 
   wait    = true
@@ -121,7 +121,7 @@ resource "helm_release" "redis" {
 
 resource "helm_release" "mlflow" {
   name      = "mlflow"
-  chart     = "${path.module}/../../deploy/charts/mlflow"
+  chart     = "${path.module}/../../charts/mlflow"
   namespace = kubernetes_namespace_v1.data.metadata[0].name
 
   wait    = true

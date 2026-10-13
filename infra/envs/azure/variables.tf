@@ -22,7 +22,7 @@ variable "location" {
 }
 
 variable "vnet_cidr" {
-  description = "Address space for the VNet (split into aks/db/public subnets)."
+  description = "Address space for the VNet (used by the AKS subnet)."
   type        = string
   default     = "10.0.0.0/16"
 }
@@ -67,12 +67,6 @@ variable "vm_size" {
     )
     error_message = "vm_size must be a 2-vCPU burstable SKU with >=4 GB RAM (Standard_B2s, Standard_B2as_v2, Standard_B2als_v2). 1 GB SKUs (B2ats_v2/B2pts_v2) cannot run AKS kubelets."
   }
-}
-
-variable "db_sku_name" {
-  description = "PostgreSQL Flexible Server SKU."
-  type        = string
-  default     = "B_Standard_B1ms"
 }
 
 variable "budget_limit_usd" {

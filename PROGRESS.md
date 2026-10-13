@@ -619,3 +619,32 @@ Only observed command output is recorded here.
   - Next action: Azure bootstrap/OIDC and state configuration, cloud dashboard/access, then human-approved deployment and real AKS end-to-end verification. P9.6 remains unchecked; no Azure resources created by this work.
 
 - G3 checklist cleanup (2026-10-13) — Retired the obsolete P4.1 human laptop-runner installation requirement rather than falsely marking it installed. GitHub-hosted CI success is the replacement evidence. No further code changes; final publication CI is being observed.
+
+## 2026-10-13 — C1 deletion and directory cleanup (local checks complete)
+
+Deleted 15 obsolete files rather than concatenating them. Tracked source went
+from 224 to 209 files and 67 to 56 directories. Removed archived planning notes,
+redundant code map, obsolete act config, empty performance placeholder, duplicate
+Kind config, and unused Azure Blob/PostgreSQL/identity modules. Flattened docs,
+scripts, UI, charts, Dockerfile, and job manifests; retained runtime features,
+active demo evidence, the human viva guide, tests, and local functional harness.
+Same repository/container layout removes release-path fallbacks. The moved UI
+is tested through HTTP and actual non-mutating subprocess execution.
+
+Acceptance: `make lint test check-infra check-actions check-charts secret-scan
+check-images`. Actual output summary:
+```text
+All checks passed! 88 files already formatted.
+93 passed, 3 skipped; total coverage: 84.29% (80% required).
+Terraform local and Azure: Success! The configuration is valid.
+9 Helm charts linted; strict schemas: 48 valid, 0 invalid/errors/skipped.
+Actionlint and shell syntax passed; gitleaks: no leaks found.
+Six images built; all six real entry points OK; retrain Helm/path smoke passed.
+```
+
+Three e2e checks remain skipped because the cluster is stopped; no live deployment
+was performed. First image download failed TLS; bounded checksum-preserving
+retries resolved it and the full image acceptance then passed. Azure lockfile
+was regenerated with init only to remove its unused random provider. No Azure
+resources were created, modified, or destroyed. User synopsis and ignored state
+remain untouched. Next action: push cleanup and observe GitHub CI before C1 closes.
