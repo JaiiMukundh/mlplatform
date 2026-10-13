@@ -7,7 +7,7 @@ SHELL := /usr/bin/env bash
 	train-mlflow gate-candidate feast-rematerialize model-release-local \
 	deploy-monitor e2e deploy-all azure-init azure-validate azure-plan azure-apply azure-destroy \
 	deploy-azure destroy-azure azure-preflight deploy-azure-full train-azure \
-	azure-sleep azure-wake azure-kill-compute ui
+	azure-sleep azure-wake azure-kill-compute azure-kill ui
 
 help: ## Show the supported project commands.
 	@awk 'BEGIN {FS = ":.*## "; printf "MLPlatform targets:\n\n"} /^[a-zA-Z0-9_-]+:.*## / {printf "  %-22s %s\n", $$1, $$2}' $(MAKEFILE_LIST)
@@ -206,6 +206,9 @@ azure-sleep: ## [HUMAN] Stop AKS; disks and managed services still bill.
 
 azure-wake: ## [HUMAN] Start AKS (CONFIRMATION=WAKE).
 	@$(MAKE) azure ACTION=wake
+
+azure-kill: ## Delete ALL project Azure resources, including state (CONFIRMATION=KILL).
+	@$(MAKE) azure ACTION=kill
 
 azure-kill-compute: ## Explain the safer whole-cluster sleep option.
 	@echo "Use make azure-sleep to retain in-cluster data; targeted destruction is not automated."

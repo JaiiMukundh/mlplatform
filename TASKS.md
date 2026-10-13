@@ -12,6 +12,12 @@ Checkboxes are changed only after the corresponding acceptance check has been ob
 
 - [x] C1 Delete obsolete files and flatten wrapper directories without changing runtime features. Acceptance: `make lint test check-infra check-actions check-charts secret-scan check-images` and GitHub CI.
 
+## Azure test deployment and full teardown — 2026-10-13
+
+- [x] A1 Add a state-independent full kill switch with ownership guards and verified deletion. Acceptance: `make lint test check-actions check-infra secret-scan`; mocked CLI teardown tests cover partial deployments, reruns, ownership rejection, and failures.
+- [ ] A2 Host the dashboard and adapt its operations to AKS; verify cloud configuration and images.
+- [ ] A3 Configure GitHub OIDC/state, provision through Actions, and verify live serving/dashboard/retraining with a documented kill action. Billable execution requires explicit override of AGENTS rule 12.
+
 ## P0 — Foundations
 
 - [x] P0.1 Create repository layout and foundational files.

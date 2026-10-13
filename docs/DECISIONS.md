@@ -419,3 +419,19 @@ functionality, not additional file concatenation. Managed Blob/PostgreSQL and
 workload identities were never connected to the runtime; dropping their planned
 resources preserves MinIO/PostgreSQL behavior and avoids redundant provisioning.
 No Azure apply is run; existing local state and user documents are untouched.
+
+## 2026-10-13 — Full test-session teardown and two-hour expiry
+
+The user explicitly overrides AGENTS rule 12 for this Azure test deployment
+and chooses automatic deletion after two hours. Implement `kill` before any
+Terraform initialization, validate repository ownership of every resource group,
+include the AKS node group and separately owned state storage group, and require
+all groups to be absent before reporting success. Retain `destroy` as an app-only
+operation; it cannot promise zero ongoing project cost because it retains state.
+
+Use one small scheduled workflow for expiry (every 15 minutes, best effort).
+It disables itself when no session exists or teardown finishes; startup re-enables
+it. Start a deadline at provisioning and renew it to two hours after successful
+startup, so failed startup is also covered. Retain the manual kill operation
+for immediate teardown. Deletion permanently loses test data/models/history.
+Keep unrelated Azure resources and the no-cost GitHub OIDC identity untouched.

@@ -7,7 +7,7 @@ on:
       action:
         description: "Plan is read-only; deploy creates billable Azure resources"
         type: choice
-        options: [plan, deploy, verify, release, sleep, wake, destroy]
+        options: [plan, deploy, verify, release, sleep, wake, destroy, kill]
         default: plan
         required: true
       version:
@@ -15,16 +15,16 @@ on:
         type: string
         default: ""
       confirmation:
-        description: "For deploy/wake/destroy, type the action in uppercase to confirm"
+        description: "For deploy/wake/destroy/kill, type the action in uppercase to confirm"
         type: string
         default: ""
 permissions:
   contents: read
-  actions: read
+  actions: write
   id-token: write
 concurrency:
   group: azure-platform
-  cancel-in-progress: false
+  cancel-in-progress: ${{ github.event_name == 'workflow_dispatch' && inputs.action == 'kill' }}
 jobs:
   platform:
     if: github.ref == 'refs/heads/main'
@@ -42,6 +42,9 @@ jobs:
       ARM_SUBSCRIPTION_ID: ${{ vars.AZURE_SUBSCRIPTION_ID }}
       TF_IN_AUTOMATION: "true"
       TF_INPUT: "false"
+      AZURE_RESOURCE_GROUP: ${{ vars.AZURE_RESOURCE_GROUP }}
+      AZURE_NODE_RESOURCE_GROUP: ${{ vars.AZURE_NODE_RESOURCE_GROUP }}
+      TF_STATE_RESOURCE_GROUP: ${{ vars.TF_STATE_RESOURCE_GROUP }}
       TF_STATE_ACCOUNT: ${{ vars.TF_STATE_ACCOUNT }}
       TF_VAR_subscription_id: ${{ vars.AZURE_SUBSCRIPTION_ID }}
       TF_VAR_location: ${{ vars.AZURE_LOCATION || 'indiasouthcentral' }}
@@ -86,4 +89,6 @@ jobs:
           conclusion="$(gh api "repos/$GITHUB_REPOSITORY/actions/workflows/ci.yml/runs?head_sha=$GITHUB_SHA&status=completed" --jq '.workflow_runs[0].conclusion')"
           test "$conclusion" = success || { echo "CI must succeed for $GITHUB_SHA before deployment" >&2; exit 1; }
       - name: Run the selected cloud operation
+        env:
+          GH_TOKEN: ${{ github.token }}
         run: make azure

@@ -120,3 +120,24 @@ same repeatable interface is available through Make when authenticated:
 A budget alert is a notification, not an automatic spending stop. Destroy only
 after the demo/data are no longer needed; in-cluster PVCs and lineage are lost
 with the cluster. Sleep retains them but does not eliminate all charges.
+
+## Complete kill switch and automatic expiry
+
+Use Actions → azure → Run workflow → action **kill**, confirmation **KILL**.
+This cancels an active cloud operation, validates repository ownership, deletes
+the app and AKS node resource groups plus the separately owned state-storage
+resource group, and verifies all are absent. It works without Terraform state,
+including after partial deployment. `make azure-kill CONFIRMATION=KILL` exposes
+the same operation. This deletes all test datasets, disks, artifacts, and model
+history; the next startup provisions a fresh environment. Unrelated subscription
+resources are never part of the kill switch.
+
+The user chose a two-hour test session. Startup tags its deadline; azure-expiry
+checks every 15 minutes and invokes the same full teardown when due. GitHub
+schedules can be delayed, so use the manual kill switch as soon as testing ends.
+The expiry workflow disables itself after cleanup and startup re-enables it.
+The OIDC app and repository remain: neither is a running Azure resource.
+
+Stopping AKS keeps disks and other charges. Terraform `destroy` retains the
+state storage account. Only full `kill` removes all project-owned billable
+resources; charges already incurred can appear later in Cost Management.

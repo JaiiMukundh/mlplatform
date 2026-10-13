@@ -1,5 +1,5 @@
 #!/usr/bin/env bash
-# One Azure interface: plan/deploy/verify/release/sleep/wake/destroy.
+# One Azure interface, including complete state-independent test teardown.
 # Billable/destructive operations require an explicit human workflow confirmation.
 set -Eeuo pipefail
 cd "$(dirname "${BASH_SOURCE[0]}")/.."
@@ -8,6 +8,14 @@ ACTION="${1:-plan}"
 TF=(terraform -chdir=infra/envs/azure)
 
 check() {
+  if [[ "${ACTION}" == kill || "${ACTION}" == expired ]]; then
+    [[ "${CONFIRMATION:-}" == KILL ]] || { echo "Human confirmation must be KILL" >&2; exit 1; }
+    for key in ARM_SUBSCRIPTION_ID AZURE_RESOURCE_GROUP TF_STATE_RESOURCE_GROUP; do
+      [[ -n "${!key:-}" ]] || { echo "Missing GitHub Azure variable: ${key}" >&2; exit 1; }
+    done
+    [[ "${AZURE_RESOURCE_GROUP}" != "${TF_STATE_RESOURCE_GROUP}" ]] || { echo "App and state resource groups must be separate" >&2; exit 1; }
+    return
+  fi
   for key in ARM_CLIENT_ID ARM_TENANT_ID ARM_SUBSCRIPTION_ID TF_STATE_ACCOUNT TF_VAR_kubernetes_version TF_VAR_budget_email; do
     [[ -n "${!key:-}" ]] || { echo "Missing GitHub Azure variable: ${key}" >&2; exit 1; }
   done
@@ -23,6 +31,76 @@ check() {
 # The check command validates the selected workflow ACTION before authenticating.
 if [[ "${ACTION}" == check ]]; then ACTION="${WORKFLOW_ACTION}"; check; exit; fi
 check
+if [[ "${ACTION}" == kill || "${ACTION}" == expired ]]; then
+  az account set --subscription "${ARM_SUBSCRIPTION_ID}"
+fi
+if [[ "${ACTION}" == expired ]]; then
+  due=false
+  existing=false
+  for group in "${AZURE_RESOURCE_GROUP}" "${TF_STATE_RESOURCE_GROUP}"; do
+    [[ "$(az group exists --name "${group}")" == true ]] || continue
+    existing=true
+    deadline="$(az group show --name "${group}" --query tags.ExpiresAt -o tsv)"
+    [[ -n "${deadline}" ]] || { echo "Expiry missing on ${group}; use manual KILL" >&2; exit 1; }
+    expired="$(python3 - "${deadline}" <<'EXPIRY_CHECK'
+from datetime import datetime, timezone
+import sys
+print("true" if datetime.now(timezone.utc) >= datetime.fromisoformat(sys.argv[1].replace("Z", "+00:00")) else "false")
+EXPIRY_CHECK
+)"
+    [[ "${expired}" != true ]] || due=true
+  done
+  if [[ "${due}" != true ]]; then
+    echo "No expired Azure test session."
+    if [[ "${existing}" == false && -n "${GH_TOKEN:-}" ]]; then
+      gh api --method PUT "repos/${GITHUB_REPOSITORY}/actions/workflows/expiry.yml/disable"
+    fi
+    exit
+  fi
+  ACTION=kill
+fi
+# Full teardown does not need a readable backend, providers, or Kubernetes.
+if [[ "${ACTION}" == kill ]]; then
+  OWNER="${GITHUB_REPOSITORY:-JaiiMukundh/mlplatform}"
+  GROUPS_TO_DELETE=("${AZURE_RESOURCE_GROUP}")
+  if [[ "$(az group exists --name "${AZURE_RESOURCE_GROUP}")" == true ]]; then
+    node_groups="$(az aks list --resource-group "${AZURE_RESOURCE_GROUP}" --query '[].nodeResourceGroup' -o tsv)"
+    while IFS= read -r group; do
+      [[ -z "${group}" ]] || GROUPS_TO_DELETE+=("${group}")
+    done <<< "${node_groups}"
+  fi
+  [[ -z "${AZURE_NODE_RESOURCE_GROUP:-}" ]] || GROUPS_TO_DELETE+=("${AZURE_NODE_RESOURCE_GROUP}")
+  GROUPS_TO_DELETE+=("${TF_STATE_RESOURCE_GROUP}")
+  # Validate ownership for every group before deleting anything. AKS node groups
+  # are owned through their managedBy link to the cluster in our app group.
+  for group in "${GROUPS_TO_DELETE[@]}"; do
+    [[ "$(az group exists --name "${group}")" == true ]] || continue
+    ownership="$(az group show --name "${group}" --query '{repository:tags.Repository,managedBy:managedBy}' -o json)"
+    OWNERSHIP="${ownership}" python3 - "${OWNER}" "${ARM_SUBSCRIPTION_ID}" "${AZURE_RESOURCE_GROUP}" <<'OWNERSHIP_CHECK'
+import json, os, sys
+owner, subscription, app_group = sys.argv[1:]
+record = json.loads(os.environ["OWNERSHIP"])
+cluster_prefix = f"/subscriptions/{subscription}/resourceGroups/{app_group}/providers/Microsoft.ContainerService/managedClusters/"
+if record.get("repository") != owner and not (record.get("managedBy") or "").lower().startswith(cluster_prefix.lower()):
+    sys.exit("Refusing kill: resource group is not owned by this repository")
+OWNERSHIP_CHECK
+  done
+  for group in "${GROUPS_TO_DELETE[@]}"; do
+    [[ "$(az group exists --name "${group}")" == true ]] || continue
+    echo "Deleting project resource group: ${group}"
+    az group delete --name "${group}" --yes
+  done
+  for group in "${GROUPS_TO_DELETE[@]}"; do
+    [[ "$(az group exists --name "${group}")" == false ]] || { echo "Kill incomplete: ${group} still exists" >&2; exit 1; }
+  done
+  message="KILL VERIFIED: app, AKS node groups, and Terraform state group are absent. Test data and model history were deleted."
+  echo "${message}"
+  if [[ -n "${GH_TOKEN:-}" ]]; then
+    gh api --method PUT "repos/${GITHUB_REPOSITORY}/actions/workflows/expiry.yml/disable"
+  fi
+  [[ -z "${GITHUB_STEP_SUMMARY:-}" ]] || echo "${message}" >> "${GITHUB_STEP_SUMMARY}"
+  exit
+fi
 "${TF[@]}" init -input=false -lockfile=readonly \
   -backend-config="storage_account_name=${TF_STATE_ACCOUNT}" \
   -backend-config="container_name=tfstate" -backend-config="key=mlplatform.tfstate" \

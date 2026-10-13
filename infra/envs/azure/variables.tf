@@ -86,3 +86,9 @@ variable "budget_start_date" {
   type        = string
   default     = "2026-10-01T00:00:00Z"
 }
+
+variable "expires_at" {
+  description = "UTC test-session deadline; GitHub expiry deletes the full environment after this time."
+  type        = string
+  default     = ""
+}

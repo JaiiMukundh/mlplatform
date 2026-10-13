@@ -48,6 +48,7 @@ laptop runner is needed. No Azure deployment has been performed by the agent.
 | `make github-login` | Authenticate GitHub CLI and Git |
 | `make github-push` | Publish the current branch without force |
 | `make azure ACTION=plan` | Plan using the persistent cloud backend |
+| `make azure-kill CONFIRMATION=KILL` | Delete all project Azure resources, including state storage |
 
 ## Local functionality test harness
 
@@ -92,3 +93,8 @@ Files beginning with a dot are tool configuration, not discarded app code:
 `.pre-commit-config.yaml` runs optional local checks. `.env.example` is the
 credential template. `.git/` stores repository history; `.venv/`, `.terraform/`,
 and cache directories are generated locally and are not published to GitHub.
+
+For a full cost shutdown, use the GitHub **azure** workflow with action **kill**
+and confirmation **KILL**. The two-hour expiry workflow is a backup, checked
+every 15 minutes; GitHub scheduling can run late. Full kill deletes test data
+and model history as well as compute, disks, images, and state storage.

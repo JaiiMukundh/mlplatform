@@ -15,3 +15,11 @@
 13. **Context hygiene.** If your context is getting long: update `PROGRESS.md` with "Next action: …", then continue. On resume, read `AGENTS.md`, `TASKS.md`, the tail of `PROGRESS.md`, and the current phase only.
 14. **Don't gold-plate.** Anything marked *stretch* is done only after all must-haves in all phases pass.
 15. **Honesty over polish.** If something is simulated (e.g., synthetic data, simulated drift), say so in docs. Never present simulated results as real.
+
+### Authorized test deployment exception — 2026-10-13
+
+The user explicitly replied “Yes—override rule 12 for this deployment.” Azure
+provisioning for this test session is authorized, as is teardown when requested.
+The user also selected automatic full teardown after two hours. Use project-owned
+resource groups only; delete application, AKS node resources, and state storage
+for full shutdown. This exception does not authorize unrelated Azure resources.

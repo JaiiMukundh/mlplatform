@@ -672,3 +672,30 @@ Local: 93 passed, 3 cluster tests skipped; coverage 84.29%.
 
 C1 checkbox is now verified. Next action: Azure dashboard/bootstrap work when
 requested; billable Azure apply remains human-only under AGENTS.md.
+
+## 2026-10-13 — A1 full kill switch and two-hour expiry
+
+The user explicitly overrides AGENTS rule 12 for this deployment and selects
+automatic full deletion after two hours. Added state-independent `kill` to the
+existing Azure script/workflow and a small scheduled expiry workflow. Kill
+cancels the active cloud workflow, validates ownership before deleting anything,
+removes app/node/state resource groups, and verifies absence. Expiry checks every
+15 minutes (GitHub can delay schedules) and disables itself after teardown.
+Startup must re-enable it and set/renew deadlines in A3. No live deletion was run.
+
+Acceptance: `make lint test check-actions check-infra secret-scan`:
+```text
+All checks passed; 88 files already formatted.
+102 passed, 3 skipped; coverage 84.29% (80% required).
+Kill mocked-CLI tests: partial/rerun/ownership/failures/expiry all pass.
+Terraform local/Azure valid; all 9 charts linted; shell syntax passed.
+Actionlint passed; gitleaks history/staged: no leaks found.
+```
+
+Read-only Azure inventory shows no deployed resources; subscription is enabled.
+Owner account is connected; GitHub Azure variables are absent. Regional API
+latest creatable stable AKS patch is 1.36.4. Preflight currently reports 6 regional
+vCPUs and 10 Basv2-family vCPUs free, but official AKS docs prohibit B-series
+system nodes. A2/A3 must replace that old scaffold size with a supported SKU.
+Next action: implement cloud dashboard/runtime paths, then configure OIDC/backend
+and provision from GitHub Actions with the kill switch ready.

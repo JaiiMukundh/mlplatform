@@ -141,3 +141,125 @@ def test_dashboard_serves_page_and_runs_commands_from_repository(
         output = client.get("/api/stream/verify-layout")
         assert "MLPlatform targets:" in output.text
         assert "COMPLETED SUCCESSFULLY (EXIT 0)" in output.text
+
+
+@pytest.mark.parametrize(
+    "scenario",
+    [
+        "normal",
+        "partial",
+        "unowned",
+        "delete_failure",
+        "list_failure",
+        "expired",
+        "not_expired",
+        "bad_expiry",
+    ],
+)
+def test_full_kill_is_state_independent_and_checks_ownership(
+    scenario: str, tmp_path: Path
+) -> None:
+    """Exercise real kill control flow against a fake Azure CLI, never Azure."""
+    state = tmp_path / "groups.json"
+    owner = "JaiiMukundh/mlplatform"
+    groups = {
+        "test-app": {"repository": owner},
+        "test-state": {"repository": owner},
+        "test-nodes": {
+            "managedBy": "/subscriptions/test-sub/resourceGroups/test-app/"
+            "providers/Microsoft.ContainerService/managedClusters/test-cluster"
+        },
+    }
+    if scenario == "partial":
+        groups.pop("test-app")
+    if scenario == "unowned":
+        groups["test-state"] = {"repository": "another/repository"}
+    for group in groups.values():
+        group["deadline"] = (
+            "3000-01-01T00:00:00Z"
+            if scenario == "not_expired"
+            else "invalid"
+            if scenario == "bad_expiry"
+            else "2000-01-01T00:00:00Z"
+        )
+    state.write_text(json.dumps({"groups": groups, "deleted": []}))
+    cli = tmp_path / "az"
+    cli.write_text(
+        "#!/usr/bin/env python3\n"
+        "import json, os, sys\n"
+        "from pathlib import Path\n"
+        "path = Path(os.environ['FAKE_AZ_STATE'])\n"
+        "state = json.loads(path.read_text())\n"
+        "args = sys.argv[1:]\n"
+        "if args[:2] == ['account', 'set']:\n"
+        "    sys.exit(0)\n"
+        "if args[:2] == ['aks', 'list']:\n"
+        "    if os.environ['SCENARIO'] == 'list_failure': sys.exit(3)\n"
+        "    print('test-nodes'); sys.exit(0)\n"
+        "group = args[args.index('--name') + 1]\n"
+        "if args[:2] == ['group', 'exists']:\n"
+        "    print(str(group in state['groups']).lower())\n"
+        "elif args[:2] == ['group', 'show']:\n"
+        "    if 'tags.ExpiresAt' in args: print(state['groups'][group]['deadline'])\n"
+        "    else: print(json.dumps(state['groups'][group]))\n"
+        "elif args[:2] == ['group', 'delete']:\n"
+        "    if os.environ['SCENARIO'] == 'delete_failure': sys.exit(4)\n"
+        "    state['deleted'].append(group)\n"
+        "    del state['groups'][group]\n"
+        "    path.write_text(json.dumps(state))\n"
+        "else: sys.exit(5)\n"
+    )
+    cli.chmod(0o755)
+    terraform = tmp_path / "terraform"
+    terraform.write_text("#!/bin/sh\nexit 95\n")
+    terraform.chmod(0o755)
+    environment = {
+        **os.environ,
+        "PATH": f"{tmp_path}:{os.environ['PATH']}",
+        "ARM_SUBSCRIPTION_ID": "test-sub",
+        "AZURE_RESOURCE_GROUP": "test-app",
+        "AZURE_NODE_RESOURCE_GROUP": "test-nodes",
+        "TF_STATE_RESOURCE_GROUP": "test-state",
+        "CONFIRMATION": "KILL",
+        "GITHUB_REPOSITORY": owner,
+        "GITHUB_STEP_SUMMARY": "",
+        "GH_TOKEN": "",
+        "FAKE_AZ_STATE": str(state),
+        "SCENARIO": scenario,
+    }
+    action = (
+        "expired" if scenario in {"expired", "not_expired", "bad_expiry"} else "kill"
+    )
+    command = ["bash", "scripts/azure.sh", action]
+    result = subprocess.run(
+        command, cwd=ROOT, env=environment, capture_output=True, text=True
+    )
+    record = json.loads(state.read_text())
+    if scenario in {"unowned", "delete_failure", "list_failure", "bad_expiry"}:
+        assert result.returncode != 0
+        assert record["deleted"] == []
+    elif scenario == "not_expired":
+        assert result.returncode == 0, result.stderr
+        assert record["groups"] == groups
+        assert record["deleted"] == []
+    else:
+        assert result.returncode == 0, result.stderr
+        assert "KILL VERIFIED" in result.stdout
+        assert record["groups"] == {}
+        again = subprocess.run(
+            command, cwd=ROOT, env=environment, capture_output=True, text=True
+        )
+        assert again.returncode == 0
+        assert json.loads(state.read_text())["deleted"] == record["deleted"]
+
+
+def test_kill_requires_explicit_confirmation_but_no_terraform_backend() -> None:
+    """The emergency path remains usable when backend configuration is absent."""
+    variables = {
+        "ARM_SUBSCRIPTION_ID": "test-sub",
+        "AZURE_RESOURCE_GROUP": "test-app",
+        "TF_STATE_RESOURCE_GROUP": "test-state",
+        "TF_STATE_ACCOUNT": "",
+    }
+    assert check("kill", **variables).returncode != 0
+    assert check("kill", CONFIRMATION="KILL", **variables).returncode == 0

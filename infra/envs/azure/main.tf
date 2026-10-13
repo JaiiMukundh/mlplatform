@@ -7,6 +7,8 @@ locals {
     Project     = var.project
     Environment = var.environment
     ManagedBy   = "terraform"
+    Repository  = "JaiiMukundh/mlplatform"
+    ExpiresAt   = var.expires_at
   }
 }
 
