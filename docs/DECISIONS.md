@@ -454,3 +454,13 @@ with a temporary self-signed certificate; scope external tools to the configured
 tester network and deployment runner. Share one static public IP across distinct
 service ports. One compact dashboard manifest holds its required Kubernetes
 resources; validate it alongside chart renders. Local operation remains available.
+
+## 2026-10-13 — GitHub identity under university tenant restrictions
+
+The connected Owner account was denied Entra application registration by the
+university tenant. Use an Azure user-assigned managed identity with a GitHub
+federated credential instead (supported for subscription Contributor/Owner).
+Keep it in a separately tagged identity-only group so full kill retains the
+no-cost login identity and future GitHub startup works. Microsoft states managed
+identities have no additional cost. Billable app/node/state groups are deleted.
+No client password or long-lived GitHub Azure secret is created.

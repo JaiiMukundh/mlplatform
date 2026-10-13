@@ -95,3 +95,11 @@ jobs:
         env:
           GH_TOKEN: ${{ github.token }}
         run: make azure
+      - name: Remove billable resources if startup fails
+        if: failure() && inputs.action == 'deploy'
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          if test -e /tmp/mlp-startup-started; then
+            make azure ACTION=kill CONFIRMATION=KILL
+          fi

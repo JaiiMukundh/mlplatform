@@ -148,3 +148,9 @@ Dashboard credentials are the `grafana-admin` Kubernetes secret (username admin)
 The deployment records its URL and deadline in the GitHub Actions summary; it
 does not print the password. The initial tester network is AZURE_ALLOWED_CIDR
 in GitHub environment azure; update it when testing from a different network.
+
+The university tenant prohibits Entra application registration. The connected
+Owner instead bootstraps a user-assigned managed identity with the same GitHub
+OIDC issuer/subject/audience in `mlp-github-identity-rg`. It remains after kill
+to allow startup from Actions. The identity-only group contains no VM, disks,
+registry, or storage; managed identities have no additional cost.

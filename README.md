@@ -4,8 +4,8 @@ A credit-risk model platform with live serving, feature storage, model versionin
 monitoring, drift detection, and autonomous retraining. The local system proved
 functionality; Azure is the deployment destination, driven by GitHub Actions.
 
-**Current status:** GitHub-hosted CI verified. Azure deployment is next.
-The dashboard is still in the local test harness; cloud hosting is the next step.
+**Current status:** Cloud deployment preparation verified. Azure rollout is in progress.
+The dashboard has an AKS image with HTTPS/login and in-cluster operations.
 
 ## Repository
 
@@ -17,7 +17,7 @@ The dashboard is still in the local test harness; cloud hosting is the next step
 | `ui/` | Operations dashboard |
 | `docs/` | Specification, decisions, explanations, runbooks, and measured evidence |
 | `tests/` | Application tests, feature parity, release safeguards, cloud configuration contracts |
-| `.github/workflows/` | Two GitHub-hosted workflows: CI and Azure operations |
+| `.github/workflows/` | GitHub-hosted CI, Azure operations, and test-session expiry |
 
 Charts live directly in `infra/charts/`, jobs in `infra/jobs/`, and the shared
 Dockerfile at `infra/Dockerfile`. There are no archived documentation folders.
@@ -47,6 +47,7 @@ laptop runner is needed. No Azure deployment has been performed by the agent.
 | `make secret-scan security` | Credential and dependency scans; report infrastructure findings |
 | `make github-login` | Authenticate GitHub CLI and Git |
 | `make github-push` | Publish the current branch without force |
+| `make azure-connect` | Configure free GitHub OIDC identity and Azure variables |
 | `make azure ACTION=plan` | Plan using the persistent cloud backend |
 | `make azure-kill CONFIRMATION=KILL` | Delete all project Azure resources, including state storage |
 

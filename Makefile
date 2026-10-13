@@ -218,3 +218,7 @@ azure-kill-compute: ## Explain the safer whole-cluster sleep option.
 ui: ## Launch the Central Management and Demo Dashboard (http://localhost:8050).
 	@echo "Starting Central Management UI on http://localhost:8050 ..."
 	@uv run python -m ui.app
+
+.PHONY: azure-connect
+azure-connect: ## Configure passwordless GitHub Azure access (no billable resources).
+	@bash scripts/azure.sh connect

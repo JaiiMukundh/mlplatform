@@ -735,3 +735,30 @@ yet. Discovered and fixed expiry orphan-node handling so partial group removal
 cannot disable cleanup while node resources remain. Next action: configure
 GitHub OIDC, make startup recreate its private backend and two-hour expiry,
 then provision and verify live Azure through Actions.
+
+### A3 preparation — live provisioning next
+
+Entra application registration was denied by the university tenant. The
+subscription Owner successfully created a user-assigned OIDC identity instead
+in mlp-github-identity-rg, registered the GitHub azure-environment subject, granted
+required ARM/RBAC/state-data/ACR permissions, and configured all 14 GitHub Azure
+variables. Identity and its group have no ongoing Azure resource charge; they
+remain so GitHub can restart after full kill. No VM/storage/registry was created.
+
+Added idempotent private backend creation to the GitHub deploy operation, initial
+two-hour deadline for failed startup and renewal after readiness, expiry workflow
+re-enablement, and failure cleanup once startup reaches its resource phase.
+Next action: finish startup acceptance, commit/push, wait for exact-commit CI,
+then dispatch Azure deployment and verify the real endpoints and model lifecycle.
+
+A3 startup preparation acceptance passed: `make lint test check-infra
+check-actions check-charts secret-scan`. Actual output:
+```text
+106 passed, 3 skipped; coverage 84.29%; Ruff lint/format passed.
+Terraform local/Azure: valid; 9 Helm charts linted; shell syntax passed.
+Actionlint passed; strict schemas: 53 valid, 0 invalid/errors/skipped.
+Startup ownership regression rejects another project before storage creation.
+Gitleaks history/staged: no leaks found.
+GitHub OIDC and 14 Azure variables configured; no billable resources created.
+```
+Next action: push this exact source, wait for CI, and launch Azure deploy.

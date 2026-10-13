@@ -155,6 +155,7 @@ def test_dashboard_serves_page_and_runs_commands_from_repository(
         "not_expired",
         "bad_expiry",
         "orphaned_nodes",
+        "startup_unowned",
     ],
 )
 def test_full_kill_is_state_independent_and_checks_ownership(
@@ -176,7 +177,7 @@ def test_full_kill_is_state_independent_and_checks_ownership(
     if scenario == "orphaned_nodes":
         groups.pop("test-app")
         groups.pop("test-state")
-    if scenario == "unowned":
+    if scenario in {"unowned", "startup_unowned"}:
         groups["test-state"] = {"repository": "another/repository"}
     for group in groups.values():
         group["deadline"] = (
@@ -205,6 +206,8 @@ def test_full_kill_is_state_independent_and_checks_ownership(
         "    print(str(group in state['groups']).lower())\n"
         "elif args[:2] == ['group', 'show']:\n"
         "    if 'tags.ExpiresAt' in args: print(state['groups'][group]['deadline'])\n"
+        "    elif 'tags.Repository' in args:\n"
+        "        print(state['groups'][group].get('repository',''))\n"
         "    else: print(json.dumps(state['groups'][group]))\n"
         "elif args[:2] == ['group', 'delete']:\n"
         "    if os.environ['SCENARIO'] == 'delete_failure': sys.exit(4)\n"
@@ -214,6 +217,9 @@ def test_full_kill_is_state_independent_and_checks_ownership(
         "else: sys.exit(5)\n"
     )
     cli.chmod(0o755)
+    gh = tmp_path / "gh"
+    gh.write_text("#!/bin/sh\nexit 0\n")
+    gh.chmod(0o755)
     terraform = tmp_path / "terraform"
     terraform.write_text("#!/bin/sh\nexit 95\n")
     terraform.chmod(0o755)
@@ -224,7 +230,14 @@ def test_full_kill_is_state_independent_and_checks_ownership(
         "AZURE_RESOURCE_GROUP": "test-app",
         "AZURE_NODE_RESOURCE_GROUP": "test-nodes",
         "TF_STATE_RESOURCE_GROUP": "test-state",
-        "CONFIRMATION": "KILL",
+        "CONFIRMATION": "DEPLOY" if scenario == "startup_unowned" else "KILL",
+        "ARM_CLIENT_ID": "test-client",
+        "ARM_TENANT_ID": "test-tenant",
+        "TF_STATE_ACCOUNT": "teststate",
+        "TF_VAR_kubernetes_version": "1.36.4",
+        "TF_VAR_budget_email": "owner@example.com",
+        "TF_VAR_location": "test-region",
+        "AZURE_ALLOWED_CIDR": "192.0.2.1/32",
         "GITHUB_REPOSITORY": owner,
         "GITHUB_STEP_SUMMARY": "",
         "GH_TOKEN": "",
@@ -236,14 +249,24 @@ def test_full_kill_is_state_independent_and_checks_ownership(
         if scenario in {"expired", "not_expired", "bad_expiry", "orphaned_nodes"}
         else "kill"
     )
+    if scenario == "startup_unowned":
+        action = "deploy"
     command = ["bash", "scripts/azure.sh", action]
     result = subprocess.run(
         command, cwd=ROOT, env=environment, capture_output=True, text=True
     )
     record = json.loads(state.read_text())
-    if scenario in {"unowned", "delete_failure", "list_failure", "bad_expiry"}:
+    if scenario in {
+        "unowned",
+        "delete_failure",
+        "list_failure",
+        "bad_expiry",
+        "startup_unowned",
+    }:
         assert result.returncode != 0
         assert record["deleted"] == []
+        if scenario == "startup_unowned":
+            assert "Backend group belongs to another project" in result.stderr
     elif scenario == "not_expired":
         assert result.returncode == 0, result.stderr
         assert record["groups"] == groups

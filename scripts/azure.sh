@@ -7,6 +7,61 @@ WORKFLOW_ACTION="${ACTION:-plan}"
 ACTION="${1:-plan}"
 TF=(terraform -chdir=infra/envs/azure)
 
+if [[ "${ACTION}" == connect ]]; then
+  REPO="$(gh repo view --json nameWithOwner --jq .nameWithOwner)"
+  SUBSCRIPTION="$(az account show --query id -o tsv)"
+  TENANT="$(az account show --query tenantId -o tsv)"
+  BUDGET_EMAIL="$(az ad signed-in-user show --query mail -o tsv)"
+  [[ "${BUDGET_EMAIL}" == *@* ]] || { echo "Set a real Azure budget email" >&2; exit 1; }
+  PROJECT=mlp
+  ENVIRONMENT=test
+  RESOURCE_GROUP="${PROJECT}-${ENVIRONMENT}-rg"
+  STATE_GROUP="${PROJECT}-${ENVIRONMENT}-state-rg"
+  STATE_ACCOUNT="mlptf$(printf '%s' "${SUBSCRIPTION}" | tr -d '-' | cut -c1-16)"
+  IDENTITY_GROUP=mlp-github-identity-rg
+  IDENTITY_NAME=mlplatform-github-actions
+  az provider register --namespace Microsoft.ManagedIdentity --wait
+  if [[ "$(az group exists --name "${IDENTITY_GROUP}")" == true ]]; then
+    owner="$(az group show --name "${IDENTITY_GROUP}" --query tags.Repository -o tsv)"
+    [[ "${owner}" == "${REPO}" ]] || { echo "Identity group belongs to another project" >&2; exit 1; }
+  else
+    az group create --name "${IDENTITY_GROUP}" --location indiasouthcentral --tags "Repository=${REPO}" >/dev/null
+  fi
+  identities="$(az identity list --resource-group "${IDENTITY_GROUP}" --query "[?name=='${IDENTITY_NAME}'].name" -o tsv)"
+  [[ -n "${identities}" ]] || az identity create --name "${IDENTITY_NAME}" --resource-group "${IDENTITY_GROUP}" --location indiasouthcentral --tags "Repository=${REPO}" >/dev/null
+  APP_ID="$(az identity show --name "${IDENTITY_NAME}" --resource-group "${IDENTITY_GROUP}" --query clientId -o tsv)"
+  PRINCIPAL_ID="$(az identity show --name "${IDENTITY_NAME}" --resource-group "${IDENTITY_GROUP}" --query principalId -o tsv)"
+  federation="$(az identity federated-credential list --identity-name "${IDENTITY_NAME}" --resource-group "${IDENTITY_GROUP}" --query "[?name=='github-azure'].name" -o tsv)"
+  [[ -n "${federation}" ]] || az identity federated-credential create --name github-azure --identity-name "${IDENTITY_NAME}" --resource-group "${IDENTITY_GROUP}" --issuer https://token.actions.githubusercontent.com --subject "repo:${REPO}:environment:azure" --audiences api://AzureADTokenExchange >/dev/null
+  scope="/subscriptions/${SUBSCRIPTION}"
+  for role in Contributor 'Role Based Access Control Administrator' 'Storage Blob Data Contributor' AcrPush; do
+    existing="$(az role assignment list --scope "${scope}" --query "[?principalId=='${PRINCIPAL_ID}' && roleDefinitionName=='${role}'].id" -o tsv)"
+    [[ -n "${existing}" ]] || az role assignment create --assignee-object-id "${PRINCIPAL_ID}" --assignee-principal-type ServicePrincipal --role "${role}" --scope "${scope}" >/dev/null
+  done
+  PUBLIC_CIDR="$(curl --fail --silent --show-error https://api.ipify.org)/32"
+  variables="$(mktemp)"
+  cat > "${variables}" <<VARS
+AZURE_CLIENT_ID=${APP_ID}
+AZURE_TENANT_ID=${TENANT}
+AZURE_SUBSCRIPTION_ID=${SUBSCRIPTION}
+AZURE_RESOURCE_GROUP=${RESOURCE_GROUP}
+AZURE_NODE_RESOURCE_GROUP=${PROJECT}-${ENVIRONMENT}-nodes-rg
+TF_STATE_RESOURCE_GROUP=${STATE_GROUP}
+TF_STATE_ACCOUNT=${STATE_ACCOUNT}
+AZURE_PROJECT=${PROJECT}
+AZURE_ENVIRONMENT=${ENVIRONMENT}
+AZURE_LOCATION=indiasouthcentral
+AZURE_VM_SIZE=Standard_D4as_v4
+AZURE_KUBERNETES_VERSION=1.36.4
+AZURE_BUDGET_EMAIL=${BUDGET_EMAIL}
+AZURE_ALLOWED_CIDR=${PUBLIC_CIDR}
+VARS
+  gh variable set --env azure --env-file "${variables}" --repo "${REPO}"
+  rm -f "${variables}"
+  echo "GitHub OIDC and Azure variables configured. No billable resources created."
+  exit
+fi
+
 check() {
   if [[ "${ACTION}" == kill || "${ACTION}" == expired ]]; then
     [[ "${CONFIRMATION:-}" == KILL ]] || { echo "Human confirmation must be KILL" >&2; exit 1; }
@@ -106,6 +161,39 @@ OWNERSHIP_CHECK
   fi
   [[ -z "${GITHUB_STEP_SUMMARY:-}" ]] || echo "${message}" >> "${GITHUB_STEP_SUMMARY}"
   exit
+fi
+if [[ "${ACTION}" == deploy ]]; then
+  : "${AZURE_ALLOWED_CIDR:?set the tester network CIDR in GitHub environment azure}"
+  : "${TF_STATE_RESOURCE_GROUP:?set the project-owned backend resource group}"
+  python3 - "${AZURE_ALLOWED_CIDR}" <<'CIDR_CHECK'
+import ipaddress,sys
+ipaddress.ip_network(sys.argv[1], strict=False)
+CIDR_CHECK
+  export TF_VAR_expires_at="$(date -u -d '+2 hours' +%FT%TZ)"
+  gh api --method PUT "repos/${GITHUB_REPOSITORY}/actions/workflows/expiry.yml/enable"
+  if [[ "$(az group exists --name "${TF_STATE_RESOURCE_GROUP}")" == true ]]; then
+    owner="$(az group show --name "${TF_STATE_RESOURCE_GROUP}" --query tags.Repository -o tsv)"
+    [[ "${owner}" == "${GITHUB_REPOSITORY}" ]] || { echo "Backend group belongs to another project" >&2; exit 1; }
+    az group update --name "${TF_STATE_RESOURCE_GROUP}" --set "tags.ExpiresAt=${TF_VAR_expires_at}" >/dev/null
+  else
+    az group create --name "${TF_STATE_RESOURCE_GROUP}" --location "${TF_VAR_location}" \
+      --tags "Repository=${GITHUB_REPOSITORY}" "ExpiresAt=${TF_VAR_expires_at}" >/dev/null
+  fi
+  touch /tmp/mlp-startup-started
+  accounts="$(az storage account list --resource-group "${TF_STATE_RESOURCE_GROUP}" --query "[?name=='${TF_STATE_ACCOUNT}'].name" -o tsv)"
+  if [[ -z "${accounts}" ]]; then
+    az storage account create --name "${TF_STATE_ACCOUNT}" --resource-group "${TF_STATE_RESOURCE_GROUP}" \
+      --location "${TF_VAR_location}" --sku Standard_LRS --kind StorageV2 \
+      --https-only true --min-tls-version TLS1_2 --allow-blob-public-access false \
+      --allow-shared-key-access false --tags "Repository=${GITHUB_REPOSITORY}" >/dev/null
+  fi
+  for attempt in $(seq 1 30); do
+    if az storage container create --name tfstate --account-name "${TF_STATE_ACCOUNT}" --auth-mode login --public-access off >/dev/null; then
+      break
+    fi
+    [[ "${attempt}" != 30 ]] || { echo "State-container creation failed" >&2; exit 1; }
+    echo "Waiting for backend data-plane access (${attempt}/30)"; sleep 10
+  done
 fi
 "${TF[@]}" init -input=false -lockfile=readonly \
   -backend-config="storage_account_name=${TF_STATE_ACCOUNT}" \
@@ -289,3 +377,16 @@ print(re.sub(r"__([A-Z_]+)__",lambda match:values[match[1]],manifest))
 DASHBOARD_RENDER
 
 verify
+SESSION_EXPIRES_AT="$(date -u -d '+2 hours' +%FT%TZ)"
+for group in "${RG}" "${TF_STATE_RESOURCE_GROUP}"; do
+  az group update --name "${group}" --set "tags.ExpiresAt=${SESSION_EXPIRES_AT}" >/dev/null
+done
+echo "Automatic full teardown due at ${SESSION_EXPIRES_AT} UTC; scheduled checks every 15 minutes."
+if [[ -n "${GITHUB_STEP_SUMMARY:-}" ]]; then
+  {
+    echo "Dashboard: https://${PUBLIC_HOST}:8050 (admin login; self-signed test certificate)"
+    echo "Test session expires: ${SESSION_EXPIRES_AT}; cleanup scheduling may be delayed."
+    echo "End testing immediately: run the azure workflow, action kill, confirmation KILL."
+    echo "Kill deletes the app, node resources, images, disks, model/data history, and backend."
+  } >> "${GITHUB_STEP_SUMMARY}"
+fi
