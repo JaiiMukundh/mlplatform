@@ -51,7 +51,7 @@ Checkboxes are changed only after the corresponding acceptance check has been ob
 
 ## P4 — CI/CD
 
-- [ ] P4.1 Install and configure the self-hosted runner. (human; `docs/runner-setup.md` written)
+- P4.1 Superseded by G2/G3: GitHub-hosted runners replace the laptop runner; no runner installation is required.
 - [x] P4.2 Implement continuous integration.
 - [x] P4.3 Implement local continuous deployment.
 - [x] P4.4 Remove model artifacts from the application image.

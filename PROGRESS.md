@@ -617,3 +617,5 @@ Only observed command output is recorded here.
   - GitHub security job: success in 24s; dependency critical gates passed; infrastructure findings remain report-only.
   - Repository azure environment restricted to main, read-only default Actions token permissions; billable/destructive operations require manual explicit confirmation. Azure workflow was not triggered.
   - Next action: Azure bootstrap/OIDC and state configuration, cloud dashboard/access, then human-approved deployment and real AKS end-to-end verification. P9.6 remains unchecked; no Azure resources created by this work.
+
+- G3 checklist cleanup (2026-10-13) — Retired the obsolete P4.1 human laptop-runner installation requirement rather than falsely marking it installed. GitHub-hosted CI success is the replacement evidence. No further code changes; final publication CI is being observed.
