@@ -392,3 +392,10 @@ not depend on a registry ID that is only known after creation. Preserve its
 indexed resource address. Give AKS a service CIDR outside the VNet address space
 instead of relying on overlapping Azure defaults. Azure execution is still
 unverified and reserved for the next cloud phase.
+
+Actual GitHub CI exposed a startup-clock bug in the remediator. A missing alert
+fingerprint must not be represented as a timestamp of zero: fresh nodes with
+monotonic uptime below 120 seconds otherwise ignore their first alerts. Require
+a previous entry explicitly; test zero uptime, repeated alerts, and exact debounce
+expiry without altering the existing action expectations. This fixes runtime
+behavior, rather than waiting for runner uptime or skipping the failing tests.

@@ -114,7 +114,8 @@ def create_app(
         name = alert.labels.get("alertname", "unknown")
         fingerprint = alert.fingerprint or f"{name}:{alert.status}"
         now = time.monotonic()
-        if now - seen.get(fingerprint, 0.0) < remediation.DEBOUNCE_SECONDS:
+        previous = seen.get(fingerprint)
+        if previous is not None and now - previous < remediation.DEBOUNCE_SECONDS:
             return "debounced", "skipped"
         seen[fingerprint] = now
 

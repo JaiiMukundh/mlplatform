@@ -604,3 +604,8 @@ Only observed command output is recorded here.
   - `make security`: uv.lock and training.txt each zero critical dependency findings; infrastructure findings remain report-only. `make secret-scan`: Git history/staged changes clean.
   - GitHub environment azure: main-only branch policy confirmed; default workflow token read-only. Reviewer/wait-timer protection unavailable on account plan; explicit manual confirmation documented. OIDC/state variables are intentionally not fabricated.
   - Next action: commit/push the verified code to GitHub, then observe actual CI. Azure bootstrap, dashboard hosting, and cloud e2e are next-phase work; no Azure resources created.
+
+- G3 INTERIM (2026-10-13) — Pushed 009218f to GitHub main; remote SHA matched. Actual hosted CI run 38428679510: security passed; quality failed six remediator tests because fresh runner monotonic uptime was below 120 seconds. Existing code treated missing fingerprints as last-seen at uptime 0.
+  - Fixed runtime debounce to require an actual previous fingerprint before applying the cooldown; tests pin the module's clock to 0 and verify first-event execution, repeat suppression, and expiry at exactly 120 seconds. Existing behavioral assertions retained.
+  - `make lint test`: 98 files formatted/linted; 92 passed, 3 cluster e2e skipped; coverage 84.29%.
+  - Next action: commit/push the startup fix and observe actual GitHub CI again; mark G3 only after success. No Azure operation triggered.

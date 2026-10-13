@@ -21,6 +21,8 @@ def _hpa(min_replicas: int, max_replicas: int) -> SimpleNamespace:
 def mocked_app(monkeypatch: pytest.MonkeyPatch) -> TestClient:
     """Build the app with mocked K8s APIs and Grafana annotations."""
     apps_api = MagicMock()
+    # A fresh runner/node may have monotonic uptime below the debounce window.
+    monkeypatch.setattr(remediator_main, "time", SimpleNamespace(monotonic=lambda: 0.0))
     autoscaling_api = MagicMock()
     autoscaling_api.read_namespaced_horizontal_pod_autoscaler.return_value = _hpa(2, 6)
     monkeypatch.setattr(
@@ -98,6 +100,30 @@ def test_debounce_ignores_repeat(mocked_app: TestClient) -> None:
     assert (
         mocked_app.autoscaling_api.patch_namespaced_horizontal_pod_autoscaler.call_count
         == 1
+    )
+
+
+def test_debounce_expires_from_zero_uptime(
+    mocked_app: TestClient,
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    """The first alert at uptime zero runs, repeats wait, and the window expires."""
+    clock = [0.0]
+    monkeypatch.setattr(
+        remediator_main, "time", SimpleNamespace(monotonic=lambda: clock[0])
+    )
+    payload = _payload("HighP95Latency", fingerprint="fp-clock")
+    first = mocked_app.post("/alert", json=payload)
+    clock[0] = 119.9
+    repeated = mocked_app.post("/alert", json=payload)
+    clock[0] = 120.0
+    expired = mocked_app.post("/alert", json=payload)
+    assert first.json()["outcomes"][0]["action"] == "scale_hpa_floor"
+    assert repeated.json()["outcomes"][0]["action"] == "debounced"
+    assert expired.json()["outcomes"][0]["action"] == "scale_hpa_floor"
+    assert (
+        mocked_app.autoscaling_api.patch_namespaced_horizontal_pod_autoscaler.call_count
+        == 2
     )
 
 
