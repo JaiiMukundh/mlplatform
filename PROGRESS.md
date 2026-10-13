@@ -655,3 +655,20 @@ exception overlooked the checksum pipes. Enable Bash pipefail explicitly; do
 not weaken hadolint. `make check-images` now passes Dockerfile lint, all six
 builds/imports, and retrain chart/job/script smoke on the corrected Dockerfile.
 Next action: publish the correction and observe CI before closing C1.
+
+C1 complete: GitHub CI run 38434602495 succeeded for
+`14d9450f17f463d0c3241c1e6f47dfa5170b4533` on main. Both quality and security
+jobs passed, including corrected Dockerfile lint, all six container builds,
+entry-point/retrain-path smoke, and the critical image vulnerability gate.
+https://github.com/JaiiMukundh/mlplatform/actions/runs/38434602495
+
+```text
+GitHub CI status: completed; conclusion: success.
+quality: success; security: success.
+Tracked files: 224 -> 209; tracked directories: 67 -> 56.
+Existing 92 tests retained; dashboard regression adds one passing test.
+Local: 93 passed, 3 cluster tests skipped; coverage 84.29%.
+```
+
+C1 checkbox is now verified. Next action: Azure dashboard/bootstrap work when
+requested; billable Azure apply remains human-only under AGENTS.md.

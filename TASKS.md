@@ -10,7 +10,7 @@ Checkboxes are changed only after the corresponding acceptance check has been ob
 
 ## Deletion and directory cleanup — 2026-10-13
 
-- [ ] C1 Delete obsolete files and flatten wrapper directories without changing runtime features. Acceptance: `make lint test check-infra check-actions check-charts secret-scan check-images` and GitHub CI.
+- [x] C1 Delete obsolete files and flatten wrapper directories without changing runtime features. Acceptance: `make lint test check-infra check-actions check-charts secret-scan check-images` and GitHub CI.
 
 ## P0 — Foundations
 
