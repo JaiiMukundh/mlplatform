@@ -893,6 +893,12 @@ commit CI, run `dashboard` action, and confirm standard HTTPS access.
 
 The first `dashboard` workflow patched the live service to 443 but its external
 curl probe had no connection timeout, so I canceled the waiting job before it
-could consume the workflow timeout. Added a 10-second connect timeout and
-15-second request timeout. The targeted action now refreshes the current
-GitHub runner IP while preserving the tester IP allowlist; rerun it after CI.
+could consume the workflow timeout. Added bounded probe timeouts. The targeted
+action refreshes the current GitHub runner IP while preserving the tester IP.
+CI run 38727648960 passed for `7aa1826`. Azure action run 38728134484 passed:
+`service/dashboard patched`, `{"status":"ok"}`, and "Dashboard: cluster,
+serving, metrics, registry, and storage checks passed." It printed the standard
+HTTPS URL. The in-app browser's egress IP is 45.112.151.108, which is in the
+dashboard allowlist, but requests from that network still time out. No broad
+ingress was enabled. Next: resolve the client-network path or request explicit
+approval before testing internet-wide dashboard ingress.
