@@ -77,9 +77,12 @@ and object-store credentials live in Kubernetes Secrets and are reused on reruns
 
 ## Cloud topology and current limits
 
-Terraform provisions the AKS network, AKS, ACR, and budget notifications. AKS uses one supported 4-vCPU/16-GiB Standard_D4as_v4
-node for the test session; model API retains two replicas. VM-family quota and regional availability must be checked for the actual
-subscription; `make azure-preflight` is read-only when authenticated.
+Terraform provisions the AKS network, AKS, ACR, and budget notifications. AKS
+uses one supported 4-vCPU/16-GiB Standard_D4as_v4 system node and one
+Standard_B2s user node for platform services in this test subscription. Model
+API retains two replicas with 512 MiB requests and 1 GiB limits. VM-family
+quota and regional availability must be checked for the actual subscription;
+`make azure-preflight` is read-only when authenticated.
 
 The deployment builds all seven named targets from `infra/Dockerfile`,
 pushes commit-tagged ACR images, installs the same Helm charts as the proven
@@ -97,7 +100,8 @@ the separate Blob account for Terraform state is still required.
 
 The dashboard runs inside AKS over HTTPS on port 8050 with admin login.
 Its temporary certificate is self-signed. Native tool ports share the same
-static public IP and are restricted to the configured tester network.
+static public IP, each Service exposes only its assigned port, and access is
+restricted to the configured tester network and the GitHub Actions runner.
 Local dashboard/demo operation remains available as a functional harness. The dataset is real UCI Taiwan credit data; repeated
 snapshot timestamps and injected drift are demonstrations, not real outcomes
 observed over time.

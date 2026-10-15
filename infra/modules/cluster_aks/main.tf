@@ -46,6 +46,21 @@ resource "azurerm_kubernetes_cluster" "this" {
   depends_on = [azurerm_role_assignment.network]
 }
 
+# Keep a small burst pool for platform services. The quota-checked system pool
+# consumes the subscription's four DASv4 cores; one B-series node is available
+# for the data and observability workloads in the test subscription.
+resource "azurerm_kubernetes_cluster_node_pool" "auxiliary" {
+  name                  = "auxiliary"
+  kubernetes_cluster_id = azurerm_kubernetes_cluster.this.id
+  vm_size               = "Standard_B2s"
+  node_count            = 1
+  mode                  = "User"
+  vnet_subnet_id        = var.vnet_subnet_id
+  os_disk_size_gb       = 30
+  max_pods              = 30
+  tags                  = var.tags
+}
+
 data "azurerm_client_config" "current" {}
 
 resource "azurerm_user_assigned_identity" "cluster" {

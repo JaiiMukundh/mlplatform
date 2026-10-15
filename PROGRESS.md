@@ -795,3 +795,32 @@ Next action: fix `public_service` to drop extra Service ports (alertmanager 8080
 conflict), reduce single-node memory requests or codify the aux pool, register
 both OIDC subjects in `azure.sh connect`, then re-dispatch deploy with fresh
 human confirmation. A3 stays unchecked.
+
+## 2026-10-15 — A3 live retry preparation
+
+Implemented the previously observed Azure fixes: Terraform now creates the
+successful one-node Standard_B2s platform pool alongside the quota-limited
+Standard_D4as_v4 system node; Azure model-api requests 512 MiB and can use 1 GiB;
+MLflow requests 256 MiB; and each shared-IP Service drops extra ports before
+applying its assigned public port. Added a cloud contract test for the port
+filter. GitHub's configured tester CIDR still matches this host's current
+public IPv4 (45.112.151.108/32). Azure quota readout: regional cores 0/6,
+standardBSFamily 0/4, standardDASv4Family 0/4. The SKU-list endpoint stalled in
+the local preflight; this D4 SKU and B2s pool both created successfully in the
+previous live run.
+
+Acceptance command: `make lint test check-infra check-actions check-charts
+secret-scan`.
+
+Actual output summary:
+```text
+Ruff lint and format: passed (89 files formatted).
+Pytest: 107 passed, 3 skipped; coverage 84.29% (required 80%).
+Terraform local/Azure validation and Helm lint: passed.
+Kubernetes schemas: 53 resources valid, 0 invalid/errors/skipped.
+Actionlint passed; Gitleaks scanned 96 commits and staged changes, no leaks.
+```
+
+Next action: commit/push only the A3 fix files, wait for exact-commit GitHub CI,
+then launch the authorized Azure workflow and verify serving, dashboard,
+retraining, and expiry teardown.

@@ -16,7 +16,7 @@ Checkboxes are changed only after the corresponding acceptance check has been ob
 
 - [x] A1 Add a state-independent full kill switch with ownership guards and verified deletion. Acceptance: `make lint test check-actions check-infra secret-scan`; mocked CLI teardown tests cover partial deployments, reruns, ownership rejection, and failures.
 - [x] A2 Host the dashboard and adapt its operations to AKS; verify cloud configuration and images.
-- [ ] A3 Configure GitHub OIDC/state, provision through Actions, and verify live serving/dashboard/retraining with a documented kill action. Billable execution requires explicit override of AGENTS rule 12.
+- [ ] A3 Configure GitHub OIDC/state, provision through Actions, and verify live serving/dashboard/retraining with a documented kill action. Authorized test deployment exception is recorded in AGENTS.md.
 
 ## P0 — Foundations
 

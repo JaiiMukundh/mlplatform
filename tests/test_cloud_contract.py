@@ -11,7 +11,39 @@ import pytest
 import yaml
 from retrain.dispatch import dispatch_candidate
 
+from scripts.azure_public_service import prepare_service
+
 ROOT = Path(__file__).resolve().parents[1]
+
+
+def test_public_service_exposes_only_configured_port(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    """Shared Azure IP Services must not retain conflicting chart ports."""
+    monkeypatch.setenv("PUBLIC_IP_NAME", "mlp-test-ingress")
+    monkeypatch.setenv("AZURE_RESOURCE_GROUP", "mlp-test-rg")
+    monkeypatch.setenv("AZURE_ALLOWED_CIDR", "203.0.113.8/32")
+    monkeypatch.setenv("RUNNER_CIDR", "198.51.100.4/32")
+    service = {
+        "metadata": {"annotations": {}},
+        "spec": {
+            "ports": [
+                {"port": 80, "targetPort": 9093, "name": "http"},
+                {"port": 8080, "targetPort": 8080, "name": "metrics"},
+            ]
+        },
+    }
+
+    prepared = prepare_service(service, 9093)
+
+    assert prepared["spec"]["type"] == "LoadBalancer"
+    assert prepared["spec"]["ports"] == [
+        {"port": 9093, "targetPort": 9093, "name": "http"}
+    ]
+    assert prepared["spec"]["loadBalancerSourceRanges"] == [
+        "203.0.113.8/32",
+        "198.51.100.4/32",
+    ]
 
 
 def check(action: str, **overrides: str) -> subprocess.CompletedProcess[str]:

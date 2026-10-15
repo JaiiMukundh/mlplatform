@@ -298,19 +298,13 @@ for service in postgres minio; do
   helm_apply "${service}" data "infra/charts/${service}" --set auth.createSecret=false --set "auth.existingSecret=${service}-auth"
 done
 helm_apply redis data infra/charts/redis
-helm_apply mlflow data infra/charts/mlflow --set "image.repository=${ACR}/mlp-mlflow,image.tag=${TAG}"
+helm_apply mlflow data infra/charts/mlflow \
+  --set "image.repository=${ACR}/mlp-mlflow,image.tag=${TAG},resources.requests.memory=256Mi"
 
 public_service() {
   local namespace="$1" name="$2" port="$3"
-  kubectl -n "${namespace}" get service "${name}" -o json | python3 -c '
-import json,os,sys
-service=json.load(sys.stdin)
-service["metadata"].setdefault("annotations",{}).update({"service.beta.kubernetes.io/azure-pip-name":os.environ["PUBLIC_IP_NAME"],"service.beta.kubernetes.io/azure-load-balancer-resource-group":os.environ["AZURE_RESOURCE_GROUP"]})
-spec=service["spec"]
-spec["type"]="LoadBalancer"
-spec["loadBalancerSourceRanges"]=[os.environ["AZURE_ALLOWED_CIDR"],os.environ["RUNNER_CIDR"]]
-spec["ports"][0]["port"]=int(sys.argv[1])
-print(json.dumps(service))' "${port}" | kubectl replace -f -
+  kubectl -n "${namespace}" get service "${name}" -o json | \
+    PUBLIC_PORT="${port}" python3 scripts/azure_public_service.py | kubectl replace -f -
 }
 public_service observability kube-prometheus-stack-grafana 3000
 public_service observability kube-prometheus-stack-alertmanager 9093

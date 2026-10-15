@@ -1,5 +1,18 @@
 # Decisions
 
+## 2026-10-15 — Give Azure platform services a quota-supported node and isolate public ports
+
+- **Decision:** Keep the D4as_v4 system node for the two model API replicas and
+  add one B2s user pool for platform services. Raise the Azure model API
+  container memory to a 512 MiB request and 1 GiB limit, lower MLflow's
+  scheduling request to 256 MiB, and expose exactly one port per Service on the
+  shared public IP.
+- **Reason:** The first live run required an auxiliary B2s node to schedule the
+  platform and failed serving while Alertmanager retained a conflicting 8080
+  Service port. The exact single-port rule prevents a second Azure LoadBalancer
+  rule from claiming the model API port; codifying the observed node and memory
+  settings makes clean deployments repeatable.
+
 ## 2026-10-13 — Compact infrastructure and finish GitHub before Azure execution
 
 The human now authorizes repository edits, commits, and GitHub pushes, and asks for fewer files without losing functionality. Keep each Terraform module in one `main.tf` (at most 221 lines), retaining all module interfaces and resource addresses. Retain local functional tests and the local environment as the proven test harness; cloud operation must never depend on a laptop runner. Existing uncommitted Azure migration changes are part of the requested publication; exclude the unrelated synopsis document. Verify and commit this compaction before rewriting CI/CD. Record new stable tool/provider pins from official registries; commit Terraform dependency locks. Azure provisioning remains a human-approved operation under AGENTS.md rule 12.
