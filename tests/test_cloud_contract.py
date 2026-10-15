@@ -132,6 +132,18 @@ def test_plan_needs_configuration_but_no_billing_confirmation() -> None:
     assert "TF_STATE_ACCOUNT" in result.stderr
 
 
+def test_dashboard_action_is_allowed_without_widening_the_source_allowlist() -> None:
+    """Dashboard port migration is a CI-gated, allowlisted operation."""
+    assert check("dashboard").returncode == 0
+    manifest = (ROOT / "infra/dashboard.yaml").read_text()
+    workflow = (ROOT / ".github/workflows/cd.yml").read_text()
+    deploy_script = (ROOT / "scripts/azure.sh").read_text()
+    assert "loadBalancerSourceRanges: [__ALLOWED_CIDR__, __RUNNER_CIDR__]" in manifest
+    assert "port: 443, targetPort: https" in manifest
+    assert "inputs.action == 'deploy' || inputs.action == 'dashboard'" in workflow
+    assert "https://${PUBLIC_HOST}/healthz" in deploy_script
+
+
 def test_release_rejects_shell_payloads() -> None:
     """Candidate identifiers cannot become executable shell syntax in a Job."""
     assert check("release", VERSION="7").returncode == 0

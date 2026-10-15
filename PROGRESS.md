@@ -878,3 +878,15 @@ The GitHub expiry workflow is enabled; the session deadline is 2026-10-15
 12:25:03 UTC and scheduled checks run every 15 minutes. Immediate full teardown:
 GitHub Actions → azure → Run workflow → action `kill`, confirmation `KILL`, or
 `make azure-kill CONFIRMATION=KILL`. A3 and P9.6 are complete.
+
+## 2026-10-15 — Dashboard access fix
+
+The dashboard pod and both AKS node-port health checks returned `{"status":"ok"}`;
+the public `:8050` URL timed out. The Service and NSG retained the configured
+tester and runner IP allowlist. Move only the public dashboard port to HTTPS 443
+(container remains on 8050), add a targeted `dashboard` GitHub Actions update,
+and include a public health check in `verify`. Acceptance: `make lint test
+check-infra check-actions check-charts secret-scan` passed: 110 passed, 3
+skipped, coverage 84.29%; Terraform valid, Helm 0 failed, 6 manifest batches
+valid, Gitleaks no leaks. `git diff --check` passed. Next: push, wait for exact
+commit CI, run `dashboard` action, and confirm the standard HTTPS URL responds.

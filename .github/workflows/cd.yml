@@ -5,9 +5,9 @@ on:
   workflow_dispatch:
     inputs:
       action:
-        description: "Plan is read-only; deploy creates billable Azure resources"
+        description: "Plan is read-only; dashboard moves public HTTPS to port 443"
         type: choice
-        options: [plan, deploy, verify, release, sleep, wake, destroy, kill]
+        options: [plan, deploy, verify, dashboard, release, sleep, wake, destroy, kill]
         default: plan
         required: true
       version:
@@ -85,7 +85,7 @@ jobs:
         if: inputs.action == 'deploy'
         run: uv sync --frozen
       - name: Require successful CI for this exact commit
-        if: inputs.action == 'deploy'
+        if: inputs.action == 'deploy' || inputs.action == 'dashboard'
         env:
           GH_TOKEN: ${{ github.token }}
         run: |

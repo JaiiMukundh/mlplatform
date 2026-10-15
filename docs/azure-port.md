@@ -9,7 +9,7 @@ GitHub-hosted runners handle cloud operation; no laptop runner is required.
 
 Live endpoints:
 
-- Dashboard: <https://mlp-test-b3e0c60e.indiasouthcentral.cloudapp.azure.com:8050>
+- Dashboard: <https://mlp-test-b3e0c60e.indiasouthcentral.cloudapp.azure.com>
   (login `admin`; self-signed test certificate; tester network allowlist applies).
 - Model API: <http://172.198.48.202:8080> (`/readyz`, `/model-info`, and
   `POST /predict`).
@@ -118,7 +118,8 @@ in-cluster PostgreSQL. Unused managed Blob/PostgreSQL resources and workload ide
 removed. Application storage remains the same proven MinIO/PostgreSQL setup;
 the separate Blob account for Terraform state is still required.
 
-The dashboard runs inside AKS over HTTPS on port 8050 with admin login.
+The dashboard runs inside AKS over HTTPS on port 8050 with admin login; its
+public load balancer listens on standard HTTPS port 443.
 Its temporary certificate is self-signed. Native tool ports share the same
 static public IP, each Service exposes only its assigned port, and access is
 restricted to the configured tester network and the GitHub Actions runner.

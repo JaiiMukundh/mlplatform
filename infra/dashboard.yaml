@@ -110,4 +110,4 @@ spec:
   loadBalancerSourceRanges: [__ALLOWED_CIDR__, __RUNNER_CIDR__]
   selector: {app: dashboard}
   ports:
-    - {name: https, port: 8050, targetPort: https}
+    - {name: https, port: 443, targetPort: https}

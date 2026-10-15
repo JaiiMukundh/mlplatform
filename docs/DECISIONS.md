@@ -1,5 +1,15 @@
 # Decisions
 
+## 2026-10-15 — Serve the Azure dashboard on standard HTTPS
+
+- **Decision:** Keep the dashboard container on HTTPS port 8050, but expose its
+  Azure LoadBalancer Service on port 443. Add a targeted GitHub Actions action
+  to update this Service and check the public health URL, with the existing
+  tester and runner source ranges unchanged.
+- **Reason:** The dashboard pod and node-port health checks were healthy, while
+  connections to the public `:8050` endpoint timed out. Port 443 avoids client
+  networks that block uncommon ports without broadening the service allowlist.
+
 ## 2026-10-15 — Give Azure platform services a quota-supported node and isolate public ports
 
 - **Decision:** Keep the D4as_v4 system node for the two model API replicas and

@@ -80,7 +80,7 @@ check() {
       [[ "${CONFIRMATION:-}" == "${ACTION^^}" ]] || { echo "Human confirmation must be ${ACTION^^}" >&2; exit 1; } ;;
     release)
       [[ "${VERSION:-}" =~ ^[0-9]+$ ]] || { echo "Release VERSION must be a numeric MLflow version" >&2; exit 1; } ;;
-    check|plan|verify|sleep|init) ;;
+    check|plan|verify|dashboard|sleep|init) ;;
     *) echo "Unknown Azure action: ${ACTION}" >&2; exit 2 ;;
   esac
 }
@@ -269,6 +269,8 @@ verify() {
   curl --fail --silent --show-error -H 'Content-Type: application/json' \
     -d '{"customer_ids":[7]}' "http://${address}:8080/predict"
   kubectl -n observability rollout status deployment/dashboard --timeout=300s
+  curl --insecure --fail --silent --show-error --retry 6 --retry-all-errors --retry-delay 2 \
+    "https://${PUBLIC_HOST}/healthz"
   password="$(kubectl -n observability get secret grafana-admin -o jsonpath='{.data.admin-password}' | base64 -d)"
   kubectl -n observability exec deploy/dashboard -- curl --fail --silent --insecure \
     --user "admin:${password}" https://localhost:8050/api/status > /tmp/mlp-dashboard-status.json
@@ -279,11 +281,17 @@ assert status["nodes_ready"] >= 1 and status["serving_model"], status
 assert all(status[key] for key in ["prometheus_online", "mlflow_online", "minio_online"]), status
 print("Dashboard: cluster, serving, metrics, registry, and storage checks passed")
 DASHBOARD_CHECK
-  echo "Dashboard: https://${PUBLIC_HOST}:8050"
+  echo "Dashboard: https://${PUBLIC_HOST}"
   echo "Model API: http://${address}:8080"
   [[ -z "${GITHUB_STEP_SUMMARY:-}" ]] || echo "Model API: http://${address}:8080" >> "${GITHUB_STEP_SUMMARY}"
 }
 [[ "${ACTION}" == verify ]] && { verify; exit; }
+if [[ "${ACTION}" == dashboard ]]; then
+  kubectl -n observability patch service dashboard --type=json \
+    -p='[{"op":"replace","path":"/spec/ports/0/port","value":443}]'
+  verify
+  exit
+fi
 if [[ "${ACTION}" == release ]]; then
   export VERSION
   manifest="$(mktemp)"
@@ -412,7 +420,7 @@ done
 echo "Automatic full teardown due at ${SESSION_EXPIRES_AT} UTC; scheduled checks every 15 minutes."
 if [[ -n "${GITHUB_STEP_SUMMARY:-}" ]]; then
   {
-    echo "Dashboard: https://${PUBLIC_HOST}:8050 (admin login; self-signed test certificate)"
+    echo "Dashboard: https://${PUBLIC_HOST} (admin login; self-signed test certificate)"
     echo "Test session expires: ${SESSION_EXPIRES_AT}; cleanup scheduling may be delayed."
     echo "End testing immediately: run the azure workflow, action kill, confirmation KILL."
     echo "Kill deletes the app, node resources, images, disks, model/data history, and backend."
