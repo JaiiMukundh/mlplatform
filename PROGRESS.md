@@ -889,4 +889,10 @@ and include a public health check in `verify`. Acceptance: `make lint test
 check-infra check-actions check-charts secret-scan` passed: 110 passed, 3
 skipped, coverage 84.29%; Terraform valid, Helm 0 failed, 6 manifest batches
 valid, Gitleaks no leaks. `git diff --check` passed. Next: push, wait for exact
-commit CI, run `dashboard` action, and confirm the standard HTTPS URL responds.
+commit CI, run `dashboard` action, and confirm standard HTTPS access.
+
+The first `dashboard` workflow patched the live service to 443 but its external
+curl probe had no connection timeout, so I canceled the waiting job before it
+could consume the workflow timeout. Added a 10-second connect timeout and
+15-second request timeout. The targeted action now refreshes the current
+GitHub runner IP while preserving the tester IP allowlist; rerun it after CI.

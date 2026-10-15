@@ -80,7 +80,9 @@ check() {
       [[ "${CONFIRMATION:-}" == "${ACTION^^}" ]] || { echo "Human confirmation must be ${ACTION^^}" >&2; exit 1; } ;;
     release)
       [[ "${VERSION:-}" =~ ^[0-9]+$ ]] || { echo "Release VERSION must be a numeric MLflow version" >&2; exit 1; } ;;
-    check|plan|verify|dashboard|sleep|init) ;;
+    dashboard)
+      [[ -n "${AZURE_ALLOWED_CIDR:-}" ]] || { echo "Dashboard action requires AZURE_ALLOWED_CIDR" >&2; exit 1; } ;;
+    check|plan|verify|sleep|init) ;;
     *) echo "Unknown Azure action: ${ACTION}" >&2; exit 2 ;;
   esac
 }
@@ -255,6 +257,24 @@ export PUBLIC_IP_NAME="$("${TF[@]}" output -raw public_ip_name)"
 export PUBLIC_HOST="$("${TF[@]}" output -raw public_host)"
 export AZURE_RESOURCE_GROUP="${RG}"
 
+verify_dashboard() {
+  kubectl -n observability rollout status deployment/dashboard --timeout=300s
+  curl --insecure --fail --silent --show-error --connect-timeout 10 --max-time 15 \
+    --retry 6 --retry-all-errors --retry-delay 2 \
+    "https://${PUBLIC_HOST}/healthz"
+  password="$(kubectl -n observability get secret grafana-admin -o jsonpath='{.data.admin-password}' | base64 -d)"
+  kubectl -n observability exec deploy/dashboard -- curl --fail --silent --insecure \
+    --user "admin:${password}" https://localhost:8050/api/status > /tmp/mlp-dashboard-status.json
+  python3 - <<'DASHBOARD_CHECK'
+import json
+status = json.load(open("/tmp/mlp-dashboard-status.json"))
+assert status["nodes_ready"] >= 1 and status["serving_model"], status
+assert all(status[key] for key in ["prometheus_online", "mlflow_online", "minio_online"]), status
+print("Dashboard: cluster, serving, metrics, registry, and storage checks passed")
+DASHBOARD_CHECK
+  echo "Dashboard: https://${PUBLIC_HOST}"
+}
+
 verify() {
   kubectl -n serving rollout status deployment/model-api --timeout=180s
   local address=""
@@ -268,28 +288,16 @@ verify() {
   curl --fail --silent --show-error "http://${address}:8080/model-info"
   curl --fail --silent --show-error -H 'Content-Type: application/json' \
     -d '{"customer_ids":[7]}' "http://${address}:8080/predict"
-  kubectl -n observability rollout status deployment/dashboard --timeout=300s
-  curl --insecure --fail --silent --show-error --retry 6 --retry-all-errors --retry-delay 2 \
-    "https://${PUBLIC_HOST}/healthz"
-  password="$(kubectl -n observability get secret grafana-admin -o jsonpath='{.data.admin-password}' | base64 -d)"
-  kubectl -n observability exec deploy/dashboard -- curl --fail --silent --insecure \
-    --user "admin:${password}" https://localhost:8050/api/status > /tmp/mlp-dashboard-status.json
-  python3 - <<'DASHBOARD_CHECK'
-import json
-status = json.load(open("/tmp/mlp-dashboard-status.json"))
-assert status["nodes_ready"] >= 1 and status["serving_model"], status
-assert all(status[key] for key in ["prometheus_online", "mlflow_online", "minio_online"]), status
-print("Dashboard: cluster, serving, metrics, registry, and storage checks passed")
-DASHBOARD_CHECK
-  echo "Dashboard: https://${PUBLIC_HOST}"
+  verify_dashboard
   echo "Model API: http://${address}:8080"
   [[ -z "${GITHUB_STEP_SUMMARY:-}" ]] || echo "Model API: http://${address}:8080" >> "${GITHUB_STEP_SUMMARY}"
 }
 [[ "${ACTION}" == verify ]] && { verify; exit; }
 if [[ "${ACTION}" == dashboard ]]; then
-  kubectl -n observability patch service dashboard --type=json \
-    -p='[{"op":"replace","path":"/spec/ports/0/port","value":443}]'
-  verify
+  RUNNER_CIDR="$(curl --fail --silent --show-error https://api.ipify.org)/32"
+  kubectl -n observability patch service dashboard --type=merge \
+    -p="{\"spec\":{\"ports\":[{\"name\":\"https\",\"port\":443,\"protocol\":\"TCP\",\"targetPort\":\"https\"}],\"loadBalancerSourceRanges\":[\"${AZURE_ALLOWED_CIDR}\",\"${RUNNER_CIDR}\"]}}"
+  verify_dashboard
   exit
 fi
 if [[ "${ACTION}" == release ]]; then

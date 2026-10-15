@@ -101,6 +101,7 @@ def check(action: str, **overrides: str) -> subprocess.CompletedProcess[str]:
         "TF_STATE_ACCOUNT": "teststate",
         "TF_VAR_kubernetes_version": "1.36.4",
         "TF_VAR_budget_email": "owner@example.com",
+        "AZURE_ALLOWED_CIDR": "203.0.113.10/32",
         "ACTION": action,
         "CONFIRMATION": "",
         **overrides,
@@ -142,6 +143,12 @@ def test_dashboard_action_is_allowed_without_widening_the_source_allowlist() -> 
     assert "port: 443, targetPort: https" in manifest
     assert "inputs.action == 'deploy' || inputs.action == 'dashboard'" in workflow
     assert "https://${PUBLIC_HOST}/healthz" in deploy_script
+    assert "--connect-timeout 10 --max-time 15" in deploy_script
+    assert (
+        'RUNNER_CIDR="$(curl --fail --silent --show-error https://api.ipify.org)/32"'
+        in deploy_script
+    )
+    assert "loadBalancerSourceRanges" in deploy_script
 
 
 def test_release_rejects_shell_payloads() -> None:
