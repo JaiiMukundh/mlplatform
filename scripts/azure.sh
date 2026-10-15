@@ -146,6 +146,19 @@ if record.get("repository") != owner and not (record.get("managedBy") or "").low
     sys.exit("Refusing kill: resource group is not owned by this repository")
 OWNERSHIP_CHECK
   done
+  budget_name="${TF_VAR_project:-mlp}-${TF_VAR_environment:-test}-monthly"
+  budget_id="/subscriptions/${ARM_SUBSCRIPTION_ID}/resourceGroups/${AZURE_RESOURCE_GROUP}/providers/Microsoft.Consumption/budgets/${budget_name}"
+  existing_budget="$(az consumption budget show --budget-name "${budget_name}" \
+    --resource-group "${AZURE_RESOURCE_GROUP}" --query id -o tsv 2>/dev/null || true)"
+  if [[ -n "${existing_budget}" ]]; then
+    [[ "${existing_budget,,}" == "${budget_id,,}" ]] || {
+      echo "Refusing kill: project budget ID does not match its owned resource group" >&2
+      exit 1
+    }
+    az consumption budget delete --budget-name "${budget_name}" \
+      --resource-group "${AZURE_RESOURCE_GROUP}" >/dev/null
+    echo "Deleted project cost budget: ${budget_name}"
+  fi
   for group in "${GROUPS_TO_DELETE[@]}"; do
     [[ "$(az group exists --name "${group}")" == true ]] || continue
     echo "Deleting project resource group: ${group}"
@@ -201,6 +214,23 @@ fi
   -backend-config="use_azuread_auth=true" -backend-config="use_oidc=true"
 [[ "${ACTION}" == init ]] && exit 0
 [[ "${ACTION}" == plan ]] && { "${TF[@]}" plan -input=false; exit; }
+if [[ "${ACTION}" == deploy ]]; then
+  # Resource-group deletion leaves Azure Cost Management budgets behind. Import
+  # only the exact project-scoped alert so a clean backend can be recreated.
+  budget_name="${TF_VAR_project}-${TF_VAR_environment}-monthly"
+  expected_budget="/subscriptions/${ARM_SUBSCRIPTION_ID}/resourceGroups/${TF_VAR_project}-${TF_VAR_environment}-rg/providers/Microsoft.Consumption/budgets/${budget_name}"
+  existing_budget="$(az consumption budget show --budget-name "${budget_name}" \
+    --resource-group "${TF_VAR_project}-${TF_VAR_environment}-rg" --query id -o tsv 2>/dev/null || true)"
+  if [[ -n "${existing_budget}" ]]; then
+    [[ "${existing_budget,,}" == "${expected_budget,,}" ]] || {
+      echo "Refusing deploy: existing budget ID does not match the project scope" >&2
+      exit 1
+    }
+    if ! "${TF[@]}" state show azurerm_consumption_budget_resource_group.monthly >/dev/null 2>&1; then
+      "${TF[@]}" import -input=false azurerm_consumption_budget_resource_group.monthly "${expected_budget}"
+    fi
+  fi
+fi
 if [[ "${ACTION}" == destroy ]]; then
   "${TF[@]}" plan -destroy -out=destroy.tfplan
   "${TF[@]}" apply -input=false destroy.tfplan

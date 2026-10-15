@@ -182,6 +182,7 @@ def test_dashboard_serves_page_and_runs_commands_from_repository(
         "partial",
         "unowned",
         "delete_failure",
+        "budget_delete_failure",
         "list_failure",
         "expired",
         "not_expired",
@@ -219,7 +220,18 @@ def test_full_kill_is_state_independent_and_checks_ownership(
             if scenario == "bad_expiry"
             else "2000-01-01T00:00:00Z"
         )
-    state.write_text(json.dumps({"groups": groups, "deleted": []}))
+    state.write_text(
+        json.dumps(
+            {
+                "groups": groups,
+                "deleted": [],
+                "budget": {
+                    "id": "/subscriptions/test-sub/resourceGroups/test-app/"
+                    "providers/Microsoft.Consumption/budgets/mlp-test-monthly"
+                },
+            }
+        )
+    )
     cli = tmp_path / "az"
     cli.write_text(
         "#!/usr/bin/env python3\n"
@@ -233,6 +245,11 @@ def test_full_kill_is_state_independent_and_checks_ownership(
         "if args[:2] == ['aks', 'list']:\n"
         "    if os.environ['SCENARIO'] == 'list_failure': sys.exit(3)\n"
         "    print('test-nodes'); sys.exit(0)\n"
+        "if args[:3] == ['consumption', 'budget', 'show']:\n"
+        "    print((state.get('budget') or {}).get('id', '')); sys.exit(0)\n"
+        "if args[:3] == ['consumption', 'budget', 'delete']:\n"
+        "    if os.environ['SCENARIO'] == 'budget_delete_failure': sys.exit(6)\n"
+        "    state['budget'] = None; path.write_text(json.dumps(state)); sys.exit(0)\n"
         "group = args[args.index('--name') + 1]\n"
         "if args[:2] == ['group', 'exists']:\n"
         "    print(str(group in state['groups']).lower())\n"
@@ -291,6 +308,7 @@ def test_full_kill_is_state_independent_and_checks_ownership(
     if scenario in {
         "unowned",
         "delete_failure",
+        "budget_delete_failure",
         "list_failure",
         "bad_expiry",
         "startup_unowned",
@@ -306,6 +324,7 @@ def test_full_kill_is_state_independent_and_checks_ownership(
     else:
         assert result.returncode == 0, result.stderr
         assert "KILL VERIFIED" in result.stdout
+        assert record["budget"] is None
         assert record["groups"] == {}
         again = subprocess.run(
             command, cwd=ROOT, env=environment, capture_output=True, text=True

@@ -131,8 +131,8 @@ with the cluster. Sleep retains them but does not eliminate all charges.
 
 Use Actions → azure → Run workflow → action **kill**, confirmation **KILL**.
 This cancels an active cloud operation, validates repository ownership, deletes
-the app and AKS node resource groups plus the separately owned state-storage
-resource group, and verifies all are absent. It works without Terraform state,
+the exact project budget, app and AKS node resource groups, plus the separately
+owned state-storage resource group, and verifies all are absent. It works without Terraform state,
 including after partial deployment. `make azure-kill CONFIRMATION=KILL` exposes
 the same operation. This deletes all test datasets, disks, artifacts, and model
 history; the next startup provisions a fresh environment. Unrelated subscription

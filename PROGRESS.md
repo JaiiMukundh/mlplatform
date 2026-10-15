@@ -824,3 +824,25 @@ Actionlint passed; Gitleaks scanned 96 commits and staged changes, no leaks.
 Next action: commit/push only the A3 fix files, wait for exact-commit GitHub CI,
 then launch the authorized Azure workflow and verify serving, dashboard,
 retraining, and expiry teardown.
+
+The exact-commit CI passed (run 38708102492). Azure run 38708588695 created the
+AKS 1.36.4 cluster, B2s user node, ACR, network, and budget, then failed because
+the first failed run's full resource-group cleanup left the Cost Management
+budget behind. The workflow's verified cleanup removed the app, node, and state
+groups, and left only the free OIDC identity and its group. Updated the deploy
+path to import the exact project budget into a fresh Terraform state, and the
+kill path to delete that budget after ownership checks. A3 remains unchecked.
+Next action: run the acceptance gate, commit/push, wait for CI, and retry Azure.
+
+Budget recovery acceptance (2026-10-15):
+
+```text
+108 passed, 3 skipped; total coverage 84.29% (required 80.0%)
+Terraform configurations valid; Helm charts linted (0 failed)
+Kubernetes schemas valid; GitHub Actions valid
+Gitleaks: no leaks found
+```
+
+`make lint test check-infra check-actions check-charts secret-scan` and
+`git diff --check` passed. Next action: publish the fix, then retry the Azure
+workflow after exact-commit CI succeeds.
