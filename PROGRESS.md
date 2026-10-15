@@ -941,3 +941,13 @@ The live pod was updated, the exact `covariate` shock uploaded to MinIO and Feas
 materialization completed using the pinned ACR image. Follow-up traffic: 352
 requests, 0 errors, p95 0.019s; `traffic PASS`. `bash -n` and the exact live
 script import check passed.
+
+## 2026-10-15 — Azure test deployment stopped
+
+At the user's request, dispatched the project-owned full teardown through Azure
+workflow run [38735862611](https://github.com/JaiiMukundh/mlplatform/actions/runs/38735862611).
+It removed the monthly budget, application resource group, AKS node resource
+group, and Terraform state resource group. The workflow completed with
+`KILL VERIFIED: app, AKS node groups, and Terraform state group are absent.`
+Verified `az group exists` returned `false` for `mlp-test-rg`,
+`mlp-test-nodes-rg`, and `mlp-test-state-rg`.
