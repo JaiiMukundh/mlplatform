@@ -902,3 +902,29 @@ HTTPS URL. The in-app browser's egress IP is 45.112.151.108, which is in the
 dashboard allowlist, but requests from that network still time out. No broad
 ingress was enabled. Next: resolve the client-network path or request explicit
 approval before testing internet-wide dashboard ingress.
+
+## 2026-10-15 — Public dashboard access diagnosis
+
+Per the user's five-minute authorization, temporarily opened only dashboard
+HTTPS port 443 to all source IPs, with an automatic five-minute restore scheduled
+before the change. Browser navigation reached the endpoint and reported
+`net::ERR_CERT_AUTHORITY_INVALID`; the dashboard uses a deliberately self-signed
+test certificate. A bounded HTTPS health request returned `HTTP/1.1 200 OK`
+with `{"status":"ok"}`. Restored and verified the prior source allowlist
+(`45.112.151.108/32`, `57.151.83.105/32`) on port 443; no other service was
+opened. At the time, the mismatch between the browser's observed source and
+`api.ipify.org` had not yet been identified. The browser saw a self-signed
+certificate warning during the open test; the later NAT-range correction below
+records the actual timeout cause and the successful authenticated page request.
+
+## 2026-10-15 — Corrected tester NAT allowlist
+
+The user's browser requests were recorded by the dashboard as source
+`45.112.151.110`; the earlier `api.ipify.org` check returned
+`45.112.151.108`, so the `/32` rule excluded the browser. Added the observed
+source to the live port-443 allowlist and changed setup to use the aligned
+`45.112.151.108/30` tester NAT range (four addresses); the GitHub runner remains
+allowed. Verified `bash -n scripts/azure.sh`, confirmed `.110` belongs to the
+CIDR, and authenticated HTTPS `/` returned HTTP 200 in 0.35 seconds. Dashboard
+logs show the browser source `.110` receiving HTTP 200. GitHub environment
+`AZURE_ALLOWED_CIDR` now matches the `/30` range.

@@ -39,7 +39,10 @@ if [[ "${ACTION}" == connect ]]; then
     existing="$(az role assignment list --scope "${scope}" --query "[?principalId=='${PRINCIPAL_ID}' && roleDefinitionName=='${role}'].id" -o tsv)"
     [[ -n "${existing}" ]] || az role assignment create --assignee-object-id "${PRINCIPAL_ID}" --assignee-principal-type ServicePrincipal --role "${role}" --scope "${scope}" >/dev/null
   done
-  PUBLIC_CIDR="$(curl --fail --silent --show-error https://api.ipify.org)/32"
+  PUBLIC_IP="$(curl --fail --silent --show-error https://api.ipify.org)"
+  # Azure observed a different egress address for browser traffic in the same
+  # tester NAT pool, so allow its aligned /30 instead of the single lookup IP.
+  PUBLIC_CIDR="$(python3 -c 'import ipaddress,sys; print(ipaddress.ip_network(sys.argv[1] + "/30", strict=False))' "${PUBLIC_IP}")"
   variables="$(mktemp)"
   cat > "${variables}" <<VARS
 AZURE_CLIENT_ID=${APP_ID}
