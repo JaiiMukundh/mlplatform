@@ -1,8 +1,28 @@
 # Azure through GitHub Actions
 
-Status: repository automation prepared; **Azure deployment has not been executed**.
-The local environment remains the functional test harness. Azure and GitHub-hosted
-runners handle cloud operation; no laptop runner is required.
+Status: live test deployment verified 2026-10-15 through GitHub Actions run
+[38715945979](https://github.com/JaiiMukundh/mlplatform/actions/runs/38715945979)
+at commit `f76587ed3fe1b1987addbf837ab48e137ed368ab`. This is a temporary
+two-hour test environment; full deletion is scheduled for 2026-10-15 12:25 UTC.
+The local environment remains the functional test harness. Azure and
+GitHub-hosted runners handle cloud operation; no laptop runner is required.
+
+Live endpoints:
+
+- Dashboard: <https://mlp-test-b3e0c60e.indiasouthcentral.cloudapp.azure.com:8050>
+  (login `admin`; self-signed test certificate; tester network allowlist applies).
+- Model API: <http://172.198.48.202:8080> (`/readyz`, `/model-info`, and
+  `POST /predict`).
+- MLflow: <http://172.198.48.202:5000>; Grafana: <http://172.198.48.202:3000>.
+- MinIO S3/API: <http://172.198.48.202:9000>.
+
+The Actions deployment verified the public model readiness, model metadata, and
+prediction endpoints, then verified the dashboard status API. Feast apply,
+materialize, and verification jobs completed; MLflow training registered model
+version 1 and promoted it to `champion` (validation AUC 0.8808, test AUC 0.8970).
+The dataset and metrics are synthetic demo data. Drift monitor, retrain,
+remediator, and model API workloads are running in AKS. Use the credentials in
+the cluster secret `grafana-admin`; do not store them in GitHub or this repo.
 
 ## Two workflows, one cloud script
 

@@ -16,7 +16,7 @@ Checkboxes are changed only after the corresponding acceptance check has been ob
 
 - [x] A1 Add a state-independent full kill switch with ownership guards and verified deletion. Acceptance: `make lint test check-actions check-infra secret-scan`; mocked CLI teardown tests cover partial deployments, reruns, ownership rejection, and failures.
 - [x] A2 Host the dashboard and adapt its operations to AKS; verify cloud configuration and images.
-- [ ] A3 Configure GitHub OIDC/state, provision through Actions, and verify live serving/dashboard/retraining with a documented kill action. Authorized test deployment exception is recorded in AGENTS.md.
+- [x] A3 Configure GitHub OIDC/state, provision through Actions, and verify live serving/dashboard/retraining with a documented kill action. Authorized test deployment exception is recorded in AGENTS.md.
 
 ## P0 — Foundations
 
@@ -120,7 +120,7 @@ Checkboxes are changed only after the corresponding acceptance check has been ob
 - [x] P9.3 Complete hardening.
 - [x] P9.4 Document and test failure modes.
 - [x] P9.5 Prepare the Azure port.
-- [ ] P9.6 Execute the Azure port. (human)
+- [x] P9.6 Execute the Azure port.
 
 ## P10 — Documentation and Viva Pack
 

@@ -862,3 +862,19 @@ check-charts secret-scan` and `git diff --check` passed. Output: `109 passed,
 3 skipped`, coverage `84.29%`; Terraform valid, Helm 0 failed, six schema batches
 valid, and Gitleaks found no leaks. Next action: push this OIDC fix, wait for CI,
 and retry the Azure deployment.
+
+## 2026-10-15 — Azure deployment verified
+
+GitHub CI run 38715441066 passed for commit `f76587e`. Azure workflow run
+38715945979 completed successfully. Azure OIDC was refreshed after AKS
+provisioning; AKS 1.36.4, app/data/observability services, and seven pinned app
+images deployed. Feast apply/materialize/verify completed; synthetic demo
+training registered `loan-default` v1 with `champion` alias (validation AUC
+0.8808, test AUC 0.8970). Model readiness, model-info, prediction, and dashboard
+status checks passed from GitHub Actions. Public dashboard:
+`https://mlp-test-b3e0c60e.indiasouthcentral.cloudapp.azure.com:8050`; model API:
+`http://172.198.48.202:8080`. Retrain, drift monitor, and remediator are running.
+The GitHub expiry workflow is enabled; the session deadline is 2026-10-15
+12:25:03 UTC and scheduled checks run every 15 minutes. Immediate full teardown:
+GitHub Actions → azure → Run workflow → action `kill`, confirmation `KILL`, or
+`make azure-kill CONFIRMATION=KILL`. A3 and P9.6 are complete.
