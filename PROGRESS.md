@@ -928,3 +928,16 @@ allowed. Verified `bash -n scripts/azure.sh`, confirmed `.110` belongs to the
 CIDR, and authenticated HTTPS `/` returned HTTP 200 in 0.35 seconds. Dashboard
 logs show the browser source `.110` receiving HTTP 200. GitHub environment
 `AZURE_ALLOWED_CIDR` now matches the `/30` range.
+
+## 2026-10-15 — Azure drift-shock action fixed and run
+
+The dashboard ran `python scripts/simulate_drift.py` with cwd `/app`; Python
+placed `/app/scripts` on `sys.path`, so imports from `/app/ml` failed. Set
+`PYTHONPATH=/app` in the Azure dashboard Deployment. The next attempt exposed a
+second cloud/local mismatch: `run_job.sh` submitted the dev-only
+`localhost:5001/training:dev` image to AKS. It now renders the configured
+`TRAINING_IMAGE` into job manifests when set (Azure), preserving local defaults.
+The live pod was updated, the exact `covariate` shock uploaded to MinIO and Feast
+materialization completed using the pinned ACR image. Follow-up traffic: 352
+requests, 0 errors, p95 0.019s; `traffic PASS`. `bash -n` and the exact live
+script import check passed.

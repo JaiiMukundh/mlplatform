@@ -54,6 +54,7 @@ spec:
             limits: {cpu: 1000m, memory: 2Gi}
           env:
             - {name: DEPLOY_TARGET, value: azure}
+            - {name: PYTHONPATH, value: /app}
             - {name: CLUSTER_NAME, value: __CLUSTER_NAME__}
             - {name: PUBLIC_IP_NAME, value: __PUBLIC_IP_NAME__}
             - {name: AZURE_RESOURCE_GROUP, value: __RESOURCE_GROUP__}
