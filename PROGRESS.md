@@ -846,3 +846,19 @@ Gitleaks: no leaks found
 `make lint test check-infra check-actions check-charts secret-scan` and
 `git diff --check` passed. Next action: publish the fix, then retry the Azure
 workflow after exact-commit CI succeeds.
+
+Second Azure retry (run 38712060560, commit 7ffe9b7) verified budget import and
+successfully provisioned AKS 1.36.4, both nodes, network, ACR, and role
+assignments. The application stage failed after Terraform: the original GitHub
+federated assertion had expired during the long AKS create, and
+`az aks get-credentials` could not obtain an AAD token. The workflow's failure
+handler deleted the app, AKS node, and state groups; all three are absent.
+Added a fresh GitHub OIDC token exchange immediately before Kubernetes access,
+with a mocked contract test. A3 remains unchecked.
+Next action: run the acceptance gate, publish, and retry deployment.
+
+OIDC refresh acceptance: `make lint test check-infra check-actions
+check-charts secret-scan` and `git diff --check` passed. Output: `109 passed,
+3 skipped`, coverage `84.29%`; Terraform valid, Helm 0 failed, six schema batches
+valid, and Gitleaks found no leaks. Next action: push this OIDC fix, wait for CI,
+and retry the Azure deployment.

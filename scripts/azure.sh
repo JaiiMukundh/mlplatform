@@ -3,6 +3,7 @@
 # Billable/destructive operations require an explicit human workflow confirmation.
 set -Eeuo pipefail
 cd "$(dirname "${BASH_SOURCE[0]}")/.."
+source scripts/azure_oidc.sh
 WORKFLOW_ACTION="${ACTION:-plan}"
 ACTION="${1:-plan}"
 TF=(terraform -chdir=infra/envs/azure)
@@ -246,6 +247,9 @@ case "${ACTION}" in
   sleep) az aks stop --resource-group "${RG}" --name "${CLUSTER}"; exit ;;
   wake) az aks start --resource-group "${RG}" --name "${CLUSTER}"; exit ;;
 esac
+# AKS creation can outlast GitHub's five-minute OIDC assertion. Exchange a new
+# job-scoped token before requesting Kubernetes credentials or pushing images.
+refresh_azure_oidc_login
 az aks get-credentials --resource-group "${RG}" --name "${CLUSTER}" --overwrite-existing
 export PUBLIC_IP_NAME="$("${TF[@]}" output -raw public_ip_name)"
 export PUBLIC_HOST="$("${TF[@]}" output -raw public_host)"

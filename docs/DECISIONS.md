@@ -24,6 +24,14 @@
   old budget name. Import supports repeatable restart, while full kill removes
   the orphaned alert rather than accumulating project leftovers.
 
+## 2026-10-15 — Refresh GitHub OIDC after Azure provisioning
+
+- **Decision:** Request a fresh job-scoped GitHub OIDC token and reauthenticate
+  Azure CLI immediately before AKS access after Terraform completes.
+- **Reason:** AKS provisioning can take longer than the five-minute validity of
+  the original federated assertion. Infrastructure succeeded, but the expired
+  assertion prevented `az aks get-credentials` from obtaining a user token.
+
 ## 2026-10-13 — Compact infrastructure and finish GitHub before Azure execution
 
 The human now authorizes repository edits, commits, and GitHub pushes, and asks for fewer files without losing functionality. Keep each Terraform module in one `main.tf` (at most 221 lines), retaining all module interfaces and resource addresses. Retain local functional tests and the local environment as the proven test harness; cloud operation must never depend on a laptop runner. Existing uncommitted Azure migration changes are part of the requested publication; exclude the unrelated synopsis document. Verify and commit this compaction before rewriting CI/CD. Record new stable tool/provider pins from official registries; commit Terraform dependency locks. Azure provisioning remains a human-approved operation under AGENTS.md rule 12.

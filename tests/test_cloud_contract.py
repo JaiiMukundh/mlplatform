@@ -46,6 +46,51 @@ def test_public_service_exposes_only_configured_port(
     ]
 
 
+def test_github_oidc_session_refreshes_for_long_azure_provisioning(
+    tmp_path: Path,
+) -> None:
+    """A fresh GitHub assertion must renew Azure CLI auth after Terraform apply."""
+    binaries = tmp_path / "bin"
+    binaries.mkdir()
+    fake_curl = binaries / "curl"
+    fake_curl.write_text('#!/bin/sh\nprintf \'{"value":"fresh-oidc-token"}\\n\'\n')
+    fake_curl.chmod(0o755)
+    fake_az = binaries / "az"
+    fake_az.write_text('#!/bin/sh\nprintf "%s\\n" "$*" >> "$AZ_CALLS"\n')
+    fake_az.chmod(0o755)
+    calls = tmp_path / "azure-calls.txt"
+    environment = {
+        **os.environ,
+        "PATH": f"{binaries}:{os.environ['PATH']}",
+        "AZ_CALLS": str(calls),
+        "ACTIONS_ID_TOKEN_REQUEST_URL": "https://token.actions.test/oidc",
+        "ACTIONS_ID_TOKEN_REQUEST_TOKEN": "github-request-token",
+        "ARM_CLIENT_ID": "client",
+        "ARM_TENANT_ID": "tenant",
+        "ARM_SUBSCRIPTION_ID": "subscription",
+    }
+    result = subprocess.run(
+        [
+            "bash",
+            "-c",
+            f'source "{ROOT}/scripts/azure_oidc.sh"; refresh_azure_oidc_login',
+        ],
+        cwd=ROOT,
+        env=environment,
+        capture_output=True,
+        text=True,
+        check=False,
+    )
+
+    assert result.returncode == 0, result.stderr
+    assert calls.read_text().splitlines() == [
+        "login --service-principal --username client --tenant tenant "
+        "--federated-token fresh-oidc-token --output none",
+        "account set --subscription subscription",
+    ]
+    assert "refresh_azure_oidc_login" in (ROOT / "scripts/azure.sh").read_text()
+
+
 def check(action: str, **overrides: str) -> subprocess.CompletedProcess[str]:
     """Run the configuration gate only; never initialize or mutate Azure."""
     environment = {
