@@ -65,13 +65,7 @@ def temporal_split(frame: pd.DataFrame) -> TemporalSplits:
 
 def build_model() -> HistGradientBoostingClassifier:
     """Create the pinned deterministic gradient-boosted classifier."""
-    return HistGradientBoostingClassifier(
-        learning_rate=0.08,
-        max_iter=180,
-        max_leaf_nodes=31,
-        l2_regularization=0.2,
-        random_state=42,
-    )
+    return HistGradientBoostingClassifier(**_model_hyperparameters())
 
 
 def _feature_schema(frame: pd.DataFrame) -> dict[str, Any]:
