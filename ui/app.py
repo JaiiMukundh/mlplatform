@@ -181,7 +181,9 @@ ACTION_COMMANDS: dict[str, str] = {
     "manual_retrain": "bash scripts/retrain_and_release.sh",
     "demo_model_full": "bash scripts/retrain_and_release.sh",
     "run_gate": "bash scripts/run_gate.sh",
-    "feast_rematerialize": "make feast-rematerialize",
+    "feast_rematerialize": (
+        "bash scripts/run_job.sh infra/jobs/feast-rematerialize-job.yaml data"
+    ),
     "e2e_tests": "make e2e",
 }
 

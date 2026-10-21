@@ -1055,3 +1055,22 @@ tests skipped; line coverage was 85.56% (required 80%). Terraform validated
 both environments. Helm lint passed for all 9 charts, rendered schema checks
 had zero invalid resources, and Gitleaks found no leaks in 116 commits or staged
 changes. This is a source-level verification; live deployment was not rerun.
+
+## 2026-10-21 — Restore full platform and remove local deployment (C2)
+
+Reset the reduction branch to pre-reduction commit `5c01ab5` and continued on
+`codex/cloud-only`. Removed the kind cluster, local registry, local Terraform
+root and ignored local state/cache, local deployment scripts/targets, and local
+E2E harness. No kind cluster or local registry container was running. Kept the
+full API, feature store, MLflow, monitoring, drift, retraining, cloud workflow,
+and dashboard code. AKS remains in `infra/envs/azure` and `cluster_aks`.
+
+Acceptance output: `make lint test` passed (110 tests, 85.56% line coverage).
+Azure Terraform `validate` succeeded; Helm lint passed for nine retained cloud
+charts; strict rendered resource checks reported zero invalid resources.
+`make check-actions` passed and Gitleaks found no secrets in 117 commits or
+staged changes. `git diff --check` passed. No Azure apply or Git push occurred.
+
+Next action: replace the cloud Helm-based workload definitions with Terraform
+while retaining the restored cloud runtime features. The cloud currently still
+uses Helm; this is tracked as C3 and is not represented as complete.

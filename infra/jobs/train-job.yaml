@@ -15,8 +15,8 @@ spec:
       restartPolicy: OnFailure
       containers:
         - name: train-mlflow
-          image: localhost:5001/training:dev
-          # Always: the local registry tag is reused across builds.
+          image: __TRAINING_IMAGE__
+          # Cloud image is injected by the Azure deployment.
           resources:
             requests: {cpu: 500m, memory: 1Gi}
             limits: {cpu: 1900m, memory: 3Gi}

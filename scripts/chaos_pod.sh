@@ -5,7 +5,7 @@ set -Eeuo pipefail
 
 readonly NAMESPACE="${1:-serving}"
 readonly RELEASE="${2:-model-api}"
-readonly BASE_URL="${3:-http://localhost:8080}"
+readonly BASE_URL="${3:-${MODEL_API_URL:?set the AKS model API URL}}"
 
 pods_before="$(kubectl get pods -n "${NAMESPACE}" -l "app.kubernetes.io/instance=${RELEASE}" -o name)"
 echo "chaos: running pods before: $(echo "${pods_before}" | tr '\n' ' ')"

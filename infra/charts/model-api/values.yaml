@@ -1,9 +1,9 @@
 replicaCount: 2
 
 image:
-  repository: localhost:5001/model-api
+  repository: invalid.azurecr.io/model-api
   tag: dev
-  # Always: the local registry tag is reused across builds, so nodes would
+  # Always: the ACR tag is reused across builds, so nodes would
   # otherwise serve a stale cached layer (bit us on the P6.7 mlflow cutover).
   pullPolicy: Always
 

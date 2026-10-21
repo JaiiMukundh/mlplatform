@@ -1,7 +1,7 @@
 replicaCount: 1
 
 image:
-  repository: localhost:5001/mlflow
+  repository: invalid.azurecr.io/mlflow
   tag: dev
   pullPolicy: IfNotPresent
 

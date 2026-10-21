@@ -5,7 +5,8 @@ command -v kubectl >/dev/null || { echo "ERROR: kubectl not found" >&2; exit 1; 
 command -v jq >/dev/null || { echo "ERROR: jq not found" >&2; exit 1; }
 manifest="${1:?job manifest required}"
 namespace="${2:-data}"
-if [[ -n "${TRAINING_IMAGE:-}" ]]; then
+if grep -q '__TRAINING_IMAGE__' "${manifest}"; then
+  : "${TRAINING_IMAGE:?set the ACR training image}"
   rendered_manifest="$(mktemp)"
   python3 - "${manifest}" "${rendered_manifest}" "${TRAINING_IMAGE}" <<'PY'
 from pathlib import Path
@@ -13,12 +14,11 @@ import sys
 
 source_path, output_path, image = sys.argv[1:]
 source = Path(source_path).read_text()
-local_image = "image: localhost:5001/training:dev"
+local_image = "image: __TRAINING_IMAGE__"
 cloud_image = f"image: {image}"
-if local_image in source:
-    source = source.replace(local_image, cloud_image)
-elif cloud_image not in source:
+if local_image not in source:
     raise SystemExit(f"job manifest has no training image placeholder: {source_path}")
+source = source.replace(local_image, cloud_image)
 Path(output_path).write_text(source)
 PY
   manifest="${rendered_manifest}"

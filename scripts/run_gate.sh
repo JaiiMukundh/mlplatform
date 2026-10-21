@@ -14,7 +14,7 @@ GATE_YAML="${REPO_ROOT}/infra/jobs/gate-job.yaml"
 RUN_JOB_SCRIPT="${REPO_ROOT}/scripts/run_job.sh"
 
 sed -e "s/__CANDIDATE__/${VERSION}/" \
-  -e "s|localhost:5001/training:dev|${TRAINING_IMAGE:-localhost:5001/training:dev}|g" \
+  -e "s|__TRAINING_IMAGE__|${TRAINING_IMAGE:-__TRAINING_IMAGE__}|g" \
   "${GATE_YAML}" >"${RENDERED}"
 LOGS="$(mktemp)"
 trap 'rm -f "${LOGS}"' EXIT

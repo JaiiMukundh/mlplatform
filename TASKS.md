@@ -2,6 +2,11 @@
 
 Checkboxes are changed only after the corresponding acceptance check has been observed.
 
+## Cloud-only deployment — 2026-10-21
+
+- [x] C2 Restore the pre-reduction platform and remove kind, local registry, local Terraform, local deployment commands and local E2E harness. Acceptance: `make lint test check-infra check-actions check-charts secret-scan` with no local deployment target.
+- [ ] C3 Move the remaining cloud Helm workloads into Terraform without dropping their runtime features. Acceptance: cloud Terraform validates, cloud deployment contract tests pass, and Helm is absent from active deployment.
+
 ## Simplification without feature loss — 2026-10-21
 
 - [x] S4 Reduce non-UI production code further without removing platform flows.

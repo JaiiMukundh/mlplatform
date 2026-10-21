@@ -1,18 +1,19 @@
 #!/usr/bin/env bash
-# Release one MLflow model version to production (P7.3, local equivalent of
+# Release one MLflow model version to production (P7.3, AKS implementation of
 # model-release.yml): gate -> staging -> loadcheck -> promote -> prod deploy
 # -> verify, with rejection or rollback on every failure path.
-# Usage: bash scripts/model_release_local.sh <VERSION> [IMAGE_TAG]
+# Usage: bash scripts/model_release.sh <VERSION> [IMAGE_TAG]
 set -Eeuo pipefail
+[[ "${DEPLOY_TARGET:-}" == azure ]] || { echo "DEPLOY_TARGET=azure is required" >&2; exit 2; }
 
 readonly VERSION="${1:?model version required}"
 readonly IMAGE_TAG="${2:-dev}"
-readonly MLFLOW="${MLFLOW_TRACKING_URI:-http://localhost:5000}"
+readonly MLFLOW="${MLFLOW_TRACKING_URI:-http://mlflow.data.svc:5000}"
 readonly MODEL="${MODEL_NAME:-loan-default}"
 # Overridable for in-cluster execution (retrain Job): the runner uses host
 # NodePorts, the cluster uses ClusterIP DNS names.
-readonly STAGING_URL="${STAGING_URL:-http://localhost:8081}"
-readonly PROD_URL="${PROD_URL:-http://localhost:8080}"
+readonly STAGING_URL="${STAGING_URL:-http://model-api-staging.staging.svc:8080}"
+readonly PROD_URL="${PROD_URL:-http://model-api.serving.svc:8080}"
 
 alias_version() {
   curl -s "${MLFLOW}/api/2.0/mlflow/registered-models/get?name=${MODEL}" |
