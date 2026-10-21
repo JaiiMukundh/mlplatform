@@ -1,3 +1,5 @@
+> Historical record: local kind deployment described below was removed on 2026-10-21. Current deployment is AKS only; see README.
+
 # MLPlatform — Implementation Spec (Open-Source First, AWS Last)
 
 > **Audience:** an autonomous coding agent (opencode / Codex / Antigravity / any free model) and the human supervising it.

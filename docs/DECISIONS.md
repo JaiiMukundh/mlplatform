@@ -560,3 +560,11 @@ each container carries without changing the complete local development setup.
   Terraform provider declarations in child modules can be removed because the
   local and Azure environment roots still pin exact provider versions; both
   environment validations passed after this change.
+
+## 2026-10-21 — Restore full platform and remove local deployment
+
+The user canceled the 1,000-line reduction. Reset the working branch to
+`5c01ab5`, restoring the pre-reduction runtime, tests, dashboard, AKS and cloud
+workflows. Remove the local kind cluster, registry, Terraform root, and local
+deployment targets. Keep local lint, tests, image builds, and dataset preparation
+as development actions; they do not host the application.

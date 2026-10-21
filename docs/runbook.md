@@ -1,3 +1,5 @@
+> Historical record: local kind deployment described below was removed on 2026-10-21. Current deployment is AKS only; see README.
+
 # Platform Operational Runbook & Incident Response (P10.2)
 
 This runbook documents production operations, alert triage procedures, disaster recovery, demo baselining, and security credential management for the Autonomous Self-Healing Machine Learning Platform.

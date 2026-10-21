@@ -17,7 +17,7 @@ REPO_ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
 TRAIN_YAML="${REPO_ROOT}/infra/jobs/train-job.yaml"
 RUN_JOB_SCRIPT="${REPO_ROOT}/scripts/run_job.sh"
 
-sed -e "s|localhost:5001/training:dev|${TRAINING_IMAGE:-localhost:5001/training:dev}|g" \
+sed -e "s|__TRAINING_IMAGE__|${TRAINING_IMAGE:-__TRAINING_IMAGE__}|g" \
   -e "s/__TRIGGER__/${TRIGGER}/" -e "s/__GIT_SHA__/${GIT_SHA}/" \
   -e "s/__SHUFFLE_FLAG__/${SHUFFLE_FLAG}/" \
   "${TRAIN_YAML}" >"${RENDERED}"

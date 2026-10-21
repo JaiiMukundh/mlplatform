@@ -1,13 +1,11 @@
 #!/usr/bin/env bash
-# Prove a released model-api serves traffic via the kind host port mapping.
+# Prove a released model-api serves traffic through its cluster Service.
 # Usage: scripts/smoke.sh [namespace] [release] [base-url]
-# The chart Service is NodePort 30080, but the Terraform Kind template maps that
-# container port to host port 8080, so the default base URL is localhost:8080.
 set -Eeuo pipefail
 
 readonly NAMESPACE="${1:-serving}"
 readonly RELEASE="${2:-model-api}"
-readonly BASE_URL="${3:-http://localhost:8080}"
+readonly BASE_URL="${3:-http://model-api.serving.svc:8080}"
 
 echo "smoke: ${RELEASE}.${NAMESPACE} via ${BASE_URL}"
 sleep 2

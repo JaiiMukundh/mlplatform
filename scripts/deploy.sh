@@ -3,6 +3,9 @@
 # Usage: scripts/deploy.sh <release> <namespace> <image-tag> [extra helm args...]
 set -Eeuo pipefail
 
+[[ "${DEPLOY_TARGET:-}" == azure ]] || { echo "DEPLOY_TARGET=azure is required" >&2; exit 2; }
+: "${MODEL_API_REPOSITORY:?set the ACR model API repository}"
+
 if [[ $# -lt 3 ]]; then
   echo "usage: $0 <release> <namespace> <image-tag> [extra helm args...]" >&2
   exit 2
@@ -37,22 +40,17 @@ REPO_ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
 CHART_DIR="${REPO_ROOT}/infra/charts/model-api"
 SMOKE_SCRIPT="${REPO_ROOT}/scripts/smoke.sh"
 
-HELM_ARGS=()
-if [[ "${DEPLOY_TARGET:-local}" == azure ]]; then
-  HELM_ARGS+=(-f "${CHART_DIR}/values-azure.yaml")
-  [[ "${NAMESPACE}" != staging ]] || HELM_ARGS+=(--set service.type=ClusterIP)
-  if [[ -n "${PUBLIC_IP_NAME:-}" ]]; then
-    annotations="$(python3 -c 'import json,os; print(json.dumps({"service.beta.kubernetes.io/azure-pip-name":os.environ["PUBLIC_IP_NAME"],"service.beta.kubernetes.io/azure-load-balancer-resource-group":os.environ["AZURE_RESOURCE_GROUP"]}))')"
-    HELM_ARGS+=(--set-json "service.annotations=${annotations}")
-  fi
-  if [[ -n "${AZURE_ALLOWED_CIDR:-}" ]]; then
-    ranges="$(python3 -c 'import json,os; print(json.dumps([x for x in [os.environ["AZURE_ALLOWED_CIDR"],os.environ.get("RUNNER_CIDR", "")] if x]))')"
-    HELM_ARGS+=(--set-json "service.loadBalancerSourceRanges=${ranges}")
-  fi
+HELM_ARGS=(-f "${CHART_DIR}/values-azure.yaml")
+[[ "${NAMESPACE}" != staging ]] || HELM_ARGS+=(--set service.type=ClusterIP)
+if [[ -n "${PUBLIC_IP_NAME:-}" ]]; then
+  annotations="$(python3 -c 'import json,os; print(json.dumps({"service.beta.kubernetes.io/azure-pip-name":os.environ["PUBLIC_IP_NAME"],"service.beta.kubernetes.io/azure-load-balancer-resource-group":os.environ["AZURE_RESOURCE_GROUP"]}))')"
+  HELM_ARGS+=(--set-json "service.annotations=${annotations}")
 fi
-if [[ -n "${MODEL_API_REPOSITORY:-}" ]]; then
-  HELM_ARGS+=(--set "image.repository=${MODEL_API_REPOSITORY}")
+if [[ -n "${AZURE_ALLOWED_CIDR:-}" ]]; then
+  ranges="$(python3 -c 'import json,os; print(json.dumps([x for x in [os.environ["AZURE_ALLOWED_CIDR"],os.environ.get("RUNNER_CIDR", "")] if x]))')"
+  HELM_ARGS+=(--set-json "service.loadBalancerSourceRanges=${ranges}")
 fi
+HELM_ARGS+=(--set "image.repository=${MODEL_API_REPOSITORY}")
 
 helm upgrade --install "${RELEASE}" "${CHART_DIR}" \
   --namespace "${NAMESPACE}" --create-namespace \
@@ -67,7 +65,7 @@ if [[ "${RELEASE}" == "model-api-staging" ]]; then
   # The staging release serves host port 8081 (NodePort 30081); the default
   # smoke URL would silently test production instead. Overridable for
   # in-cluster release runs (ClusterIP DNS instead of host ports).
-  bash "${SMOKE_SCRIPT}" "${NAMESPACE}" "${RELEASE}" "${STAGING_SMOKE_URL:-http://localhost:8081}"
+  bash "${SMOKE_SCRIPT}" "${NAMESPACE}" "${RELEASE}" "${STAGING_SMOKE_URL:-http://model-api-staging.staging.svc:8080}"
 else
-  bash "${SMOKE_SCRIPT}" "${NAMESPACE}" "${RELEASE}" "${PROD_SMOKE_URL:-http://localhost:8080}"
+  bash "${SMOKE_SCRIPT}" "${NAMESPACE}" "${RELEASE}" "${PROD_SMOKE_URL:-http://model-api.serving.svc:8080}"
 fi

@@ -312,7 +312,7 @@ import json, os, sys
 pod = json.loads(json.load(sys.stdin)["data"]["pod-spec.json"])
 c = pod["containers"][0]
 c["env"].append({"name":"VERSION", "value": os.environ["VERSION"]})
-c["args"][0] = c["args"][0].replace("python -m retrain.main", "bash scripts/model_release_local.sh \"$VERSION\" \"$IMAGE_TAG\"")
+c["args"][0] = c["args"][0].replace("python -m retrain.main", "bash scripts/model_release.sh \"$VERSION\" \"$IMAGE_TAG\"")
 print(json.dumps({"apiVersion":"batch/v1", "kind":"Job", "metadata":{"name":"model-release", "namespace":"data"}, "spec":{"backoffLimit":0,"ttlSecondsAfterFinished":3600,"template":{"spec":pod}}}))
 ' > "${manifest}"
   bash scripts/run_job.sh "${manifest}" data
@@ -379,9 +379,10 @@ models=json.load(sys.stdin).get("registered_models",[])
 print(next((a["version"] for m in models if m["name"]=="loan-default" for a in m.get("aliases",[]) if a["alias"]=="champion"),""))')"
 export TRAINING_IMAGE="${ACR}/mlp-training:${TAG}"
 if [[ -z "${CHAMPION}" ]]; then
-  make seed-data publish-feast-data
+  make seed-data
+  DEPLOY_TARGET=azure make publish-feast-data
   for job in apply-job.yaml materialize-job.yaml verify-job.yaml; do
-    sed "s|localhost:5001/training:dev|${TRAINING_IMAGE}|g" "infra/jobs/feast-${job}" > /tmp/mlp-feast-job.yaml
+    sed "s|__TRAINING_IMAGE__|${TRAINING_IMAGE}|g" "infra/jobs/feast-${job}" > /tmp/mlp-feast-job.yaml
     bash scripts/run_job.sh /tmp/mlp-feast-job.yaml data
   done
   bash scripts/train_mlflow.sh

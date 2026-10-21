@@ -1,3 +1,5 @@
+> Historical record: local kind deployment described below was removed on 2026-10-21. Current deployment is AKS only; see README.
+
 # MLPlatform — Viva Prep Pack
 
 Team: Shlok Sharma, Samarth Sukumar, Jaii Mukundh A · Supervisor: Dr Anup Bhat B · Dept. of Computer Engineering

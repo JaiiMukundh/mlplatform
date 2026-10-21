@@ -1,8 +1,7 @@
 # MLPlatform
 
 A credit-risk model platform with live serving, feature storage, model versioning,
-monitoring, drift detection, and autonomous retraining. The local system proved
-functionality; Azure is the deployment destination, driven by GitHub Actions.
+monitoring, drift detection, and autonomous retraining. The runtime deployment is Azure Kubernetes Service, driven by GitHub Actions.
 
 **Current status:** Cloud deployment preparation verified. Azure rollout is in progress.
 The dashboard has an AKS image with HTTPS/login and in-cluster operations.
@@ -12,8 +11,8 @@ The dashboard has an AKS image with HTTPS/login and in-cluster operations.
 | Directory | Responsibility |
 |---|---|
 | `core/` | Model API, data/training, shared code, Feast, drift monitor, retraining, remediation |
-| `infra/` | Local/Azure Terraform, Helm charts, one Dockerfile with seven image targets |
-| `scripts/` | Shared local/cloud operations and demo tools |
+| `infra/` | Azure Terraform, cloud Helm charts, one Dockerfile with seven image targets |
+| `scripts/` | Cloud operations, data preparation, and demo tools |
 | `ui/` | Operations dashboard |
 | `docs/` | Specification, decisions, explanations, runbooks, and measured evidence |
 | `tests/` | Application tests, feature parity, release safeguards, cloud configuration contracts |
@@ -21,8 +20,7 @@ The dashboard has an AKS image with HTTPS/login and in-cluster operations.
 
 Charts live directly in `infra/charts/`, jobs in `infra/jobs/`, and the shared
 Dockerfile at `infra/Dockerfile`. There are no archived documentation folders.
-Each Terraform module lives in one file. Training and release scripts are shared
-between local testing and AKS. Runtime images contain no baked-in models or data.
+Each Terraform module lives in one file. Training and release scripts run against AKS. Runtime images contain no baked-in models or data.
 
 ## GitHub and Azure
 
@@ -51,25 +49,13 @@ laptop runner is needed. No Azure deployment has been performed by the agent.
 | `make azure ACTION=plan` | Plan using the persistent cloud backend |
 | `make azure-kill CONFIRMATION=KILL` | Delete all project Azure resources, including state storage |
 
-## Local functionality test harness
+## Local development tools
 
-The local environment is optional and remains available for functional testing.
-Its operation is independent of the deployed Azure application.
-
-| Target | Purpose |
-|---|---|
-| `make bootstrap` | Check local prerequisites |
-| `make up` | Create local Kubernetes and infrastructure |
-| `make deploy-all` | Seed features, train, and deploy local workloads |
-| `make ui` | Open the dashboard service on port 8050 |
-| `make e2e` | Verify serving and both self-healing flows |
-| `make reset-demo` | Restore the repeatable baseline |
-| `make demo-infra` | Inject latency and observe remediation |
-| `make demo-model` | Inject drift and observe autonomous retraining/release |
-| `make down` | Remove local infrastructure |
-
-Local access: dashboard :8050, model API :8080, Grafana :3000, MLflow :5000,
-MinIO :9001, Prometheus :9090. Cloud endpoints are documented after rollout.
+`make lint test check-infra check-actions check-charts check-images secret-scan`
+checks code and cloud configuration without deploying a local cluster.
+`make seed-data` prepares the demo dataset for upload to the cloud. The local
+kind cluster, registry, Terraform environment, and `make up/down` deployment
+targets have been removed. The application runs on AKS when deployed.
 
 ## Evidence and explanations
 
@@ -100,6 +86,6 @@ and confirmation **KILL**. The two-hour expiry workflow is a backup, checked
 every 15 minutes; GitHub scheduling can run late. Full kill deletes test data
 and model history as well as compute, disks, images, and state storage.
 
-If local Docker bridge networking cannot download pinned build dependencies,
+If the CI runner Docker bridge cannot download pinned build dependencies,
 `make check-images DOCKER_NETWORK=host` runs the same checks using host networking.
 Cloud workflows use their GitHub runner network.

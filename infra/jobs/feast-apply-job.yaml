@@ -15,8 +15,8 @@ spec:
       restartPolicy: OnFailure
       containers:
         - name: feast-apply
-          image: localhost:5001/training:dev
-          # Always: the local registry tag is reused across builds, so nodes would
+          image: __TRAINING_IMAGE__
+          # Cloud image is injected by the Azure deployment, so nodes would
           # otherwise serve a stale cached layer (this bit us once).
           resources:
             requests: {cpu: 100m, memory: 256Mi}

@@ -4,8 +4,8 @@ Status: live test deployment verified 2026-10-15 through GitHub Actions run
 [38715945979](https://github.com/JaiiMukundh/mlplatform/actions/runs/38715945979)
 at commit `f76587ed3fe1b1987addbf837ab48e137ed368ab`. This is a temporary
 two-hour test environment; full deletion is scheduled for 2026-10-15 12:25 UTC.
-The local environment remains the functional test harness. Azure and
-GitHub-hosted runners handle cloud operation; no laptop runner is required.
+The local deployment has been removed. Azure and GitHub-hosted runners handle
+cloud operation; no laptop runner is required.
 
 Live endpoints:
 
@@ -106,7 +106,7 @@ quota and regional availability must be checked for the actual subscription;
 
 The deployment builds all seven named targets from `infra/Dockerfile`,
 pushes commit-tagged ACR images, installs the same Helm charts as the proven
-local environment, and installs Prometheus/Grafana/Loki/Alloy before ServiceMonitors.
+cloud environment, and installs Prometheus/Grafana/Loki/Alloy before ServiceMonitors.
 It seeds Feast and trains the initial MLflow champion only when no champion
 exists. Reruns preserve model lineage and existing drifted data. A readiness,
 model-info, and real prediction check must succeed before deployment succeeds.

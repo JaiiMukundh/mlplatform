@@ -5,6 +5,8 @@
 set -Eeuo pipefail
 
 readonly NAMESPACE="${NAMESPACE:-serving}"
+readonly MODEL_API_URL="${MODEL_API_URL:?set the AKS model API URL}"
+readonly PROMETHEUS_URL="${PROMETHEUS_URL:?set the AKS Prometheus URL}"
 readonly LATENCY_MS="${LATENCY_MS:-500}"
 readonly RPS="${RPS:-10}"
 readonly WAIT_SECONDS="${WAIT_SECONDS:-240}"
@@ -20,8 +22,7 @@ for pod in $(kubectl -n "${NAMESPACE}" get pods -l app.kubernetes.io/name=model-
 done
 
 echo "[0s] starting traffic (${RPS} rps) in background"
-source .venv/bin/activate 2>/dev/null || true
-python scripts/traffic.py --rps "${RPS}" --duration "${WAIT_SECONDS}" --url "${MODEL_API_URL:-http://localhost:8080}" --max-error-rate 1.0 > /tmp/chaos-traffic.log 2>&1 &
+python scripts/traffic.py --rps "${RPS}" --duration "${WAIT_SECONDS}" --url "${MODEL_API_URL}" --max-error-rate 1.0 > /tmp/chaos-traffic.log 2>&1 &
 TRAFFIC_PID=$!
 
 fired_at=""
@@ -29,7 +30,7 @@ acted_at=""
 for elapsed in $(seq 15 15 "${WAIT_SECONDS}"); do
   sleep 15
   # Has the alert fired? (ALERTS==1 with alertstate=firing; pending->firing ~2-3 min)
-  state="$(curl -s -G "${PROMETHEUS_URL:-http://localhost:9090}/api/v1/query" --data-urlencode 'query=ALERTS{alertname="HighP95Latency"}' | python3 -c 'import json,sys; d=json.load(sys.stdin); r=d["data"]["result"]; print(r[0]["value"][1] + ":" + r[0]["metric"].get("alertstate","?") if r else "none")' 2>/dev/null || echo "query-failed")"
+  state="$(curl -s -G "${PROMETHEUS_URL}/api/v1/query" --data-urlencode 'query=ALERTS{alertname="HighP95Latency"}' | python3 -c 'import json,sys; d=json.load(sys.stdin); r=d["data"]["result"]; print(r[0]["value"][1] + ":" + r[0]["metric"].get("alertstate","?") if r else "none")' 2>/dev/null || echo "query-failed")"
   current_min="$(kubectl -n "${NAMESPACE}" get hpa model-api -o jsonpath='{.spec.minReplicas}')"
   echo "[${elapsed}s] ALERTS=${state} hpa_min=${current_min}"
   if [[ "${state}" == "1:firing" && -z "${fired_at}" ]]; then

@@ -28,7 +28,7 @@ def dispatch_candidate(
 ) -> str:
     """Announce a candidate version; return how it was released."""
     if release_script is None:
-        release_script = "scripts/model_release_local.sh"
+        release_script = "scripts/model_release.sh"
     mode = trigger_mode or os.environ.get("TRIGGER_MODE", "local")
     if mode == "github":
         repo = github_repo or os.environ.get("GITHUB_REPO", "")

@@ -1,7 +1,7 @@
 replicaCount: 1
 
 image:
-  repository: localhost:5001/remediator
+  repository: invalid.azurecr.io/remediator
   tag: dev
   pullPolicy: IfNotPresent
 

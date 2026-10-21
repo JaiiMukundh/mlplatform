@@ -109,7 +109,7 @@ RUN curl -fsSL --retry 3 --retry-all-errors --connect-timeout 20 --max-time 180 
     && rm -rf /tmp/linux-amd64
 
 COPY --chown=10001:10001 core/retrain/ retrain/
-COPY --chown=10001:10001 scripts/model_release_local.sh scripts/deploy.sh scripts/smoke.sh scripts/loadcheck.py scripts/run_gate.sh scripts/run_job.sh scripts/
+COPY --chown=10001:10001 scripts/model_release.sh scripts/deploy.sh scripts/smoke.sh scripts/loadcheck.py scripts/run_gate.sh scripts/run_job.sh scripts/
 COPY --chown=10001:10001 infra/charts/model-api infra/charts/model-api
 COPY --chown=10001:10001 infra/jobs/gate-job.yaml infra/jobs/gate-job.yaml
 

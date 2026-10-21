@@ -1,3 +1,5 @@
+> Historical record: local kind deployment described below was removed on 2026-10-21. Current deployment is AKS only; see README.
+
 # 10-Minute Live Demo Script & Run-of-Show (P10.5)
 
 This script provides the exact minute-by-minute run-of-show, terminal commands, expected outputs, UI presentation points, and fallback procedures for presenting the Autonomous Self-Healing Machine Learning Platform.

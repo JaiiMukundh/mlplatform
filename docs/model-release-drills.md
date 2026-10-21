@@ -1,3 +1,5 @@
+> Historical record: local kind deployment described below was removed on 2026-10-21. Current deployment is AKS only; see README.
+
 # Model release drills (P7.4) — observed 2026-10-03
 
 All drills ran through the same scripts the workflow uses

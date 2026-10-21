@@ -1,9 +1,9 @@
 replicaCount: 1
 
 image:
-  repository: localhost:5001/drift-monitor
+  repository: invalid.azurecr.io/drift-monitor
   tag: dev
-  # Always: the local registry tag is reused across builds.
+  # Always: the ACR tag is reused across builds.
   pullPolicy: Always
 
 service:
