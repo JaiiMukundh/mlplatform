@@ -1020,5 +1020,8 @@ inline JavaScript passed `node --check` and a render smoke check (5 portals and
 passed. Further duplication cleanup in drift metrics and model setup brings
 `ui/app.py`, `ui/templates/index.html`, `core/drift_monitor/main.py`, and
 `core/ml/train.py` to 4,329 lines, down 197 from their original 4,526. S2/S3
-now track actual behavior-preserving code reduction. Next action: run full
-GitHub CI after the final diff is committed.
+now track actual behavior-preserving code reduction.
+
+Final simplification acceptance passed on `407c5c3`: GitHub Actions run
+[39603457222](https://github.com/JaiiMukundh/mlplatform/actions/runs/39603457222)
+passed quality and security, including image builds. S2 and S3 are complete.
