@@ -519,3 +519,11 @@ until a separate explicit request to change visibility.
 Reason: the user asked for a much simpler current codebase while earlier asking
 to retain the same functionality. Service-specific runtime installs lower what
 each container carries without changing the complete local development setup.
+
+## 2026-10-21 — Update critical training transitive dependencies
+
+- **Decision:** Pin certifi 2026.10.19 and Pillow 13.0.0 in the training input and
+  lock.
+- **Reason:** Trivy identified critical certificate bundle and JPEG handling
+  advisories in the prior locked versions. These are the fixed stable releases
+  published on PyPI.

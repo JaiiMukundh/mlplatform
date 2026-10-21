@@ -969,4 +969,11 @@ check-charts` and `make secret-scan` passed (106 commits, no leaks).
 
 `make check-images` is pending: Docker could not reach PyPI to install the
 existing pinned `uv==0.13.0` tool, including with host networking. Next action:
-push this branch and run its pinned GitHub CI workflow to verify container builds.
+the first GitHub run (39597873218) built through dependency install and
+infrastructure checks, but its security job found two critical pins in the
+existing training lock. Updated to certifi 2026.10.19 and Pillow 13.0.0 from
+their official PyPI releases, regenerated the 140-package training lock, and
+updated the shared uv lock's Certifi dependency. The first run's image scan
+also found that same old Certifi pin. Local Trivy now reports zero vulnerable
+Python dependencies; IaC findings remain report-only as configured. Next action:
+rerun GitHub CI to verify security and the container builds.

@@ -16,7 +16,7 @@ blinker==1.9.0
 boto3==1.43.106
 botocore==1.43.106
 cachetools==7.2.0
-certifi==2026.7.22
+certifi==2026.10.19
 cffi==2.1.1
 charset-normalizer==3.5.2
 click==8.5.0
@@ -80,7 +80,7 @@ packaging==26.3
 pandas==2.3.3
 partd==1.4.2
 pathspec==1.1.1
-pillow==12.3.0
+pillow==13.0.0
 prettytable==3.18.0
 prometheus-client==0.24.1
 propcache==0.5.4

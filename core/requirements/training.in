@@ -11,3 +11,5 @@ pydantic==2.13.5
 pydantic-settings==2.15.0
 httpx==0.28.1
 kubernetes==37.0.1
+certifi==2026.10.19
+pillow==13.0.0
