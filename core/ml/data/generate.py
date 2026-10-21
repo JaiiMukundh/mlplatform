@@ -117,19 +117,15 @@ def generate_dataset(
         timestamp = effective_end - dt.timedelta(days=7 * weeks_ago)
         ts_val = pd.Timestamp(timestamp, tz="UTC")
 
-        feat_frame = selected[[ENTITY_COLUMN, *FEATURE_COLUMNS]].copy()
-        feat_frame.insert(1, TIMESTAMP_COLUMN, ts_val)
-        feature_frames.append(feat_frame)
-
-        lbl_frame = selected[[ENTITY_COLUMN, LABEL_COLUMN]].copy()
-        lbl_frame.insert(1, TIMESTAMP_COLUMN, ts_val)
-        label_frames.append(lbl_frame)
+        snapshot = selected.copy()
+        snapshot.insert(1, TIMESTAMP_COLUMN, ts_val)
+        feature_frames.append(
+            snapshot[[ENTITY_COLUMN, TIMESTAMP_COLUMN, *FEATURE_COLUMNS]]
+        )
+        label_frames.append(snapshot[[ENTITY_COLUMN, TIMESTAMP_COLUMN, LABEL_COLUMN]])
 
     features = pd.concat(feature_frames, ignore_index=True)
-    features = features[[ENTITY_COLUMN, TIMESTAMP_COLUMN, *FEATURE_COLUMNS]]
-
     labels = pd.concat(label_frames, ignore_index=True)
-    labels = labels[[ENTITY_COLUMN, TIMESTAMP_COLUMN, LABEL_COLUMN]]
 
     latest = features.loc[
         features[TIMESTAMP_COLUMN] == features[TIMESTAMP_COLUMN].max()

@@ -245,12 +245,10 @@ def train_mlflow_model(
             }
         )
         with tempfile.TemporaryDirectory() as tmp:
-            reference_path = Path(tmp) / "reference.parquet"
-            reference.to_parquet(reference_path, index=False)
-            mlflow.log_artifact(str(reference_path), artifact_path="")
-            eval_path = Path(tmp) / "eval_set.parquet"
-            eval_set.to_parquet(eval_path, index=False)
-            mlflow.log_artifact(str(eval_path), artifact_path="")
+            for name, frame in (("reference", reference), ("eval_set", eval_set)):
+                path = Path(tmp) / f"{name}.parquet"
+                frame.to_parquet(path, index=False)
+                mlflow.log_artifact(str(path), artifact_path="")
         signature = infer_signature(
             splits.train[FEATURE_COLUMNS].iloc[:100],
             model.predict(splits.train[FEATURE_COLUMNS].iloc[:100]),

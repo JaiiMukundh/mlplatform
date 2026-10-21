@@ -4,6 +4,9 @@ Checkboxes are changed only after the corresponding acceptance check has been ob
 
 ## Simplification without feature loss — 2026-10-21
 
+- [x] S4 Reduce non-UI production code further without removing platform flows.
+      Acceptance: `make lint test check-infra check-actions check-charts secret-scan`
+      and a measured tracked-source line count.
 - [x] S1 Split runtime dependencies by container role and prove each image can
       import its real entry point. Acceptance: `make lint test check-infra
       check-actions check-charts secret-scan check-images` and GitHub CI.

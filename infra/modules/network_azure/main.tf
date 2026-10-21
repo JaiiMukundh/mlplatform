@@ -51,14 +51,3 @@ output "aks_subnet_id" {
   description = "ID of the AKS node-pool subnet."
   value       = azurerm_subnet.aks.id
 }
-
-terraform {
-  required_version = ">= 1.9.0"
-
-  required_providers {
-    azurerm = {
-      source  = "hashicorp/azurerm"
-      version = "5.9.0"
-    }
-  }
-}

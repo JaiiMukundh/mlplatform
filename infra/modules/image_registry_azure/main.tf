@@ -47,14 +47,3 @@ output "registry_id" {
   description = "Resource ID of the registry (scope for the AKS AcrPull assignment)."
   value       = azurerm_container_registry.this.id
 }
-
-terraform {
-  required_version = ">= 1.9.0"
-
-  required_providers {
-    azurerm = {
-      source  = "hashicorp/azurerm"
-      version = "5.9.0"
-    }
-  }
-}

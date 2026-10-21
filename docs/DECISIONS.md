@@ -548,3 +548,15 @@ each container carries without changing the complete local development setup.
 - **Reason:** Trivy identified critical certificate bundle and JPEG handling
   advisories in the prior locked versions. These are the fixed stable releases
   published on PyPI.
+
+## 2026-10-21 — Count and reduce non-UI source without hiding code
+
+- **Decision:** Count tracked Python, shell, Terraform, YAML, TOML, Makefile,
+  Dockerfile, and environment-example lines outside `ui/`; report tests
+  separately. Exclude prose, lockfiles, and vendored archives from this source
+  count. Keep all source readable and all existing platform flows.
+- **Reason:** The user asked for an honest aggregate reduction. The measured
+  starting count was 10,161 production lines, or 12,438 with tests. Duplicate
+  Terraform provider declarations in child modules can be removed because the
+  local and Azure environment roots still pin exact provider versions; both
+  environment validations passed after this change.
