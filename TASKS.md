@@ -4,7 +4,7 @@ Checkboxes are changed only after the corresponding acceptance check has been ob
 
 ## Simplification without feature loss — 2026-10-21
 
-- [ ] S1 Split runtime dependencies by container role and prove each image can
+- [x] S1 Split runtime dependencies by container role and prove each image can
       import its real entry point. Acceptance: `make lint test check-infra
       check-actions check-charts secret-scan check-images` and GitHub CI.
 - [ ] S2 Split the oversized dashboard module into focused readable modules
