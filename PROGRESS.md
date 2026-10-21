@@ -986,3 +986,18 @@ separate; the dashboard now installs 99 distributions, drift monitor 46, and
 remediator 40. The model API installs 96 to retain the existing MLflow/sklearn
 provider behavior. Next action: split the dashboard's 1,194-line module into
 small route modules while keeping every existing endpoint.
+
+## 2026-10-21 — Split dashboard and drift-monitor modules
+
+The dashboard now has a 79-line app assembly module, shared state/settings,
+and separate overview, cluster, model, and action route modules. The drift
+monitor's 534-line module is now split into a 342-line app/evaluation module,
+86-line SQL storage module, and 130-line retrain-job/metric module. Route
+behavior and test-facing drift APIs were preserved.
+
+Verification: `make lint test` passed: 110 passed, 3 skipped, 84.29% coverage;
+Ruff passed across 97 files. `make check-infra check-actions check-charts
+secret-scan` passed: Terraform validation, chart lint/render checks, and
+Gitleaks (109 commits, no leaks). `make check-images` started but Docker could
+not fetch the pinned `uv==0.13.0` from PyPI before the network timeout. Next
+action: commit and push this refactor, then verify image builds in GitHub CI.

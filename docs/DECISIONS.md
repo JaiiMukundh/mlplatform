@@ -1,5 +1,16 @@
 # Decisions
 
+## 2026-10-21 — Split dashboard and drift-monitor responsibilities
+
+- **Decision:** Keep all dashboard and drift-monitor behavior and split their
+  code by responsibility. The dashboard app assembles route modules; its
+  operations and business routes live in focused files. Drift-monitor SQL
+  persistence and Kubernetes retrain-job handling live outside its app module.
+- **Reason:** The original dashboard and drift monitor were single large files
+  that mixed unrelated concerns. Smaller modules are easier to read and change
+  while preserving every endpoint and the detect, persist, retrain, and metric
+  flows.
+
 ## 2026-10-15 — Serve the Azure dashboard on standard HTTPS
 
 - **Decision:** Keep the dashboard container on HTTPS port 8050, but expose its
