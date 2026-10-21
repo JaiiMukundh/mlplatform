@@ -1676,6 +1676,15 @@
     }
 
     // Modal Live Burst Test
+    async function runBurstProbe() {
+      const response = await fetch('/api/burst-test', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ count: 10 })
+      });
+      return response.json();
+    }
+
     async function testInferenceInModal() {
       const btn = document.getElementById('modalProbeBtn');
       const status = document.getElementById('modalProbeStatus');
@@ -1683,12 +1692,7 @@
       status.innerText = 'Firing 10 concurrent requests to survivor...';
 
       try {
-        const res = await fetch('/api/burst-test', {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ count: 10 })
-        });
-        const data = await res.json();
+        const data = await runBurstProbe();
         if (data.status === 'success') {
           status.innerHTML = `<strong class="text-[#1D7A4D]">✓ ${data.successful}/${data.total} PASSED</strong> (${data.avg_latency_ms}ms avg • 0 dropped requests)`;
           showToast('PROBE PASSED', `${data.successful}/${data.total} calls succeeded with zero downtime.`, '🛡️');
@@ -1838,12 +1842,7 @@
       resElem.innerText = 'Testing 10 calls...';
 
       try {
-        const res = await fetch('/api/burst-test', {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ count: 10 })
-        });
-        const data = await res.json();
+        const data = await runBurstProbe();
         if (data.status === 'success') {
           resElem.innerText = `✓ 10/10 SUCCESSFUL (0 DROPPED • ${data.avg_latency_ms}ms avg)`;
           showToast('BURST COMPLETE', `10/10 requests succeeded with zero downtime.`, '🛡️');
@@ -1914,6 +1913,30 @@
       startWatchdogPolling();
     }
 
+    function renderDecision(state) {
+      const set = (id, property, value) => {
+        const element = document.getElementById(id);
+        if (element) element[property] = value;
+      };
+      const probabilitySize = state.compact
+        ? 'text-4xl sm:text-5xl my-0.5'
+        : 'text-5xl sm:text-6xl my-1';
+      set('verdictBox', 'className', `p-3.5 border-2 border-black ${state.background} text-center`);
+      set('scoreRiskLevel', 'className', `font-mono text-lg font-black ${state.tone === 'danger' ? 'text-[#B52A24]' : 'text-[#1D7A4D]'} uppercase tracking-wide`);
+      set('scoreRiskLevel', 'innerText', state.risk);
+      set('scoreProbability', 'className', `${probabilitySize} font-black font-mono tracking-tighter ${state.tone === 'danger' ? 'text-[#B52A24]' : state.compact ? 'text-black' : 'text-[#1D7A4D]'}`);
+      set('scoreProbability', 'innerText', state.probability);
+      set('scoreProbBar', 'className', `h-full ${state.tone === 'danger' ? 'bg-[#B52A24]' : 'bg-[#1D7A4D]'} transition-all duration-500`);
+      const bar = document.getElementById('scoreProbBar');
+      if (bar) bar.style.width = state.probability;
+      set('scoreCognitiveBadge', 'className', `px-2.5 py-1 text-xs font-mono font-bold ${state.background} ${state.tone === 'danger' ? 'text-[#B52A24]' : 'text-[#1D7A4D]'} border-2 border-black${state.pulse ? ' animate-pulse' : ''}`);
+      set('scoreCognitiveBadge', 'innerText', state.badge);
+      set('scorePathologyText', 'innerHTML', state.pathology);
+      set('scoreSubText', 'innerHTML', state.summary);
+      set('scoreFleetStatusPill', 'className', `px-3 py-2 ${state.tone === 'danger' ? 'bg-[#B52A24]' : 'bg-[#1D7A4D]'} border border-black text-white font-bold text-xs uppercase tracking-wider${state.pulse ? ' animate-pulse' : ''}`);
+      set('scoreFleetStatusPill', 'innerText', state.fleet);
+    }
+
     function renderDriftShockState() {
       // Update Profile to show shifted attributes
       const profLimit = document.getElementById('profLimit');
@@ -1933,43 +1956,14 @@
       if (psiValLimit) psiValLimit.innerHTML = '<span class="text-[#B52A24] font-bold">0.550 (CRITICAL BREACH &gt; 0.25)</span>';
       if (psiBarLimit) { psiBarLimit.style.width = '55%'; psiBarLimit.className = 'h-full bg-[#B52A24] transition-all duration-300'; }
 
-      // Update Decision to FRAUD / DUMB REJECT
-      const verdictBox = document.getElementById('verdictBox');
-      const scoreRiskLevel = document.getElementById('scoreRiskLevel');
-      const scoreProb = document.getElementById('scoreProbability');
-      const scoreProbBar = document.getElementById('scoreProbBar');
-      const cogBadge = document.getElementById('scoreCognitiveBadge');
-      const pathText = document.getElementById('scorePathologyText');
-      const subText = document.getElementById('scoreSubText');
-      const fleetPill = document.getElementById('scoreFleetStatusPill');
-
-      if (verdictBox) verdictBox.className = 'p-3.5 border-2 border-black bg-[#fed7aa] text-center';
-      if (scoreRiskLevel) {
-        scoreRiskLevel.className = 'font-mono text-lg font-black text-[#B52A24] uppercase tracking-wide';
-        scoreRiskLevel.innerText = '🚨 HIGH RISK // FRAUD REJECTED (DUMB)';
-      }
-      if (scoreProb) {
-        scoreProb.className = 'text-5xl sm:text-6xl font-black font-mono tracking-tighter text-[#B52A24] my-1';
-        scoreProb.innerText = '62.0%';
-      }
-      if (scoreProbBar) {
-        scoreProbBar.className = 'h-full bg-[#B52A24] transition-all duration-500';
-        scoreProbBar.style.width = '62.0%';
-      }
-      if (cogBadge) {
-        cogBadge.className = 'px-2.5 py-1 text-xs font-mono font-bold bg-[#fed7aa] text-[#B52A24] border-2 border-black animate-pulse';
-        cogBadge.innerText = '🚨 DUMB DECISION // SLURRED (FRAUD)';
-      }
-      if (pathText) {
-        pathText.innerHTML = '🚨 <span class="text-[#B52A24]">DUMB / SLURRED DECISION:</span> Prime borrower ($500k limit, 0 late payments) falsely classified as Fraud / High Risk because active model was trained on historical baseline!';
-      }
-      if (subText) {
-        subText.innerHTML = 'Covariate shift breached PSI &gt; 0.25 on 2 features. Autonomous Kubernetes watchdog is triggered...';
-      }
-      if (fleetPill) {
-        fleetPill.className = 'px-3 py-2 bg-[#B52A24] border border-black text-white font-bold text-xs uppercase tracking-wider animate-pulse';
-        fleetPill.innerText = '🚨 DRIFT BREACH DETECTED (PSI > 0.25)';
-      }
+      renderDecision({
+        tone: 'danger', background: 'bg-[#fed7aa]', probability: '62.0%',
+        risk: '🚨 HIGH RISK // FRAUD REJECTED (DUMB)',
+        badge: '🚨 DUMB DECISION // SLURRED (FRAUD)',
+        pathology: '🚨 <span class="text-[#B52A24]">DUMB / SLURRED DECISION:</span> Prime borrower ($500k limit, 0 late payments) falsely classified as Fraud / High Risk because active model was trained on historical baseline!',
+        summary: 'Covariate shift breached PSI &gt; 0.25 on 2 features. Autonomous Kubernetes watchdog is triggered...',
+        fleet: '🚨 DRIFT BREACH DETECTED (PSI > 0.25)', pulse: true
+      });
 
       // Update Watchdog HUD
       const watchdogPill = document.getElementById('watchdogStatusPill');
@@ -2070,43 +2064,14 @@
       if (modelPill) modelPill.innerText = `loan-default:v${version}`;
       if (modelVer) modelVer.innerText = `Champion v${version} (Retrained Fleet)`;
 
-      // Update Decision to APPROVED / RESTORED (FINE)
-      const verdictBox = document.getElementById('verdictBox');
-      const scoreRiskLevel = document.getElementById('scoreRiskLevel');
-      const scoreProb = document.getElementById('scoreProbability');
-      const scoreProbBar = document.getElementById('scoreProbBar');
-      const cogBadge = document.getElementById('scoreCognitiveBadge');
-      const pathText = document.getElementById('scorePathologyText');
-      const subText = document.getElementById('scoreSubText');
-      const fleetPill = document.getElementById('scoreFleetStatusPill');
-
-      if (verdictBox) verdictBox.className = 'p-3.5 border-2 border-black bg-[#ecfdf5] text-center';
-      if (scoreRiskLevel) {
-        scoreRiskLevel.className = 'font-mono text-lg font-black text-[#1D7A4D] uppercase tracking-wide';
-        scoreRiskLevel.innerText = 'APPROVED // HEALED & RESTORED (FINE)';
-      }
-      if (scoreProb) {
-        scoreProb.className = 'text-5xl sm:text-6xl font-black font-mono tracking-tighter text-[#1D7A4D] my-1';
-        scoreProb.innerText = '12.9%';
-      }
-      if (scoreProbBar) {
-        scoreProbBar.className = 'h-full bg-[#1D7A4D] transition-all duration-500';
-        scoreProbBar.style.width = '12.9%';
-      }
-      if (cogBadge) {
-        cogBadge.className = 'px-2.5 py-1 text-xs font-mono font-bold bg-[#ecfdf5] text-[#1D7A4D] border-2 border-black';
-        cogBadge.innerText = '🟢 CALIBRATED DECISION (FINE)';
-      }
-      if (pathText) {
-        pathText.innerHTML = `✓ <span class="text-[#1D7A4D]">OUTPUT HEALED:</span> Model retrained on shifted data window. Prime borrower correctly recognized as low default risk (12.9%)!`;
-      }
-      if (subText) {
-        subText.innerHTML = `Champion v${version} deployed zero-downtime across serving replicas. Autonomous reconciliation loop closed successfully.`;
-      }
-      if (fleetPill) {
-        fleetPill.className = 'px-3 py-2 bg-[#1D7A4D] border border-black text-white font-bold text-xs uppercase tracking-wider';
-        fleetPill.innerText = `🟢 SERVING HEALED FLEET (v${version})`;
-      }
+      renderDecision({
+        tone: 'success', background: 'bg-[#ecfdf5]', probability: '12.9%',
+        risk: 'APPROVED // HEALED & RESTORED (FINE)',
+        badge: '🟢 CALIBRATED DECISION (FINE)',
+        pathology: `✓ <span class="text-[#1D7A4D]">OUTPUT HEALED:</span> Model retrained on shifted data window. Prime borrower correctly recognized as low default risk (12.9%)!`,
+        summary: `Champion v${version} deployed zero-downtime across serving replicas. Autonomous reconciliation loop closed successfully.`,
+        fleet: `🟢 SERVING HEALED FLEET (v${version})`
+      });
     }
 
     function renderBaselineState() {
@@ -2126,43 +2091,14 @@
       if (psiValLimit) psiValLimit.innerHTML = '0.012 (STABLE)';
       if (psiBarLimit) { psiBarLimit.style.width = '4.8%'; psiBarLimit.className = 'h-full bg-[#1D7A4D] transition-all duration-300'; }
 
-      // 3. Reset Decision card to Approved // Low Risk (Fine)
-      const verdictBox = document.getElementById('verdictBox');
-      const scoreRiskLevel = document.getElementById('scoreRiskLevel');
-      const scoreProb = document.getElementById('scoreProbability');
-      const scoreProbBar = document.getElementById('scoreProbBar');
-      const cogBadge = document.getElementById('scoreCognitiveBadge');
-      const pathText = document.getElementById('scorePathologyText');
-      const subText = document.getElementById('scoreSubText');
-      const fleetPill = document.getElementById('scoreFleetStatusPill');
-
-      if (verdictBox) verdictBox.className = 'p-3.5 border-2 border-black bg-[#ecfdf5] text-center';
-      if (scoreRiskLevel) {
-        scoreRiskLevel.className = 'font-mono text-lg font-black text-[#1D7A4D] uppercase tracking-wide';
-        scoreRiskLevel.innerText = 'APPROVED // LOW RISK (FINE)';
-      }
-      if (scoreProb) {
-        scoreProb.className = 'text-4xl sm:text-5xl font-black font-mono tracking-tighter text-black my-0.5';
-        scoreProb.innerText = '6.2%';
-      }
-      if (scoreProbBar) {
-        scoreProbBar.className = 'h-full bg-[#1D7A4D] transition-all duration-500';
-        scoreProbBar.style.width = '6.2%';
-      }
-      if (cogBadge) {
-        cogBadge.className = 'px-2.5 py-1 text-xs font-mono font-bold bg-[#ecfdf5] text-[#1D7A4D] border-2 border-black';
-        cogBadge.innerText = '🟢 CALIBRATED DECISION (FINE)';
-      }
-      if (pathText) {
-        pathText.innerHTML = '✓ Calibrated decision: High credit limit ($500k), 0 late payments. Applicant approved.';
-      }
-      if (subText) {
-        subText.innerHTML = 'Baseline distribution matches training references. Decisions are crisp and accurate.';
-      }
-      if (fleetPill) {
-        fleetPill.className = 'px-3 py-2 bg-[#1D7A4D] border border-black text-white font-bold text-xs uppercase tracking-wider';
-        fleetPill.innerText = '🟢 SERVING CALIBRATED FLEET (BASELINE)';
-      }
+      renderDecision({
+        tone: 'success', background: 'bg-[#ecfdf5]', probability: '6.2%', compact: true,
+        risk: 'APPROVED // LOW RISK (FINE)',
+        badge: '🟢 CALIBRATED DECISION (FINE)',
+        pathology: '✓ Calibrated decision: High credit limit ($500k), 0 late payments. Applicant approved.',
+        summary: 'Baseline distribution matches training references. Decisions are crisp and accurate.',
+        fleet: '🟢 SERVING CALIBRATED FLEET (BASELINE)'
+      });
 
       // 4. Reset Watchdog HUD
       const watchdogPill = document.getElementById('watchdogStatusPill');

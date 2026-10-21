@@ -1004,3 +1004,20 @@ pinned `uv==0.13.0` from PyPI before the network timeout. GitHub Actions run
 passed both quality and security jobs, including all image build/import
 checks. S2 and S3 acceptance is complete. Next action: review the clean commit
 history and retain the user's untracked files untouched.
+
+## 2026-10-21 — Correct simplification to reduce code
+
+The user clarified that simplification means removing lines of code, not
+splitting files. Reverted the prior dashboard and drift-monitor module split.
+Removed duplicate prediction handling, repeated Kubernetes subprocess setup,
+repeated covariate-shock transforms, repeated dashboard decision rendering,
+and a duplicated metrics update. The two burst-probe controls now share their
+request logic.
+
+`ui/app.py` is 1,164 lines (down from 1,194); `ui/templates/index.html` is
+2,372 lines (down from 2,436); `core/drift_monitor/main.py` is back to its
+original 534 lines. Combined, those three files are down 94 lines. `make lint
+test` passed: 110 passed, 3 skipped, 84.29% coverage. The dashboard inline
+JavaScript passed `node --check`; `git diff --check` passed. The previous
+modularity tasks S2/S3 are unchecked; S4 tracks actual line reduction.
+Next action: run the full GitHub CI after the final diff is committed.
