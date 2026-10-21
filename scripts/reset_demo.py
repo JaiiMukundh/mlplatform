@@ -70,6 +70,11 @@ def _mlflow(path: str, method: str = "GET", payload: bytes | None = None) -> byt
         return response.read()
 
 
+def _run(*command: str) -> None:
+    """Run one required command; propagate failures to the caller."""
+    subprocess.run(command, check=True)
+
+
 def _has_alias(alias: str) -> bool:
     """Return whether the registry currently binds one alias."""
     payload = _mlflow("/api/2.0/mlflow/registered-models/get?name=loan-default")
@@ -125,19 +130,16 @@ def _recover_pending_staging_release() -> None:
     if not revisions:
         raise RuntimeError("staging release is pending and has no deployed revision")
     revision = max(revisions)
-    subprocess.run(
-        [
-            "helm",
-            "rollback",
-            "model-api-staging",
-            str(revision),
-            "-n",
-            "staging",
-            "--wait",
-            "--timeout",
-            "5m",
-        ],
-        check=True,
+    _run(
+        "helm",
+        "rollback",
+        "model-api-staging",
+        str(revision),
+        "-n",
+        "staging",
+        "--wait",
+        "--timeout",
+        "5m",
     )
 
 
@@ -148,19 +150,16 @@ def main() -> int:
     end_date = _model_data_end(version)
     _recover_pending_staging_release()
 
-    subprocess.run(
-        [
-            sys.executable,
-            "-m",
-            "ml.data.generate",
-            "--out",
-            "data",
-            "--seed",
-            "42",
-            "--end-date",
-            end_date.isoformat(),
-        ],
-        check=True,
+    _run(
+        sys.executable,
+        "-m",
+        "ml.data.generate",
+        "--out",
+        "data",
+        "--seed",
+        "42",
+        "--end-date",
+        end_date.isoformat(),
     )
     repo_root = Path(__file__).resolve().parents[1]
     publish_sh = repo_root / "scripts" / "publish_feast_data.sh"
@@ -168,27 +167,12 @@ def main() -> int:
     remat_yaml = repo_root / "infra" / "jobs" / "feast-rematerialize-job.yaml"
     deploy_sh = repo_root / "scripts" / "deploy.sh"
 
-    subprocess.run(["bash", str(publish_sh)], check=True)
+    _run("bash", str(publish_sh))
     # Feast's full rematerialization does not overwrite Redis keys whose
     # timestamps are newer than the reset snapshot.  Flush the demo-only
     # ephemeral online store so no drifted values survive the reset.
-    subprocess.run(
-        [
-            "kubectl",
-            "-n",
-            "data",
-            "exec",
-            "deploy/redis",
-            "--",
-            "redis-cli",
-            "FLUSHALL",
-        ],
-        check=True,
-    )
-    subprocess.run(
-        ["bash", str(run_job_sh), str(remat_yaml)],
-        check=True,
-    )
+    _run("kubectl", "-n", "data", "exec", "deploy/redis", "--", "redis-cli", "FLUSHALL")
+    _run("bash", str(run_job_sh), str(remat_yaml))
 
     _mlflow(
         "/api/2.0/mlflow/registered-models/alias",
@@ -202,72 +186,57 @@ def main() -> int:
         method="DELETE",
         payload=b'{"name":"loan-default","alias":"candidate"}',
     ) if _has_alias("candidate") else None
-    subprocess.run(
-        [
-            "bash",
-            str(deploy_sh),
-            "model-api",
-            "serving",
-            os.environ.get("IMAGE_TAG", "dev"),
-            "--set",
-            f"model.version={version}",
-        ],
-        check=True,
+    _run(
+        "bash",
+        str(deploy_sh),
+        "model-api",
+        "serving",
+        os.environ.get("IMAGE_TAG", "dev"),
+        "--set",
+        f"model.version={version}",
     )
-    subprocess.run(
-        [
-            "kubectl",
-            "-n",
-            "data",
-            "delete",
-            "job",
-            "-l",
-            "app=retrain",
-            "--ignore-not-found",
-            "--wait=true",
-        ],
-        check=True,
+    _run(
+        "kubectl",
+        "-n",
+        "data",
+        "delete",
+        "job",
+        "-l",
+        "app=retrain",
+        "--ignore-not-found",
+        "--wait=true",
     )
-    subprocess.run(
-        [
-            "kubectl",
-            "-n",
-            "data",
-            "exec",
-            "postgres-0",
-            "--",
-            "psql",
-            "-U",
-            "mlp",
-            "-d",
-            "mlp",
-            "-c",
-            "TRUNCATE prediction_log; DELETE FROM drift_state; DELETE FROM drift_meta;",
-        ],
-        check=True,
+    _run(
+        "kubectl",
+        "-n",
+        "data",
+        "exec",
+        "postgres-0",
+        "--",
+        "psql",
+        "-U",
+        "mlp",
+        "-d",
+        "mlp",
+        "-c",
+        "TRUNCATE prediction_log; DELETE FROM drift_state; DELETE FROM drift_meta;",
     )
-    subprocess.run(
-        [
-            "kubectl",
-            "-n",
-            "observability",
-            "rollout",
-            "restart",
-            "deployment/drift-monitor",
-        ],
-        check=True,
+    _run(
+        "kubectl",
+        "-n",
+        "observability",
+        "rollout",
+        "restart",
+        "deployment/drift-monitor",
     )
-    subprocess.run(
-        [
-            "kubectl",
-            "-n",
-            "observability",
-            "rollout",
-            "status",
-            "deployment/drift-monitor",
-            "--timeout=120s",
-        ],
-        check=True,
+    _run(
+        "kubectl",
+        "-n",
+        "observability",
+        "rollout",
+        "status",
+        "deployment/drift-monitor",
+        "--timeout=120s",
     )
     print(f"reset_demo complete: baseline data through {end_date}, champion v{version}")
     return 0

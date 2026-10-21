@@ -9,7 +9,7 @@ Checkboxes are changed only after the corresponding acceptance check has been ob
       check-actions check-charts secret-scan check-images` and GitHub CI.
 - [x] S2 Reduce duplicated dashboard implementation while preserving routes
       and behavior. Acceptance: same command as S1.
-- [x] S3 Review remaining large modules and reduce avoidable duplication while
+- [ ] S3 Review remaining large modules and reduce avoidable duplication while
       preserving all platform flows. Acceptance: same command as S1.
 
 ## GitHub and Azure migration — 2026-10-13

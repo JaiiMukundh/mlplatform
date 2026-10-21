@@ -1025,3 +1025,14 @@ now track actual behavior-preserving code reduction.
 Final simplification acceptance passed on `407c5c3`: GitHub Actions run
 [39603457222](https://github.com/JaiiMukundh/mlplatform/actions/runs/39603457222)
 passed quality and security, including image builds. S2 and S3 are complete.
+
+## 2026-10-21 — Continue the line reduction sweep
+
+Continued through the release gate and reset workflow: both now share the
+repeated check/command execution boilerplate. The six files in this sweep are
+4,840 lines versus 5,086 at the start (246 fewer). `make lint test` passed:
+110 passed, 3 skipped, 84.29% coverage. S3 is back in progress until the full
+acceptance and GitHub CI pass on this broader change.
+
+Next action: inspect another high-line-count implementation, then run the full
+acceptance command and update this task record.
