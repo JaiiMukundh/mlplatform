@@ -1,5 +1,15 @@
 # Decisions
 
+## 2026-10-21 — Measure simplification by removing code
+
+- **Decision:** Simplification work removes duplicated implementation and
+  tracks net source-line reductions. Keep related behavior together when that
+  leaves less code; do not count file splitting as simplification.
+- **Reason:** The user clarified that the priority is reducing the codebase's
+  line count while keeping the application behavior and readable source.
+- **Correction:** The immediately preceding dashboard/drift-monitor module
+  split was reverted because it increased total lines instead of reducing them.
+
 ## 2026-10-21 — Split dashboard and drift-monitor responsibilities
 
 - **Decision:** Keep all dashboard and drift-monitor behavior and split their
