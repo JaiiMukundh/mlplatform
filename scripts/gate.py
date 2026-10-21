@@ -91,37 +91,27 @@ def evaluate_gate(
     positive_rate = float(np.mean(candidate_proba >= 0.5))
     checks: list[GateCheck] = []
 
-    checks.append(
-        GateCheck(
-            name="absolute_floor",
-            passed=candidate_auc >= ABS_FLOOR,
-            detail=f"candidate_auc={candidate_auc:.4f} floor={ABS_FLOOR}",
-        )
+    def check(name: str, passed: bool, detail: str) -> None:
+        checks.append(GateCheck(name, passed, detail))
+
+    check(
+        "absolute_floor",
+        candidate_auc >= ABS_FLOOR,
+        f"candidate_auc={candidate_auc:.4f} floor={ABS_FLOOR}",
     )
 
     champion_auc: float | None = None
     if champion_version is None:
-        checks.append(
-            GateCheck(
-                name="no_regression",
-                passed=allow_no_champion,
-                detail="no champion version exists",
-            )
-        )
+        check("no_regression", allow_no_champion, "no champion version exists")
     else:
         champion_auc = float(
             roc_auc_score(labels, np.asarray(champion_proba, dtype=float))
         )
-        checks.append(
-            GateCheck(
-                name="no_regression",
-                passed=candidate_auc >= champion_auc - MAX_REGRESSION,
-                detail=(
-                    f"candidate_auc={candidate_auc:.4f} "
-                    f"champion_auc={champion_auc:.4f} "
-                    f"tolerance={MAX_REGRESSION}"
-                ),
-            )
+        check(
+            "no_regression",
+            candidate_auc >= champion_auc - MAX_REGRESSION,
+            f"candidate_auc={candidate_auc:.4f} champion_auc={champion_auc:.4f} "
+            f"tolerance={MAX_REGRESSION}",
         )
 
     missing = [name for name in FEATURE_COLUMNS if name not in candidate_features]
@@ -132,33 +122,25 @@ def evaluate_gate(
         and name in candidate_dtypes
         and not _numeric_dtype_compatible(_expected_dtype(name), candidate_dtypes[name])
     ]
-    checks.append(
-        GateCheck(
-            name="signature_compatible",
-            passed=not missing and not incompatible,
-            detail=(
-                f"missing={missing} incompatible={incompatible}"
-                if (missing or incompatible)
-                else f"{len(FEATURE_COLUMNS)} features match"
-            ),
-        )
+    check(
+        "signature_compatible",
+        not missing and not incompatible,
+        f"missing={missing} incompatible={incompatible}"
+        if missing or incompatible
+        else f"{len(FEATURE_COLUMNS)} features match",
     )
 
-    checks.append(
-        GateCheck(
-            name="positive_rate_sane",
-            passed=MIN_POSITIVE_RATE <= positive_rate <= MAX_POSITIVE_RATE,
-            detail=f"positive_rate={positive_rate:.4f}",
-        )
+    check(
+        "positive_rate_sane",
+        MIN_POSITIVE_RATE <= positive_rate <= MAX_POSITIVE_RATE,
+        f"positive_rate={positive_rate:.4f}",
     )
 
     load_ok = len(np.asarray(candidate_proba)) >= LOAD_TEST_ROWS
-    checks.append(
-        GateCheck(
-            name="loads_and_predicts",
-            passed=load_ok,
-            detail=f"scored_rows={len(np.asarray(candidate_proba))}",
-        )
+    check(
+        "loads_and_predicts",
+        load_ok,
+        f"scored_rows={len(candidate_proba)}",
     )
 
     passed = all(check.passed for check in checks)
