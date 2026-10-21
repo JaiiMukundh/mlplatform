@@ -6,7 +6,7 @@
 # 4. Deploys to staging, runs canary load check, promotes to champion, and rolls out to prod.
 set -Eeuo pipefail
 
-PYTHON=(uv run python)
+PYTHON=(uv run --all-groups python)
 [[ "${DEPLOY_TARGET:-local}" != azure ]] || PYTHON=(python)
 
 stamp() { date -u +%FT%TZ; }

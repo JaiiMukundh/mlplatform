@@ -150,7 +150,7 @@ Alerts are defined in `infra/charts/observability/templates/alerts.yaml`. Automa
   # Repopulate Redis cache from MinIO offline parquet
   make feast-rematerialize
   # Verify hydration for customer 1
-  uv run python -c "
+  uv run --all-groups python -c "
   import feast
   fs = feast.FeatureStore('feast_repo')
   print(fs.get_online_features(features=['customer_credit_features:credit_score'], entity_rows=[{'customer_id': '1'}]).to_dict())
@@ -192,7 +192,7 @@ Alerts are defined in `infra/charts/observability/templates/alerts.yaml`. Automa
 * **Resolution:**
   1. Inspect release log in MLflow or gate output:
      ```bash
-     uv run python scripts/gate.py --candidate-version <version>
+     uv run --all-groups python scripts/gate.py --candidate-version <version>
      ```
   2. If data drift requires hyperparameter tuning or new features, update `ml/train.py` and run a manual retraining cycle.
 

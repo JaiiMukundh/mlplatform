@@ -951,3 +951,22 @@ group, and Terraform state resource group. The workflow completed with
 `KILL VERIFIED: app, AKS node groups, and Terraform state group are absent.`
 Verified `az group exists` returned `false` for `mlp-test-rg`,
 `mlp-test-nodes-rg`, and `mlp-test-state-rg`.
+
+## 2026-10-21 — Public visibility audit and service dependency split
+
+Read-only GitHub check confirms the repository remains private. Gitleaks scanned
+106 commits (about 1.82 MB) and found no leaks. The Azure deployment environment
+allows only the `main` branch; CI grants read-only contents permission and the
+deployment workflow is limited to the `main` branch and Azure environment.
+
+S1 work on `codex/simplify-platform`: moved runtime dependencies into separate
+locked groups for model API, drift monitor, remediator, and dashboard. Each
+isolated environment imported its real service entry point; package counts were
+96, 46, 40, and 99 respectively (training lock: 140 packages). `make lint test`
+passed: 110 passed, 3 skipped, 84.29% coverage; Ruff passed for 89 files.
+`make check-infra` passed Terraform validation and Helm lint. `make check-actions
+check-charts` and `make secret-scan` passed (106 commits, no leaks).
+
+`make check-images` is pending: Docker could not reach PyPI to install the
+existing pinned `uv==0.13.0` tool, including with host networking. Next action:
+push this branch and run its pinned GitHub CI workflow to verify container builds.

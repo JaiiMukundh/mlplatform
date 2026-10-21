@@ -20,15 +20,15 @@ preflight: ## Verify host kernel limits required by kind.
 	@test $$(cat /proc/sys/fs/inotify/max_user_watches 2>/dev/null || echo 0) -ge 524288 || (echo "Kernel limits too low. Run: sudo sysctl -w fs.inotify.max_user_watches=524288" && exit 1)
 
 lint: ## Lint all implemented Python code.
-	@uv run ruff check .
-	@uv run ruff format --check .
+	@uv run --all-groups ruff check .
+	@uv run --all-groups ruff format --check .
 
 fmt: ## Format all implemented Python code.
-	@uv run ruff check --fix .
-	@uv run ruff format .
+	@uv run --all-groups ruff check --fix .
+	@uv run --all-groups ruff format .
 
 test: ## Run the unit test suite and coverage gate.
-	@uv run pytest --cov=mlp_common --cov=model_api --cov-report=term-missing
+	@uv run --all-groups pytest --cov=mlp_common --cov=model_api --cov-report=term-missing
 
 .PHONY: check-infra secret-scan github-login github-push tools check-actions check-charts security azure azure-check
 tools: ## Install checksum-verified Linux CI tools (TOOLSET="...").
@@ -38,7 +38,7 @@ check-actions: ## Validate GitHub Actions workflows.
 	@actionlint -shellcheck=""
 
 check-charts: ## Validate rendered Kubernetes manifests and vendored CRD schemas.
-	@uv run python scripts/tools.py check-charts
+	@uv run --all-groups python scripts/tools.py check-charts
 
 .PHONY: check-images
 check-images: ## Build and import-smoke all six container targets without deploying.
@@ -131,7 +131,7 @@ deploy-monitor: ## Build and deploy the drift monitor and retrain platform (P8).
 	@bash scripts/deploy_monitor.sh
 
 e2e: ## Run the local serving and self-healing end-to-end tests.
-	@MLP_RUN_E2E=1 MLP_E2E_RUN_DEMO=1 uv run pytest tests/e2e -q
+	@MLP_RUN_E2E=1 MLP_E2E_RUN_DEMO=1 uv run --all-groups pytest tests/e2e -q
 
 up: ## Build the complete local platform from scratch.
 	@test $$(cat /proc/sys/fs/inotify/max_user_watches 2>/dev/null || echo 0) -ge 524288 || (echo "Kernel limits too low. Run: sudo sysctl -w fs.inotify.max_user_watches=524288" && exit 1)
@@ -157,13 +157,13 @@ forward: ## Open local port-forwards when NodePorts are unavailable.
 	@bash scripts/forward.sh
 
 seed-data: ## Prepare deterministic UCI Taiwan feature snapshots.
-	@uv run python -m ml.data.generate --out data --seed 42
+	@uv run --all-groups python -m ml.data.generate --out data --seed 42
 
 train: ## Train and evaluate a model locally.
-	@uv run python -m ml.train --mode file --data-dir data --artifacts-dir artifacts
+	@uv run --all-groups python -m ml.train --mode file --data-dir data --artifacts-dir artifacts
 
 traffic: ## Generate prediction traffic.
-	@uv run python scripts/traffic.py --rps 10 --duration 30 --url http://localhost:8080
+	@uv run --all-groups python scripts/traffic.py --rps 10 --duration 30 --url http://localhost:8080
 
 demo-infra: ## Demonstrate Kubernetes and alert self-healing.
 	@bash scripts/chaos_alert.sh
@@ -172,7 +172,7 @@ demo-model: ## Demonstrate drift-triggered retraining and release.
 	@bash scripts/retrain_and_release.sh
 
 reset-demo: ## Restore the repeatable demo baseline.
-	@uv run python scripts/reset_demo.py
+	@uv run --all-groups python scripts/reset_demo.py
 
 terraform-local-apply: ## Apply the local Terraform stack.
 	@terraform -chdir=infra/envs/local apply -auto-approve
@@ -217,7 +217,7 @@ azure-kill-compute: ## Explain the safer whole-cluster sleep option.
 
 ui: ## Launch the Central Management and Demo Dashboard (http://localhost:8050).
 	@echo "Starting Central Management UI on http://localhost:8050 ..."
-	@uv run python -m ui.app
+	@uv run --all-groups python -m ui.app
 
 .PHONY: azure-connect
 azure-connect: ## Configure passwordless GitHub Azure access (no billable resources).

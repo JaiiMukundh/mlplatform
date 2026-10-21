@@ -506,3 +506,16 @@ Keep it in a separately tagged identity-only group so full kill retains the
 no-cost login identity and future GitHub startup works. Microsoft states managed
 identities have no additional cost. Billable app/node/state groups are deleted.
 No client password or long-lived GitHub Azure secret is created.
+## 2026-10-21 — Simplification without feature loss
+
+Keep the existing serving, Kubernetes remediation, drift detection, retraining,
+model release, and dashboard behavior while simplifying how the code and runtime
+dependencies are organized. First separate dependency sets by container role and
+then break oversized modules into focused, human-readable files. Do not remove
+MLflow, Feast, or other infrastructure behavior merely to lower package counts;
+that would change the platform's functionality. Keep the current repo private
+until a separate explicit request to change visibility.
+
+Reason: the user asked for a much simpler current codebase while earlier asking
+to retain the same functionality. Service-specific runtime installs lower what
+each container carries without changing the complete local development setup.

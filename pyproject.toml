@@ -8,12 +8,14 @@ version = "0.1.0"
 description = "Credit-risk MLOps demo with Azure deployment through GitHub Actions."
 readme = "README.md"
 requires-python = ">=3.11,<3.12"
-dependencies = [
+dependencies = []
+
+[dependency-groups]
+model-api = [
   "fastapi==0.142.2",
   "httpx==0.28.1",
   "joblib==1.6.0",
-  "kubernetes==36.0.3",
-  "mlflow-skinny==3.16.1",
+  "mlflow==3.16.1",
   "mmh3==5.3.1",
   "numpy==2.4.6",
   "pandas==3.0.6",
@@ -24,22 +26,56 @@ dependencies = [
   "pydantic-settings==2.15.0",
   "redis==8.1.0",
   "scikit-learn==1.9.1",
+  "uvicorn==0.54.0",
+]
+drift-monitor = [
+  "fastapi==0.142.2",
+  "httpx==0.28.1",
+  "kubernetes==36.0.3",
+  "numpy==2.4.6",
+  "pandas==3.0.6",
+  "prometheus-client==0.26.0",
+  "psycopg[binary]==3.3.6",
+  "pydantic==2.13.5",
+  "pydantic-settings==2.15.0",
   "scipy==1.17.1",
   "sqlalchemy==2.1.2",
   "uvicorn==0.54.0",
-  "xlrd==2.0.1",
 ]
-
-[dependency-groups]
+remediator = [
+  "fastapi==0.142.2",
+  "httpx==0.28.1",
+  "kubernetes==36.0.3",
+  "prometheus-client==0.26.0",
+  "pydantic==2.13.5",
+  "pydantic-settings==2.15.0",
+  "uvicorn==0.54.0",
+]
+dashboard = [
+  "boto3==1.43.106",
+  "fastapi==0.142.2",
+  "httpx==0.28.1",
+  "joblib==1.6.0",
+  "kubernetes==36.0.3",
+  "mlflow==3.16.1",
+  "numpy==2.4.6",
+  "pandas==3.0.6",
+  "pyarrow==25.0.1",
+  "pydantic==2.13.5",
+  "scikit-learn==1.9.1",
+  "uvicorn==0.54.0",
+]
 dev = [
   "pre-commit==4.6.2",
   "pytest==9.1.1",
   "pytest-cov==7.1.0",
   "ruff==0.16.10",
+  "xlrd==2.0.1",
 ]
 
 [tool.uv]
 package = true
+default-groups = ["dev"]
 
 [tool.hatch.build.targets.wheel]
 packages = [

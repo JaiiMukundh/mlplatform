@@ -83,7 +83,7 @@ jobs:
           echo "$HOME/.local/bin" >> "$GITHUB_PATH"
       - name: Install locked application dependencies
         if: inputs.action == 'deploy'
-        run: uv sync --frozen
+        run: uv sync --frozen --all-groups
       - name: Require successful CI for this exact commit
         if: inputs.action == 'deploy' || inputs.action == 'dashboard'
         env:
