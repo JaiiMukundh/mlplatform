@@ -6,12 +6,12 @@ image:
 
 auth:
   # When false, credentials come from the existingSecret (managed by Terraform).
-  createSecret: true
-  existingSecret: ""
+  createSecret: false
+  existingSecret: postgres-auth
   secretKeys:
     password: postgres-password
   username: mlp
-  password: changeme-local-only
+  password:
   database: mlp
 
 extraDatabases:

@@ -12,13 +12,13 @@ clientImage:
 
 auth:
   # When false, credentials come from the existingSecret (managed by Terraform).
-  createSecret: true
-  existingSecret: ""
+  createSecret: false
+  existingSecret: minio-auth
   secretKeys:
     accessKey: root-user
     secretKey: root-password
   rootUser: minioadmin
-  rootPassword: changeme-local-only
+  rootPassword:
 
 storage:
   size: 5Gi

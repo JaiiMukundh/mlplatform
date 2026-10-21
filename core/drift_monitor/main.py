@@ -83,7 +83,6 @@ class MonitorSettings(DriftSettings):
     mlflow_tracking_uri: str = "http://mlflow.data.svc:5000"
     jobs_namespace: str = "data"
     template_configmap: str = "retrain-job-template"
-    retrain_image: str = "localhost:5001/retrain:dev"
 
 
 @dataclass
@@ -232,10 +231,7 @@ def _retrain_in_flight(namespace: str) -> bool:
     from kubernetes import client as k8s_client
     from kubernetes import config as k8s_config
 
-    try:
-        k8s_config.load_incluster_config()
-    except Exception:
-        k8s_config.load_kube_config()
+    k8s_config.load_incluster_config()
     batch = k8s_client.BatchV1Api()
     jobs = batch.list_namespaced_job(namespace=namespace, label_selector="app=retrain")
     return any(
@@ -255,10 +251,7 @@ def _create_retrain_job(
     from kubernetes import client as k8s_client
     from kubernetes import config as k8s_config
 
-    try:
-        k8s_config.load_incluster_config()
-    except Exception:
-        k8s_config.load_kube_config()
+    k8s_config.load_incluster_config()
     core = k8s_client.CoreV1Api()
     template = core.read_namespaced_config_map(
         settings.template_configmap, settings.jobs_namespace
