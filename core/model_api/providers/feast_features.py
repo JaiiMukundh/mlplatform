@@ -58,24 +58,17 @@ def decode_value(raw: bytes) -> int | float | str | bool:
     if not raw:
         raise ValueError("empty Feast value")
     tag, body = raw[0], raw[1:]
-    if tag == _TAG_FLOAT32:
-        if len(body) != 4:
-            raise ValueError(f"bad float32 length: {raw.hex()}")
-        return struct.unpack("<f", body)[0]
-    if tag == _TAG_FLOAT64:
-        if len(body) != 8:
-            raise ValueError(f"bad float64 length: {raw.hex()}")
-        return struct.unpack("<d", body)[0]
-    if tag in (_TAG_INT32, _TAG_INT64):
+    if tag in (_TAG_FLOAT32, _TAG_FLOAT64):
+        fmt = "<f" if tag == _TAG_FLOAT32 else "<d"
+        if len(body) != struct.calcsize(fmt):
+            raise ValueError(f"bad float{struct.calcsize(fmt) * 8} length: {raw.hex()}")
+        return struct.unpack(fmt, body)[0]
+    if tag in (_TAG_INT32, _TAG_INT64, _TAG_BOOL):
         value, consumed = _decode_varint(body)
         if consumed != len(body):
-            raise ValueError(f"trailing bytes in int value: {raw.hex()}")
-        return value
-    if tag == _TAG_BOOL:
-        value, consumed = _decode_varint(body)
-        if consumed != len(body):
-            raise ValueError(f"trailing bytes in bool value: {raw.hex()}")
-        return bool(value)
+            kind = "bool" if tag == _TAG_BOOL else "int"
+            raise ValueError(f"trailing bytes in {kind} value: {raw.hex()}")
+        return bool(value) if tag == _TAG_BOOL else value
     if tag == _TAG_STRING:
         length, consumed = _decode_varint(body)
         text = body[consumed : consumed + length]
@@ -89,13 +82,9 @@ def entity_key(customer_id: int, project: str = PROJECT) -> bytes:
     """Build the exact Redis key Feast uses for one customer entity."""
     name = ENTITY_COLUMN.encode("utf-8")
     return (
-        struct.pack("<I", 1)
-        + struct.pack("<I", 2)
-        + struct.pack("<I", len(name))
+        struct.pack("<III", 1, 2, len(name))
         + name
-        + struct.pack("<I", 4)
-        + struct.pack("<I", 8)
-        + struct.pack("<q", customer_id)
+        + struct.pack("<IIq", 4, 8, customer_id)
         + project.encode("utf-8")
     )
 

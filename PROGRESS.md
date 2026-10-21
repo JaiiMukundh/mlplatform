@@ -1039,3 +1039,19 @@ carry distinct behavior, so I left them intact. Final GitHub CI run
 [39604641262](https://github.com/JaiiMukundh/mlplatform/actions/runs/39604641262)
 passed quality and security, including all image builds. S3 acceptance is
 complete.
+
+## 2026-10-21 — Honest non-UI source reduction (S4)
+
+Removed duplicate drift-monitor database/AUC logic, simplified the Feast byte
+decoder, snapshot generation, training artifact upload, and gate serialization.
+Removed repeated provider declarations from Terraform child modules; exact
+provider pins remain in both environment roots. Tracked production source and
+configuration fell from 10,161 to 10,052 lines (109 fewer), or 12,438 to
+12,329 when tests are included. No source was hidden or generated to affect the
+count.
+
+Acceptance output: Ruff passed for 89 Python files; 110 tests passed and 3 e2e
+tests skipped; line coverage was 85.56% (required 80%). Terraform validated
+both environments. Helm lint passed for all 9 charts, rendered schema checks
+had zero invalid resources, and Gitleaks found no leaks in 116 commits or staged
+changes. This is a source-level verification; live deployment was not rerun.

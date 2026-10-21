@@ -152,14 +152,3 @@ output "kubelet_object_id" {
   description = "Object ID of the kubelet managed identity."
   value       = azurerm_kubernetes_cluster.this.kubelet_identity[0].object_id
 }
-
-terraform {
-  required_version = ">= 1.9.0"
-
-  required_providers {
-    azurerm = {
-      source  = "hashicorp/azurerm"
-      version = "5.9.0"
-    }
-  }
-}

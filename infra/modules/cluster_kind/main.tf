@@ -114,14 +114,3 @@ output "kubeconfig_path" {
   # during plan and fail because the file is not written yet.
   value = terraform_data.cluster.id == null ? null : local.kubeconfig_file
 }
-
-terraform {
-  required_version = ">= 1.9.0"
-
-  required_providers {
-    local = {
-      source  = "hashicorp/local"
-      version = "2.9.1"
-    }
-  }
-}

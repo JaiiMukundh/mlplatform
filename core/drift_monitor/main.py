@@ -15,7 +15,7 @@ import asyncio
 import json
 import logging
 import time
-from dataclasses import dataclass
+from dataclasses import asdict, dataclass
 
 import pandas as pd
 from fastapi import FastAPI, Response
@@ -99,19 +99,16 @@ class MonitorState:
     last_eval_epoch: float = 0.0
 
 
-def _meta_table_ddl() -> str:
-    """Idempotent DDL for the monitor's persistent counters."""
-    return (
-        "CREATE TABLE IF NOT EXISTS drift_meta"
-        " (key TEXT PRIMARY KEY, value TEXT NOT NULL,"
-        " updated_at TIMESTAMPTZ NOT NULL DEFAULT now())"
-    )
-
-
 def _load_persisted_state(engine: object, state: MonitorState) -> None:
     """Restore breach counters across restarts (SPEC: persist in drift_state)."""
     with engine.begin() as connection:  # type: ignore[union-attr]
-        connection.execute(text(_meta_table_ddl()))
+        connection.execute(
+            text(
+                "CREATE TABLE IF NOT EXISTS drift_meta"
+                " (key TEXT PRIMARY KEY, value TEXT NOT NULL,"
+                " updated_at TIMESTAMPTZ NOT NULL DEFAULT now())"
+            )
+        )
         rows = connection.execute(text("SELECT key, value FROM drift_meta")).all()
     for key, value in rows:
         if key == "consecutive_breaches":
@@ -150,7 +147,7 @@ def _save_persisted_state(engine: object, state: MonitorState) -> None:
 def _save_feature_state(engine: object, report: DriftReport) -> None:
     """Persist per-feature PSI into the chart-owned drift_state table."""
     with engine.begin() as connection:  # type: ignore[union-attr]
-        for item in report.features:
+        if report.features:
             connection.execute(
                 text(
                     "INSERT INTO drift_state (feature, psi, threshold, updated_at)"
@@ -158,11 +155,10 @@ def _save_feature_state(engine: object, report: DriftReport) -> None:
                     " ON CONFLICT (feature) DO UPDATE SET psi=:psi,"
                     " threshold=:threshold, updated_at=now()"
                 ),
-                {
-                    "feature": item.feature,
-                    "psi": item.psi,
-                    "threshold": 0.25,
-                },
+                [
+                    {"feature": item.feature, "psi": item.psi, "threshold": 0.25}
+                    for item in report.features
+                ],
             )
 
 
@@ -320,19 +316,16 @@ def _update_auc_gauges(tracking_uri: str, metrics: DriftMetrics) -> None:
         from mlflow.tracking import MlflowClient
 
         client = MlflowClient(tracking_uri)
-        for alias, gauge in (("champion", metrics.champion_auc),):
+        for alias, gauge in (
+            ("champion", metrics.champion_auc),
+            ("candidate", metrics.candidate_auc),
+        ):
             try:
                 meta = client.get_model_version_by_alias("loan-default", alias)
                 run = client.get_run(meta.run_id or "")
                 gauge.set(run.data.metrics.get("test_auc", 0.0))
             except Exception:
                 gauge.set(0.0)
-        try:
-            candidate = client.get_model_version_by_alias("loan-default", "candidate")
-            run = client.get_run(candidate.run_id or "")
-            metrics.candidate_auc.set(run.data.metrics.get("test_auc", 0.0))
-        except Exception:
-            metrics.candidate_auc.set(0.0)
     except Exception:
         LOGGER.warning("auc gauge update failed", exc_info=True)
 
@@ -423,8 +416,7 @@ def create_app(
     owned_metrics = metrics or create_metrics()
     state = MonitorState()
 
-    async def evaluation_loop() -> None:
-        engine = create_engine(config.database_url, pool_pre_ping=True)
+    async def evaluation_loop(engine: object) -> None:
         reference_cache: dict[str, pd.DataFrame] = {}
         while True:
             try:
@@ -451,7 +443,7 @@ def create_app(
         # a silently dead evaluation task.
         await asyncio.to_thread(_load_persisted_state, engine, state)
         LOGGER.info("drift monitor evaluation loop started")
-        task = asyncio.create_task(evaluation_loop())
+        task = asyncio.create_task(evaluation_loop(engine))
         try:
             yield
         finally:
@@ -481,20 +473,7 @@ def create_app(
             "champion_version": state.champion_version,
             "drifted": report.drifted if report else False,
             "drifted_features": report.drifted_features if report else [],
-            "features": (
-                [
-                    {
-                        "feature": item.feature,
-                        "psi": item.psi,
-                        "ks_d": item.ks_d,
-                        "ks_p": item.ks_p,
-                        "drifted": item.drifted,
-                    }
-                    for item in report.features
-                ]
-                if report
-                else []
-            ),
+            "features": [asdict(item) for item in report.features] if report else [],
             "consecutive_breaches": state.consecutive_breaches,
             "last_trigger": state.last_trigger_epoch,
             "window_samples": state.window_samples,

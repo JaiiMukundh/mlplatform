@@ -200,22 +200,3 @@ output "minio_secret_name" {
   description = "Name of the Secret holding the MinIO credentials."
   value       = kubernetes_secret_v1.minio_auth.metadata[0].name
 }
-
-terraform {
-  required_version = ">= 1.9.0"
-
-  required_providers {
-    helm = {
-      source  = "hashicorp/helm"
-      version = "3.3.0"
-    }
-    kubernetes = {
-      source  = "hashicorp/kubernetes"
-      version = "3.3.0"
-    }
-    random = {
-      source  = "hashicorp/random"
-      version = "3.9.1"
-    }
-  }
-}

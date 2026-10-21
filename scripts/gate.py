@@ -249,10 +249,7 @@ def main() -> int:
         candidate_version=args.candidate,
         allow_no_champion=args.allow_no_champion,
     )
-    payload = {
-        **asdict(report),
-        "checks": [asdict(check) for check in report.checks],
-    }
+    payload = asdict(report)
     Path(args.out).write_text(json.dumps(payload, indent=2) + "\n")
     print(f"GATE verdict={'PASS' if report.passed else 'REJECT'}")
     print("GATE_REPORT_BEGIN")

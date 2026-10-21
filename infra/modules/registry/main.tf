@@ -49,8 +49,3 @@ output "registry_name" {
   description = "Name of the local registry container."
   value       = var.registry_name
 }
-
-terraform {
-  required_version = ">= 1.9.0"
-  # terraform_data lives in the built-in provider: no version pin allowed.
-}
