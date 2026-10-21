@@ -32,7 +32,7 @@ jobs:
           version: "v3.22.0"
       - name: Install locked dependencies and verified tools
         run: |
-          uv sync --frozen
+          uv sync --frozen --all-groups
           make tools TOOLSET="actionlint gitleaks hadolint kubeconform trivy"
           echo "$HOME/.local/bin" >> "$GITHUB_PATH"
       - name: Python, infrastructure, Actions, and credential checks

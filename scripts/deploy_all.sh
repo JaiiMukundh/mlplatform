@@ -32,7 +32,7 @@ helm upgrade --install remediator infra/charts/remediator \
   --namespace observability --create-namespace --atomic --wait --timeout 5m
 
 echo "=== 3. Seeding data and Feast feature store ==="
-uv run python -m ml.data.generate --out data --seed 42
+uv run --all-groups python -m ml.data.generate --out data --seed 42
 bash scripts/publish_feast_data.sh
 bash scripts/run_job.sh infra/jobs/feast-apply-job.yaml data
 bash scripts/run_job.sh infra/jobs/feast-materialize-job.yaml data
@@ -65,6 +65,6 @@ echo "=== 6. Deploying drift monitor & retraining platform ==="
 bash scripts/deploy_monitor.sh
 
 echo "=== 7. Resetting demo baseline ==="
-uv run python scripts/reset_demo.py
+uv run --all-groups python scripts/reset_demo.py
 
 echo "=== deploy-all complete ==="

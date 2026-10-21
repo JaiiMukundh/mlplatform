@@ -137,9 +137,9 @@ except Exception as _e:
     logger.warning("Could not load baseline model: %s", _e)
 
 ACTION_COMMANDS: dict[str, str] = {
-    "reset_demo": "uv run python scripts/reset_demo.py",
+    "reset_demo": "uv run --all-groups python scripts/reset_demo.py",
     "traffic_burst": (
-        "uv run python scripts/traffic.py --rps 15 --duration 20 --url http://localhost:8080"
+        "uv run --all-groups python scripts/traffic.py --rps 15 --duration 20 --url http://localhost:8080"
     ),
     "chaos_latency_inject": (
         "for p in $(kubectl get pods -n serving -l app.kubernetes.io/name=model-api "
@@ -158,12 +158,12 @@ ACTION_COMMANDS: dict[str, str] = {
     "chaos_pod_kill": "bash scripts/chaos_pod.sh",
     "demo_infra": "bash scripts/chaos_alert.sh",
     "simulate_drift": (
-        "uv run python scripts/simulate_drift.py --scenario covariate && "
-        "uv run python scripts/traffic.py --rps 30 --duration 12 --url http://localhost:8080"
+        "uv run --all-groups python scripts/simulate_drift.py --scenario covariate && "
+        "uv run --all-groups python scripts/traffic.py --rps 30 --duration 12 --url http://localhost:8080"
     ),
     "auto_heal": (
-        "uv run python scripts/simulate_drift.py --scenario covariate && "
-        "uv run python scripts/traffic.py --rps 30 --duration 12 --url http://localhost:8080"
+        "uv run --all-groups python scripts/simulate_drift.py --scenario covariate && "
+        "uv run --all-groups python scripts/traffic.py --rps 30 --duration 12 --url http://localhost:8080"
     ),
     "demo_model": "bash scripts/retrain_and_release.sh",
     "manual_retrain": "bash scripts/retrain_and_release.sh",
@@ -176,7 +176,7 @@ ACTION_COMMANDS: dict[str, str] = {
 
 if os.environ.get("DEPLOY_TARGET") == "azure":
     for action, command in ACTION_COMMANDS.items():
-        command = command.replace("uv run python", "python")
+        command = command.replace("uv run --all-groups python", "python")
         if action not in {"chaos_latency_inject", "chaos_latency_clear"}:
             command = command.replace("http://localhost:8080", MODEL_API_URL)
         ACTION_COMMANDS[action] = command
