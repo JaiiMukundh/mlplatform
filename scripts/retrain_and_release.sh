@@ -6,8 +6,8 @@
 # 4. Deploys to staging, runs canary load check, promotes to champion, and rolls out to prod.
 set -Eeuo pipefail
 
-PYTHON=(uv run --all-groups python)
-[[ "${DEPLOY_TARGET:-local}" != azure ]] || PYTHON=(python)
+[[ "${DEPLOY_TARGET:-}" == azure ]] || { echo "DEPLOY_TARGET=azure is required" >&2; exit 2; }
+PYTHON=(python)
 
 stamp() { date -u +%FT%TZ; }
 
@@ -21,17 +21,14 @@ import json, os, time, sys
 from kubernetes import client, config
 import mlflow
 
-try:
-    config.load_incluster_config()
-except Exception:
-    config.load_kube_config()
+config.load_incluster_config()
 
 core = client.CoreV1Api()
 batch = client.BatchV1Api()
 template = core.read_namespaced_config_map("retrain-job-template", "data")
 pod_spec = json.loads(template.data["pod-spec.json"])
 
-client_mlflow = mlflow.tracking.MlflowClient(os.environ.get("MLFLOW_TRACKING_URI", "http://localhost:5000"))
+client_mlflow = mlflow.tracking.MlflowClient(os.environ.get("MLFLOW_TRACKING_URI", "http://mlflow.data.svc:5000"))
 try:
     champ = client_mlflow.get_model_version_by_alias("loan-default", "champion").version
 except Exception:
@@ -84,7 +81,7 @@ kubectl logs -n data -l job-name="${JOB_NAME}" -f --tail=100 || true
 kubectl wait --for=condition=complete "job/${JOB_NAME}" -n data --timeout=300s
 
 echo "[STEP 3/3] Verifying new Champion version from MLflow registry..."
-NEW_CHAMPION=$(curl -s "${MLFLOW_TRACKING_URI:-http://localhost:5000}/api/2.0/mlflow/registered-models/get?name=loan-default" | python3 -c "import json,sys; a=json.load(sys.stdin)['registered_model'].get('aliases', []); print(next((x['version'] for x in a if x['alias']=='champion'), ''))")
+NEW_CHAMPION=$(curl -s "${MLFLOW_TRACKING_URI:-http://mlflow.data.svc:5000}/api/2.0/mlflow/registered-models/get?name=loan-default" | python3 -c "import json,sys; a=json.load(sys.stdin)['registered_model'].get('aliases', []); print(next((x['version'] for x in a if x['alias']=='champion'), ''))")
 
 echo "======================================================="
 echo "[$(stamp)] RETRAINING COMPLETE: Champion is now v${NEW_CHAMPION}"

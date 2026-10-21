@@ -1074,3 +1074,16 @@ staged changes. `git diff --check` passed. No Azure apply or Git push occurred.
 Next action: replace the cloud Helm-based workload definitions with Terraform
 while retaining the restored cloud runtime features. The cloud currently still
 uses Helm; this is tracked as C3 and is not represented as complete.
+
+## 2026-10-21 — Audit leftover local deployment defaults
+
+A read-only audit found no kind cluster, no local registry container, and no
+local Terraform/deployment target. It did find a dead `localhost:5001` retrain
+image default and a demo script that could select local Python/kubeconfig.
+Removed those fallbacks; the drift monitor and remediator now require AKS pod
+credentials, and data-service charts require the cloud-created Secrets.
+
+Acceptance output: Ruff lint/format passed. Pytest passed all 110 tests with
+85.56% coverage. Azure Terraform validated; all nine cloud charts linted, and
+rendered schema checks reported zero invalid resources. No cloud apply or push.
+The cloud workload deployment still uses Helm and remains tracked as C3.

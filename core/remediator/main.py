@@ -59,11 +59,8 @@ class Webhook(BaseModel):
 
 
 def load_k8s_clients() -> tuple[k8s_client.AppsV1Api, k8s_client.AutoscalingV2Api]:
-    """Load in-cluster config (fall back to kubeconfig for local dev)."""
-    try:
-        k8s_config.load_incluster_config()
-    except k8s_config.ConfigException:
-        k8s_config.load_kube_config()
+    """Load credentials mounted into the AKS pod."""
+    k8s_config.load_incluster_config()
     api = k8s_client.ApiClient()
     return k8s_client.AppsV1Api(api), k8s_client.AutoscalingV2Api(api)
 

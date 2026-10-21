@@ -14,8 +14,7 @@ jobsNamespace: data
 templateConfigMap: retrain-job-template
 
 database:
-  # scripts/deploy_monitor.sh mirrors the terraform-managed postgres-auth
-  # credentials into the release namespace under this secret.
+  # The Azure deployment mirrors postgres-auth into this namespace.
   secretName: drift-monitor-db
   secretKey: database-url
 
