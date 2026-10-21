@@ -56,50 +56,23 @@ class DriftMetrics:
 def create_metrics() -> DriftMetrics:
     """Create an isolated registry so test applications never collide."""
     registry = CollectorRegistry()
+
+    def gauge(name: str, description: str, *labels: str) -> Gauge:
+        return Gauge(name, description, labels, registry=registry)
+
+    def counter(name: str, description: str) -> Counter:
+        return Counter(name, description, registry=registry)
+
     return DriftMetrics(
-        registry=registry,
-        psi=Gauge(
-            "model_feature_psi",
-            "Population Stability Index per feature versus the champion reference.",
-            ["feature"],
-            registry=registry,
-        ),
-        ks_d=Gauge(
-            "model_feature_ks_d",
-            "Kolmogorov-Smirnov D per feature versus the champion reference.",
-            ["feature"],
-            registry=registry,
-        ),
-        drift_detected=Gauge(
-            "model_drift_detected",
-            "1 when the current window breaches the drift rule.",
-            registry=registry,
-        ),
-        window_samples=Gauge(
-            "model_drift_window_samples",
-            "Prediction rows scored in the last evaluation.",
-            registry=registry,
-        ),
-        last_eval=Gauge(
-            "model_drift_last_eval_timestamp",
-            "Unix time of the last drift evaluation.",
-            registry=registry,
-        ),
-        retrain_triggered=Counter(
-            "retrain_triggered_total",
-            "Retrain Jobs created by the drift monitor.",
-            registry=registry,
-        ),
-        champion_auc=Gauge(
-            "model_champion_auc",
-            "Test AUC of the champion version.",
-            registry=registry,
-        ),
-        candidate_auc=Gauge(
-            "model_candidate_auc",
-            "Test AUC of the candidate version (0 when none).",
-            registry=registry,
-        ),
+        registry,
+        gauge("model_feature_psi", "Feature PSI versus champion.", "feature"),
+        gauge("model_feature_ks_d", "Feature KS D versus champion.", "feature"),
+        gauge("model_drift_detected", "1 when the window breaches the drift rule."),
+        gauge("model_drift_window_samples", "Prediction rows in the last window."),
+        gauge("model_drift_last_eval_timestamp", "Unix time of the last evaluation."),
+        counter("retrain_triggered_total", "Retrain jobs created by the monitor."),
+        gauge("model_champion_auc", "Test AUC of the champion version."),
+        gauge("model_candidate_auc", "Test AUC of the candidate (zero when none)."),
     )
 
 

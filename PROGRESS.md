@@ -1014,10 +1014,11 @@ repeated covariate-shock transforms, repeated dashboard decision rendering,
 and a duplicated metrics update. The two burst-probe controls now share their
 request logic.
 
-`ui/app.py` is 1,164 lines (down from 1,194); `ui/templates/index.html` is
-2,372 lines (down from 2,436); `core/drift_monitor/main.py` is back to its
-original 534 lines. Combined, those three files are down 94 lines. `make lint
-test` passed: 110 passed, 3 skipped, 84.29% coverage. The dashboard inline
-JavaScript passed `node --check`; `git diff --check` passed. The previous
-modularity tasks S2/S3 are unchecked; S4 tracks actual line reduction.
-Next action: run the full GitHub CI after the final diff is committed.
+`make lint test` passed: 110 passed, 3 skipped, 84.29% coverage. The dashboard
+inline JavaScript passed `node --check` and a render smoke check (5 portals and
+6 live metric IDs); all 14 route paths match the original. `git diff --check`
+passed. Further duplication cleanup in drift metrics and model setup brings
+`ui/app.py`, `ui/templates/index.html`, `core/drift_monitor/main.py`, and
+`core/ml/train.py` to 4,329 lines, down 197 from their original 4,526. S2/S3
+now track actual behavior-preserving code reduction. Next action: run full
+GitHub CI after the final diff is committed.

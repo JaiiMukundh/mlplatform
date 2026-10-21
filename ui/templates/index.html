@@ -328,52 +328,7 @@
           <span class="micro-label text-[9px]">REFRESH: 2.5S</span>
         </div>
 
-        <div class="grid grid-cols-2 lg:grid-cols-4 gap-3">
-          
-          <!-- RPS -->
-          <div class="cypher-panel-bright p-3 sm:p-3.5 flex flex-col justify-between">
-            <span class="micro-label text-[9px]">01.01 // THROUGHPUT</span>
-            <p id="metricRPS" class="text-3xl sm:text-4xl font-black text-black font-mono tracking-tighter my-1">0.0</p>
-            <div class="pt-1.5 border-t border-black flex items-center justify-between text-[11px] font-mono text-[#66645D]">
-              <span>REQ/SEC</span>
-              <span class="text-black font-bold">RATE(1M)</span>
-            </div>
-          </div>
-
-          <!-- P95 Latency -->
-          <div class="cypher-panel-bright p-3 sm:p-3.5 flex flex-col justify-between">
-            <span class="micro-label text-[9px]">01.02 // P95 LATENCY</span>
-            <p id="metricP95" class="text-3xl sm:text-4xl font-black text-black font-mono tracking-tighter my-1">--</p>
-            <div class="pt-1.5 border-t border-black flex items-center justify-between text-[11px] font-mono text-[#66645D]">
-              <span>SLA: &lt; 50MS</span>
-              <span class="text-black font-bold">P50: <span id="metricP50">-- ms</span></span>
-            </div>
-          </div>
-
-          <!-- Error Rate -->
-          <div class="cypher-panel-bright p-3 sm:p-3.5 flex flex-col justify-between">
-            <span class="micro-label text-[9px]">01.03 // ERROR RATE</span>
-            <p id="metricErrors" class="text-3xl sm:text-4xl font-black text-black font-mono tracking-tighter my-1">0.0%</p>
-            <div class="pt-1.5 border-t border-black flex items-center justify-between text-[11px] font-mono text-[#66645D]">
-              <span>5XX RATIO</span>
-              <span class="text-[#1D7A4D] font-bold">HEALTHY</span>
-            </div>
-          </div>
-
-          <!-- Serving Replicas (Exactly 2 Pods!) -->
-          <div class="cypher-panel-bright p-3 sm:p-3.5 flex flex-col justify-between">
-            <span class="micro-label text-[9px]">01.04 // SERVING FLEET</span>
-            <div class="flex items-baseline gap-2 my-1">
-              <span id="metricReplicas" class="text-3xl sm:text-4xl font-black text-black font-mono tracking-tighter">2</span>
-              <span class="text-xs font-mono font-bold text-[#66645D]">/ <span id="metricDesired">2</span> DESIRED</span>
-            </div>
-            <div class="pt-1.5 border-t border-black flex items-center justify-between text-[11px] font-mono">
-              <span id="metricReplicasBadge" class="font-bold text-[#1D7A4D]">ALL ONLINE</span>
-              <span class="text-[#66645D]">PDB: MIN 1</span>
-            </div>
-          </div>
-
-        </div>
+        <div id="goldenMetrics" class="grid grid-cols-2 lg:grid-cols-4 gap-3"></div>
       </div>
 
       <!-- Lineage & Topology Bento -->
@@ -970,89 +925,7 @@
         <h1 class="text-2xl sm:text-3xl font-black uppercase text-black">Supporting Cluster Portals</h1>
       </div>
 
-      <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-        
-        <!-- Grafana -->
-        <a href="http://localhost:3000" target="_blank" class="cypher-panel p-3.5 flex flex-col justify-between hover:bg-[#F8F6F0] transition group">
-          <div>
-            <div class="flex items-center justify-between border-b-2 border-black pb-2 mb-2">
-              <span class="micro-label">PORTAL 06.01</span>
-              <span class="font-mono text-xs font-bold text-black bg-[#C8FF5A] px-2 py-0.5 border border-black">:3000</span>
-            </div>
-            <h3 class="text-base font-black uppercase text-black">Grafana Dashboard</h3>
-            <p class="text-xs text-[#66645D] mt-1">Live metrics: p95 latency, RPS, pod CPU/memory, error budget.</p>
-          </div>
-          <div class="mt-2.5 pt-1.5 border-t-2 border-black flex items-center justify-between text-xs font-bold text-black uppercase">
-            <span>LAUNCH GRAFANA</span>
-            <span>&rarr;</span>
-          </div>
-        </a>
-
-        <!-- MLflow -->
-        <a href="http://localhost:5000" target="_blank" class="cypher-panel p-3.5 flex flex-col justify-between hover:bg-[#F8F6F0] transition group">
-          <div>
-            <div class="flex items-center justify-between border-b-2 border-black pb-2 mb-2">
-              <span class="micro-label">PORTAL 06.02</span>
-              <span class="font-mono text-xs font-bold text-black bg-[#C8FF5A] px-2 py-0.5 border border-black">:5000</span>
-            </div>
-            <h3 class="text-base font-black uppercase text-black">MLflow Registry</h3>
-            <p class="text-xs text-[#66645D] mt-1">Model artifact store, parameters, gate tags, and champion lineage.</p>
-          </div>
-          <div class="mt-2.5 pt-1.5 border-t-2 border-black flex items-center justify-between text-xs font-bold text-black uppercase">
-            <span>LAUNCH MLFLOW</span>
-            <span>&rarr;</span>
-          </div>
-        </a>
-
-        <!-- Swagger -->
-        <a href="http://localhost:8080/docs" target="_blank" class="cypher-panel p-3.5 flex flex-col justify-between hover:bg-[#F8F6F0] transition group">
-          <div>
-            <div class="flex items-center justify-between border-b-2 border-black pb-2 mb-2">
-              <span class="micro-label">PORTAL 06.03</span>
-              <span class="font-mono text-xs font-bold text-black bg-[#C8FF5A] px-2 py-0.5 border border-black">:8080</span>
-            </div>
-            <h3 class="text-base font-black uppercase text-black">Model API Docs</h3>
-            <p class="text-xs text-[#66645D] mt-1">Interactive OpenAPI Swagger UI testing live `/predict` and `/healthz`.</p>
-          </div>
-          <div class="mt-2.5 pt-1.5 border-t-2 border-black flex items-center justify-between text-xs font-bold text-black uppercase">
-            <span>OPEN SWAGGER</span>
-            <span>&rarr;</span>
-          </div>
-        </a>
-
-        <!-- MinIO -->
-        <a href="http://localhost:9001" target="_blank" class="cypher-panel p-3.5 flex flex-col justify-between hover:bg-[#F8F6F0] transition group">
-          <div>
-            <div class="flex items-center justify-between border-b-2 border-black pb-2 mb-2">
-              <span class="micro-label">PORTAL 06.04</span>
-              <span class="font-mono text-xs font-bold text-black bg-[#C8FF5A] px-2 py-0.5 border border-black">:9001</span>
-            </div>
-            <h3 class="text-base font-black uppercase text-black">MinIO Storage</h3>
-            <p class="text-xs text-[#66645D] mt-1">S3 bucket browser for Feast offline parquets and MLflow binaries.</p>
-          </div>
-          <div class="mt-2.5 pt-1.5 border-t-2 border-black flex items-center justify-between text-xs font-bold text-black uppercase">
-            <span>LAUNCH MINIO</span>
-            <span>&rarr;</span>
-          </div>
-        </a>
-
-        <!-- Alertmanager -->
-        <a href="http://localhost:9093" target="_blank" class="cypher-panel p-3.5 flex flex-col justify-between hover:bg-[#F8F6F0] transition group">
-          <div>
-            <div class="flex items-center justify-between border-b-2 border-black pb-2 mb-2">
-              <span class="micro-label">PORTAL 06.05</span>
-              <span class="font-mono text-xs font-bold text-black bg-[#C8FF5A] px-2 py-0.5 border border-black">:9093</span>
-            </div>
-            <h3 class="text-base font-black uppercase text-black">Alertmanager</h3>
-            <p class="text-xs text-[#66645D] mt-1">Active Prometheus alerts and webhook triggers to the remediator.</p>
-          </div>
-          <div class="mt-2.5 pt-1.5 border-t-2 border-black flex items-center justify-between text-xs font-bold text-black uppercase">
-            <span>LAUNCH ALERTS</span>
-            <span>&rarr;</span>
-          </div>
-        </a>
-
-      </div>
+      <div id="portalGrid" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4"></div>
 
     </div>
 
@@ -1239,6 +1112,63 @@
     let replacementPodName = null;
     let survivingPodName = null;
     let isHealed = false;
+
+    const PORTALS = [
+      ['3000', '3000', 'Grafana Dashboard', 'Live metrics: p95 latency, RPS, pod CPU/memory, error budget.', 'LAUNCH GRAFANA'],
+      ['5000', '5000', 'MLflow Registry', 'Model artifact store, parameters, gate tags, and champion lineage.', 'LAUNCH MLFLOW'],
+      ['8080/docs', '8080', 'Model API Docs', 'Interactive OpenAPI Swagger UI for /predict and /healthz.', 'OPEN SWAGGER'],
+      ['9001', '9001', 'MinIO Storage', 'S3 browser for Feast offline parquets and MLflow binaries.', 'LAUNCH MINIO'],
+      ['9093', '9093', 'Alertmanager', 'Active Prometheus alerts and webhook triggers to the remediator.', 'LAUNCH ALERTS']
+    ];
+
+    document.getElementById('portalGrid').innerHTML = PORTALS.map(([target, port, title, detail, action], index) => `
+      <a href="http://localhost:${target}" target="_blank" class="cypher-panel p-3.5 flex flex-col justify-between hover:bg-[#F8F6F0] transition group">
+        <div>
+          <div class="flex items-center justify-between border-b-2 border-black pb-2 mb-2">
+            <span class="micro-label">PORTAL 06.0${index + 1}</span>
+            <span class="font-mono text-xs font-bold text-black bg-[#C8FF5A] px-2 py-0.5 border border-black">:${port}</span>
+          </div>
+          <h3 class="text-base font-black uppercase text-black">${title}</h3>
+          <p class="text-xs text-[#66645D] mt-1">${detail}</p>
+        </div>
+        <div class="mt-2.5 pt-1.5 border-t-2 border-black flex items-center justify-between text-xs font-bold text-black uppercase">
+          <span>${action}</span><span>&rarr;</span>
+        </div>
+      </a>`).join('');
+
+    const GOLDEN_METRICS = [
+      ['01.01 // THROUGHPUT', 'metricRPS', '0.0', 'REQ/SEC', 'RATE(1M)'],
+      ['01.02 // P95 LATENCY', 'metricP95', '--', 'SLA: &lt; 50MS', ''],
+      ['01.03 // ERROR RATE', 'metricErrors', '0.0%', '5XX RATIO', 'HEALTHY'],
+      ['01.04 // SERVING FLEET', 'replicas']
+    ];
+    document.getElementById('goldenMetrics').innerHTML = GOLDEN_METRICS.map(
+      ([label, id, value, footer, note]) => {
+        if (id === 'replicas') return `
+          <div class="cypher-panel-bright p-3 sm:p-3.5 flex flex-col justify-between">
+            <span class="micro-label text-[9px]">${label}</span>
+            <div class="flex items-baseline gap-2 my-1">
+              <span id="metricReplicas" class="text-3xl sm:text-4xl font-black text-black font-mono tracking-tighter">2</span>
+              <span class="text-xs font-mono font-bold text-[#66645D]">/ <span id="metricDesired">2</span> DESIRED</span>
+            </div>
+            <div class="pt-1.5 border-t border-black flex items-center justify-between text-[11px] font-mono">
+              <span id="metricReplicasBadge" class="font-bold text-[#1D7A4D]">ALL ONLINE</span>
+              <span class="text-[#66645D]">PDB: MIN 1</span>
+            </div>
+          </div>`;
+        const noteMarkup = id === 'metricP95'
+          ? '<span class="text-black font-bold">P50: <span id="metricP50">-- ms</span></span>'
+          : `<span class="${note === 'HEALTHY' ? 'text-[#1D7A4D]' : 'text-black'} font-bold">${note}</span>`;
+        return `
+          <div class="cypher-panel-bright p-3 sm:p-3.5 flex flex-col justify-between">
+            <span class="micro-label text-[9px]">${label}</span>
+            <p id="${id}" class="text-3xl sm:text-4xl font-black text-black font-mono tracking-tighter my-1">${value}</p>
+            <div class="pt-1.5 border-t border-black flex items-center justify-between text-[11px] font-mono text-[#66645D]">
+              <span>${footer}</span>${noteMarkup}
+            </div>
+          </div>`;
+      }
+    ).join('');
 
     const FEATURE_GROUPS = {
       demographics: ['limit_bal', 'sex', 'education', 'marriage', 'age'],
