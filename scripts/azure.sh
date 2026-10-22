@@ -371,7 +371,7 @@ verify_dashboard() {
     return 1
   fi
   curl --insecure --fail --silent --show-error --connect-timeout 10 --max-time 15 \
-    --retry 6 --retry-all-errors --retry-delay 2 \
+    --retry 30 --retry-all-errors --retry-delay 5 \
     "https://${PUBLIC_HOST}/healthz"
   password="$(kubectl -n observability get secret grafana-admin -o jsonpath='{.data.admin-password}' | base64 -d)"
   kubectl -n observability exec deploy/dashboard -- curl --fail --silent --insecure \
@@ -398,7 +398,7 @@ verify() {
   MODEL_API_TOKEN="$(kubectl -n serving get secret model-api-token -o jsonpath='{.data.token}' | base64 -d)"
   export MODEL_API_TOKEN
   curl --fail --silent --show-error --connect-timeout 5 --max-time 15 \
-    --retry 5 --retry-all-errors --retry-delay 3 "http://${address}:8080/readyz"
+    --retry 30 --retry-all-errors --retry-delay 5 "http://${address}:8080/readyz"
   curl --fail --silent --show-error -H "Authorization: Bearer ${MODEL_API_TOKEN}" "http://${address}:8080/model-info"
   curl --fail --silent --show-error -H 'Content-Type: application/json' \
     -H "Authorization: Bearer ${MODEL_API_TOKEN}" \

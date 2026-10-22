@@ -79,6 +79,7 @@ def test_azure_verify_temporarily_allows_and_restores_its_runner() -> None:
     assert "patch service dashboard" in script
     assert "ORIGINAL_MODEL_API_RANGES" in script
     assert "ORIGINAL_DASHBOARD_RANGES" in script
+    assert "--retry 30 --retry-all-errors --retry-delay 5" in script
 
 
 def test_github_oidc_session_refreshes_for_long_azure_provisioning(
@@ -199,8 +200,8 @@ def test_dashboard_action_keeps_the_terraform_allowlist() -> None:
     assert "kubectl -n observability describe pods -l app=dashboard" in deploy_script
 
 
-def test_model_api_load_balancer_preserves_source_ip_and_bounds_retries() -> None:
-    """Cilium ingress policy sees the client CIDR on external service traffic."""
+def test_model_api_ingress_waits_for_azure_rule_updates() -> None:
+    """Cilium preserves client CIDR; checks wait for Azure ingress reconciliation."""
     resources = json.loads((ROOT / "infra/manifests/app.json.tftpl").read_text())
     service = next(
         item
@@ -214,7 +215,7 @@ def test_model_api_load_balancer_preserves_source_ip_and_bounds_retries() -> Non
     ]
     deploy_script = (ROOT / "scripts/azure.sh").read_text()
     assert "--connect-timeout 5 --max-time 15" in deploy_script
-    assert "--retry 5 --retry-all-errors --retry-delay 3" in deploy_script
+    assert "--retry 30 --retry-all-errors --retry-delay 5" in deploy_script
 
 
 def test_release_rejects_shell_payloads() -> None:
