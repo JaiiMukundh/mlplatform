@@ -36,6 +36,11 @@ aks_apply() {
 
 if [[ "${ACTION}" == connect ]]; then
   REPO="$(gh repo view --json nameWithOwner --jq .nameWithOwner)"
+  OWNER="${REPO%%/*}"
+  REPOSITORY_NAME="${REPO#*/}"
+  REPOSITORY_METADATA="$(gh api "repos/${REPO}" --jq '{ownerId:.owner.id,repositoryId:.id}')"
+  OWNER_ID="$(python3 -c 'import json,sys; print(json.load(sys.stdin)["ownerId"])' <<<"${REPOSITORY_METADATA}")"
+  REPOSITORY_ID="$(python3 -c 'import json,sys; print(json.load(sys.stdin)["repositoryId"])' <<<"${REPOSITORY_METADATA}")"
   SUBSCRIPTION="$(az account show --query id -o tsv)"
   TENANT="$(az account show --query tenantId -o tsv)"
   BUDGET_EMAIL="$(az ad signed-in-user show --query mail -o tsv)"
@@ -60,6 +65,8 @@ if [[ "${ACTION}" == connect ]]; then
   PRINCIPAL_ID="$(az identity show --name "${IDENTITY_NAME}" --resource-group "${IDENTITY_GROUP}" --query principalId -o tsv)"
   federation="$(az identity federated-credential list --identity-name "${IDENTITY_NAME}" --resource-group "${IDENTITY_GROUP}" --query "[?name=='github-azure'].name" -o tsv)"
   [[ -n "${federation}" ]] || az identity federated-credential create --name github-azure --identity-name "${IDENTITY_NAME}" --resource-group "${IDENTITY_GROUP}" --issuer https://token.actions.githubusercontent.com --subject "repo:${REPO}:environment:azure" --audiences api://AzureADTokenExchange >/dev/null
+  immutable_federation="$(az identity federated-credential list --identity-name "${IDENTITY_NAME}" --resource-group "${IDENTITY_GROUP}" --query "[?name=='github-azure-immutable'].name" -o tsv)"
+  [[ -n "${immutable_federation}" ]] || az identity federated-credential create --name github-azure-immutable --identity-name "${IDENTITY_NAME}" --resource-group "${IDENTITY_GROUP}" --issuer https://token.actions.githubusercontent.com --subject "repo:${OWNER}@${OWNER_ID}/${REPOSITORY_NAME}@${REPOSITORY_ID}:environment:azure" --audiences api://AzureADTokenExchange >/dev/null
   scope="/subscriptions/${SUBSCRIPTION}"
   for role in Contributor 'Role Based Access Control Administrator' 'Storage Blob Data Contributor' AcrPush; do
     existing="$(az role assignment list --scope "${scope}" --query "[?principalId=='${PRINCIPAL_ID}' && roleDefinitionName=='${role}'].id" -o tsv)"
