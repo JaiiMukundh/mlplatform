@@ -2061,6 +2061,7 @@
       "namespace": "observability"
     },
     "spec": {
+      "externalTrafficPolicy": "Local",
       "loadBalancerSourceRanges": [
         "${ALLOWED_CIDR}",
         "${RUNNER_CIDR}"
@@ -2143,6 +2144,7 @@
       "namespace": "serving"
     },
     "spec": {
+      "externalTrafficPolicy": "Local",
       "loadBalancerSourceRanges": [
         "${ALLOWED_CIDR}",
         "${RUNNER_CIDR}"

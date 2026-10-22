@@ -69,6 +69,9 @@ def test_configured_api_token_protects_model_routes_but_keeps_probes_public(
     with TestClient(application) as client:
         assert client.get("/healthz").status_code == 200
         assert client.get("/metrics").status_code == 200
+        assert client.get("/docs").status_code == 200
+        schema = client.get("/openapi.json").json()
+        assert schema["paths"]["/predict"]["post"]["security"] == [{"BearerAuth": []}]
         assert client.get("/model-info").status_code == 401
         assert (
             client.get(

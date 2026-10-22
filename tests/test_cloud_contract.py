@@ -131,12 +131,31 @@ def test_dashboard_action_keeps_the_terraform_allowlist() -> None:
         "${ALLOWED_CIDR}",
         "${RUNNER_CIDR}",
     ]
+    assert service["spec"]["externalTrafficPolicy"] == "Local"
     assert service["spec"]["ports"][0]["port"] == 443
     workflow = (ROOT / ".github/workflows/cd.yml").read_text()
     deploy_script = (ROOT / "scripts/azure.sh").read_text()
     assert "inputs.action == 'deploy' || inputs.action == 'dashboard'" in workflow
     assert "https://${PUBLIC_HOST}/healthz" in deploy_script
     assert "--connect-timeout 10 --max-time 15" in deploy_script
+
+
+def test_model_api_load_balancer_preserves_source_ip_and_bounds_retries() -> None:
+    """Cilium ingress policy sees the client CIDR on external service traffic."""
+    resources = json.loads((ROOT / "infra/manifests/app.json.tftpl").read_text())
+    service = next(
+        item
+        for item in resources.values()
+        if item["kind"] == "Service" and item["metadata"]["name"] == "model-api"
+    )
+    assert service["spec"]["externalTrafficPolicy"] == "Local"
+    assert service["spec"]["loadBalancerSourceRanges"] == [
+        "${ALLOWED_CIDR}",
+        "${RUNNER_CIDR}",
+    ]
+    deploy_script = (ROOT / "scripts/azure.sh").read_text()
+    assert "--connect-timeout 5 --max-time 15" in deploy_script
+    assert "--retry 5 --retry-all-errors --retry-delay 3" in deploy_script
 
 
 def test_release_rejects_shell_payloads() -> None:

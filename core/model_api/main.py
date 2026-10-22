@@ -13,6 +13,7 @@ from dataclasses import dataclass
 from datetime import UTC, datetime
 
 from fastapi import BackgroundTasks, FastAPI, Query, Request
+from fastapi.openapi.utils import get_openapi
 from fastapi.responses import JSONResponse, Response
 from mlp_common.logging import bind_request_id, configure_logging, reset_request_id
 from mlp_common.schemas import (
@@ -87,6 +88,28 @@ def create_app(
     application.state.settings = config
     application.state.chaos = chaos
 
+    def authenticated_openapi() -> dict[str, object]:
+        if application.openapi_schema:
+            return application.openapi_schema
+        schema = get_openapi(
+            title=application.title,
+            version=application.version,
+            routes=application.routes,
+        )
+        schema.setdefault("components", {}).setdefault("securitySchemes", {})[
+            "BearerAuth"
+        ] = {"type": "http", "scheme": "bearer"}
+        public_paths = {"/healthz", "/readyz", "/metrics"}
+        for path, operations in schema["paths"].items():
+            if path not in public_paths:
+                for operation in operations.values():
+                    if isinstance(operation, dict):
+                        operation["security"] = [{"BearerAuth": []}]
+        application.openapi_schema = schema
+        return schema
+
+    application.openapi = authenticated_openapi  # type: ignore[method-assign]
+
     @application.middleware("http")
     async def observe_request(request: Request, call_next):  # type: ignore[no-untyped-def]
         request_id = request.headers.get("x-request-id", str(uuid.uuid4()))
@@ -97,7 +120,15 @@ def create_app(
         path = request.url.path
         try:
             api_token = os.environ.get("MODEL_API_TOKEN", "")
-            if api_token and path not in {"/healthz", "/readyz", "/metrics"}:
+            if api_token and path not in {
+                "/healthz",
+                "/readyz",
+                "/metrics",
+                "/docs",
+                "/openapi.json",
+                "/redoc",
+                "/docs/oauth2-redirect",
+            }:
                 supplied = request.headers.get("authorization", "")
                 supplied = supplied.removeprefix("Bearer ")
                 if not secrets.compare_digest(supplied, api_token):
