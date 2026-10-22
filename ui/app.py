@@ -46,9 +46,7 @@ async def authenticate_dashboard(
         return
     password = os.environ.get("DASHBOARD_PASSWORD", "")
     if not password:
-        if os.environ.get("DEPLOY_TARGET") == "azure":
-            raise HTTPException(status_code=503, detail="Dashboard credential missing")
-        return
+        raise HTTPException(status_code=503, detail="Dashboard credential missing")
     valid = (
         credentials is not None
         and secrets.compare_digest(credentials.username.encode(), b"admin")
@@ -98,11 +96,13 @@ ACTIVE_DRIFT_QUERY = (
 # Track running jobs
 RUNNING_JOBS: dict[str, dict[str, Any]] = {}
 
-MODEL_API_URL = os.environ.get("MODEL_API_URL", "http://localhost:8080")
-PROMETHEUS_URL = os.environ.get("PROMETHEUS_URL", "http://localhost:9090")
-MLFLOW_URL = os.environ.get("MLFLOW_TRACKING_URI", "http://localhost:5000")
-MINIO_URL = os.environ.get("MINIO_ENDPOINT", "http://localhost:9000")
-BASELINE_VERSION = "local"
+MODEL_API_URL = os.environ.get("MODEL_API_URL", "http://model-api.serving.svc:8080")
+PROMETHEUS_URL = os.environ.get(
+    "PROMETHEUS_URL", "http://kube-prometheus-stack-prometheus.observability.svc:9090"
+)
+MLFLOW_URL = os.environ.get("MLFLOW_TRACKING_URI", "http://mlflow.data.svc:5000")
+MINIO_URL = os.environ.get("MINIO_ENDPOINT", "http://minio.data.svc:9000")
+BASELINE_VERSION = ""
 
 
 def load_cloud_demo_data() -> str:
@@ -140,7 +140,7 @@ if os.environ.get("DEPLOY_TARGET") == "azure":
 BASELINE_MODEL = None
 try:
     _model_path = BASE_DIR / "artifacts" / "model.joblib"
-    if _model_path.exists():
+    if os.environ.get("DEPLOY_TARGET") == "azure" and _model_path.exists():
         import joblib
 
         BASELINE_MODEL = joblib.load(_model_path)
@@ -149,33 +149,33 @@ except Exception as _e:
     logger.warning("Could not load baseline model: %s", _e)
 
 ACTION_COMMANDS: dict[str, str] = {
-    "reset_demo": "uv run --all-groups python scripts/reset_demo.py",
+    "reset_demo": f"python scripts/reset_demo.py --version {BASELINE_VERSION}",
     "traffic_burst": (
-        "uv run --all-groups python scripts/traffic.py --rps 15 --duration 20 --url http://localhost:8080"
+        f"python scripts/traffic.py --rps 15 --duration 20 --url {MODEL_API_URL}"
     ),
     "chaos_latency_inject": (
         "for p in $(kubectl get pods -n serving -l app.kubernetes.io/name=model-api "
         "-o jsonpath='{.items[*].metadata.name}'); do "
         "kubectl exec -n serving $p -c api -- "
-        "curl -s -X POST 'http://localhost:8080/debug/latency?ms=500'; "
+        "curl -s -X POST 'http://127.0.0.1:8080/debug/latency?ms=500'; "
         'echo "Injected 500ms latency on $p"; done'
     ),
     "chaos_latency_clear": (
         "for p in $(kubectl get pods -n serving -l app.kubernetes.io/name=model-api "
         "-o jsonpath='{.items[*].metadata.name}'); do "
         "kubectl exec -n serving $p -c api -- "
-        "curl -s -X POST 'http://localhost:8080/debug/latency?ms=0'; "
+        "curl -s -X POST 'http://127.0.0.1:8080/debug/latency?ms=0'; "
         'echo "Cleared latency on $p"; done'
     ),
     "chaos_pod_kill": "bash scripts/chaos_pod.sh",
     "demo_infra": "bash scripts/chaos_alert.sh",
     "simulate_drift": (
-        "uv run --all-groups python scripts/simulate_drift.py --scenario covariate && "
-        "uv run --all-groups python scripts/traffic.py --rps 30 --duration 12 --url http://localhost:8080"
+        "python scripts/simulate_drift.py --scenario covariate && "
+        f"python scripts/traffic.py --rps 30 --duration 12 --url {MODEL_API_URL}"
     ),
     "auto_heal": (
-        "uv run --all-groups python scripts/simulate_drift.py --scenario covariate && "
-        "uv run --all-groups python scripts/traffic.py --rps 30 --duration 12 --url http://localhost:8080"
+        "python scripts/simulate_drift.py --scenario covariate && "
+        f"python scripts/traffic.py --rps 30 --duration 12 --url {MODEL_API_URL}"
     ),
     "demo_model": "bash scripts/retrain_and_release.sh",
     "manual_retrain": "bash scripts/retrain_and_release.sh",
@@ -184,20 +184,8 @@ ACTION_COMMANDS: dict[str, str] = {
     "feast_rematerialize": (
         "bash scripts/run_job.sh infra/jobs/feast-rematerialize-job.yaml data"
     ),
-    "e2e_tests": "make e2e",
+    "e2e_tests": f"bash scripts/smoke.sh serving model-api {MODEL_API_URL}",
 }
-
-
-if os.environ.get("DEPLOY_TARGET") == "azure":
-    for action, command in ACTION_COMMANDS.items():
-        command = command.replace("uv run --all-groups python", "python")
-        if action not in {"chaos_latency_inject", "chaos_latency_clear"}:
-            command = command.replace("http://localhost:8080", MODEL_API_URL)
-        ACTION_COMMANDS[action] = command
-    ACTION_COMMANDS["reset_demo"] += f" --version {BASELINE_VERSION}"
-    ACTION_COMMANDS["e2e_tests"] = (
-        f"bash scripts/smoke.sh serving model-api {MODEL_API_URL}"
-    )
 
 
 class PredictRequest(BaseModel):
@@ -209,7 +197,7 @@ class ActionRequest(BaseModel):
     action: str
 
 
-def _local_prediction(req: PredictRequest, started: float) -> dict[str, Any] | None:
+def _baseline_prediction(req: PredictRequest, started: float) -> dict[str, Any] | None:
     """Use the cached model for clean/drifted demos; otherwise use live serving."""
     if BASELINE_MODEL is None or req.env not in {"clean", "drifted"}:
         return None
@@ -260,7 +248,7 @@ def _local_prediction(req: PredictRequest, started: float) -> dict[str, Any] | N
             "environment": req.env,
         }
     except Exception as exc:
-        logger.warning("Local baseline evaluation fallback: %s", exc)
+        logger.warning("Cloud baseline evaluation fallback: %s", exc)
         return None
 
 
@@ -293,7 +281,7 @@ async def serve_index() -> HTMLResponse:
     page = index_file.read_text(encoding="utf-8")
     public_host = os.environ.get("PUBLIC_HOST", "")
     if public_host:
-        page = page.replace("http://localhost:", f"http://{public_host}:")
+        page = page.replace("__PUBLIC_HOST__", public_host)
     return HTMLResponse(content=page)
 
 
@@ -330,9 +318,7 @@ async def get_system_status() -> dict[str, Any]:
                         break
             status["nodes_ready"] = ready_count
             status["cluster"] = (
-                os.environ.get("CLUSTER_NAME", "Kind (mlp)")
-                if ready_count > 0
-                else "degraded"
+                os.environ.get("CLUSTER_NAME", "AKS") if ready_count > 0 else "degraded"
             )
     except Exception as exc:
         logger.debug("Failed querying nodes: %s", exc)
@@ -695,8 +681,8 @@ async def execute_predict(req: PredictRequest) -> dict[str, Any]:
     """Execute prediction across clean, drift shock, or retrained states."""
     t0 = time.perf_counter()
 
-    if local_result := _local_prediction(req, t0):
-        return local_result
+    if baseline_result := _baseline_prediction(req, t0):
+        return baseline_result
 
     # 3. RETRAINED & HEALED: Live Kubernetes Serving Pods via Envoy / ClusterIP
     async with httpx.AsyncClient(timeout=5.0) as client:

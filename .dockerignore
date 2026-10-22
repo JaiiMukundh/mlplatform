@@ -8,7 +8,7 @@
 coverage.xml
 .env
 .env.*
-.terraform
+**/.terraform
 *.tfstate*
 docs
 tests
@@ -20,3 +20,6 @@ infra/modules
 # Rendered Feast config contains the Postgres password: never bake it into an image.
 core/feature_repo/feature_store.yaml
 infra/vendor
+infra/manifests
+ops
+MLPlatform_Synopsis.docx

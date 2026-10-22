@@ -1,4 +1,4 @@
-"""Stable feature and model interfaces shared by local and platform providers."""
+"""Stable feature and model interfaces for the AKS serving application."""
 
 from __future__ import annotations
 

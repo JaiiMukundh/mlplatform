@@ -1,6 +1,4 @@
-# Azure native environment (AKS straight port of the old AWS design).
-# Never apply without the human step in P9.6.
-# Only init -backend=false, validate, and plan are allowed here. Applying is [HUMAN].
+# Azure infrastructure for the AKS platform. Deployment runs through the confirmed GitHub workflow.
 locals {
   name = "${var.project}-${var.environment}"
   tags = {

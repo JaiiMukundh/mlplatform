@@ -7,7 +7,7 @@ set -Eeuo pipefail
 [[ "${DEPLOY_TARGET:-}" == azure ]] || { echo "DEPLOY_TARGET=azure is required" >&2; exit 2; }
 
 readonly VERSION="${1:?model version required}"
-readonly IMAGE_TAG="${2:-dev}"
+readonly IMAGE_TAG="${2:-${IMAGE_TAG:?image tag required}}"
 readonly MLFLOW="${MLFLOW_TRACKING_URI:-http://mlflow.data.svc:5000}"
 readonly MODEL="${MODEL_NAME:-loan-default}"
 # Overridable for in-cluster execution (retrain Job): the runner uses host
@@ -59,14 +59,14 @@ fi
 
 echo "--- step 2: staging deploy ---"
 if ! bash "${SCRIPTS_DIR}/deploy.sh" model-api-staging staging "${IMAGE_TAG}" \
-  --set model.version="${VERSION}" --set service.nodePort=30081; then
-  helm rollback model-api-staging -n staging || true
+  "${VERSION}"; then
+  kubectl -n staging rollout undo deployment/model-api-staging || true
   reject_version "staging deploy failed"
 fi
 
 echo "--- step 3: staging loadcheck ---"
 if ! python3 "${SCRIPTS_DIR}/loadcheck.py" --url "${STAGING_URL}" --total "${LOADCHECK_TOTAL:-2000}" --rps "${LOADCHECK_RPS:-20}"; then
-  helm rollback model-api-staging -n staging || true
+  kubectl -n staging rollout undo deployment/model-api-staging || true
   reject_version "staging loadcheck failed"
 fi
 
@@ -78,7 +78,7 @@ set_alias champion "${VERSION}"
 
 rollback_prod() {
   echo "ROLLBACK: $1"
-  helm rollback model-api -n serving || true
+  kubectl -n serving rollout undo deployment/model-api || true
   if [[ -n "${PREV_CHAMPION}" && "${PREV_CHAMPION}" != "${VERSION}" ]]; then
     delete_alias champion
     set_alias champion "${PREV_CHAMPION}"
@@ -89,7 +89,7 @@ rollback_prod() {
 
 echo "--- step 5: prod deploy ---"
 if ! bash "${SCRIPTS_DIR}/deploy.sh" model-api serving "${IMAGE_TAG}" \
-  --set model.version="${VERSION}"; then
+  "${VERSION}"; then
   rollback_prod "prod deploy failed"
 fi
 

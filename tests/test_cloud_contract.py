@@ -8,41 +8,26 @@ import subprocess
 from pathlib import Path
 
 import pytest
-import yaml
 from retrain.dispatch import dispatch_candidate
-
-from scripts.azure_public_service import prepare_service
 
 ROOT = Path(__file__).resolve().parents[1]
 
 
-def test_public_service_exposes_only_configured_port(
-    monkeypatch: pytest.MonkeyPatch,
-) -> None:
-    """Shared Azure IP Services must not retain conflicting chart ports."""
-    monkeypatch.setenv("PUBLIC_IP_NAME", "mlp-test-ingress")
-    monkeypatch.setenv("AZURE_RESOURCE_GROUP", "mlp-test-rg")
-    monkeypatch.setenv("AZURE_ALLOWED_CIDR", "203.0.113.8/32")
-    monkeypatch.setenv("RUNNER_CIDR", "198.51.100.4/32")
-    service = {
-        "metadata": {"annotations": {}},
-        "spec": {
-            "ports": [
-                {"port": 80, "targetPort": 9093, "name": "http"},
-                {"port": 8080, "targetPort": 8080, "name": "metrics"},
-            ]
-        },
-    }
-
-    prepared = prepare_service(service, 9093)
-
-    assert prepared["spec"]["type"] == "LoadBalancer"
-    assert prepared["spec"]["ports"] == [
-        {"port": 9093, "targetPort": 9093, "name": "http"}
-    ]
-    assert prepared["spec"]["loadBalancerSourceRanges"] == [
-        "203.0.113.8/32",
-        "198.51.100.4/32",
+def test_public_service_exposes_only_configured_port() -> None:
+    """Terraform's shared Azure IP uses one external port per Service."""
+    manifest = ROOT / "infra/manifests/observability.json.tftpl"
+    resources = json.loads(manifest.read_text())
+    grafana = next(
+        item
+        for item in resources.values()
+        if item["kind"] == "Service"
+        and item["metadata"]["name"] == "kube-prometheus-stack-grafana"
+    )
+    assert grafana["spec"]["type"] == "LoadBalancer"
+    assert [port["port"] for port in grafana["spec"]["ports"]] == [3000]
+    assert grafana["spec"]["loadBalancerSourceRanges"] == [
+        "${ALLOWED_CIDR}",
+        "${RUNNER_CIDR}",
     ]
 
 
@@ -133,22 +118,25 @@ def test_plan_needs_configuration_but_no_billing_confirmation() -> None:
     assert "TF_STATE_ACCOUNT" in result.stderr
 
 
-def test_dashboard_action_is_allowed_without_widening_the_source_allowlist() -> None:
-    """Dashboard port migration is a CI-gated, allowlisted operation."""
+def test_dashboard_action_keeps_the_terraform_allowlist() -> None:
+    """Dashboard verification preserves the Terraform-managed HTTPS Service."""
     assert check("dashboard").returncode == 0
-    manifest = (ROOT / "infra/dashboard.yaml").read_text()
+    resources = json.loads((ROOT / "infra/manifests/app.json.tftpl").read_text())
+    service = next(
+        item
+        for item in resources.values()
+        if item["kind"] == "Service" and item["metadata"]["name"] == "dashboard"
+    )
+    assert service["spec"]["loadBalancerSourceRanges"] == [
+        "${ALLOWED_CIDR}",
+        "${RUNNER_CIDR}",
+    ]
+    assert service["spec"]["ports"][0]["port"] == 443
     workflow = (ROOT / ".github/workflows/cd.yml").read_text()
     deploy_script = (ROOT / "scripts/azure.sh").read_text()
-    assert "loadBalancerSourceRanges: [__ALLOWED_CIDR__, __RUNNER_CIDR__]" in manifest
-    assert "port: 443, targetPort: https" in manifest
     assert "inputs.action == 'deploy' || inputs.action == 'dashboard'" in workflow
     assert "https://${PUBLIC_HOST}/healthz" in deploy_script
     assert "--connect-timeout 10 --max-time 15" in deploy_script
-    assert (
-        'RUNNER_CIDR="$(curl --fail --silent --show-error https://api.ipify.org)/32"'
-        in deploy_script
-    )
-    assert "loadBalancerSourceRanges" in deploy_script
 
 
 def test_release_rejects_shell_payloads() -> None:
@@ -174,37 +162,52 @@ def test_make_cloud_training_requires_an_explicit_cloud_image() -> None:
 
 
 def test_cloud_retrain_keeps_acr_images_and_immutable_tag() -> None:
-    """The in-cluster release must reuse the deployed cloud images at every step."""
-    output = subprocess.run(
-        [
-            "helm",
-            "template",
-            "retrain",
-            "infra/charts/retrain",
-            "--set",
-            "image.repository=demo.azurecr.io/mlp-retrain,image.tag=abc123",
-            "--set",
-            "env.MODEL_API_REPOSITORY=demo.azurecr.io/mlp-model-api",
-            "--set",
-            "env.TRAINING_IMAGE=demo.azurecr.io/mlp-training:abc123",
-            "--set",
-            "env.IMAGE_TAG=abc123,env.DEPLOY_TARGET=azure",
-        ],
-        cwd=ROOT,
-        check=True,
-        capture_output=True,
-        text=True,
-    ).stdout
+    """The in-cluster release uses the deployed ACR image and immutable tag."""
+    resources = json.loads((ROOT / "infra/manifests/app.json.tftpl").read_text())
     config = next(
-        doc for doc in yaml.safe_load_all(output) if doc["kind"] == "ConfigMap"
+        item
+        for item in resources.values()
+        if item["kind"] == "ConfigMap"
+        and item["metadata"]["name"] == "retrain-job-template"
     )
     container = json.loads(config["data"]["pod-spec.json"])["containers"][0]
-    assert container["image"] == "demo.azurecr.io/mlp-retrain:abc123"
+    assert container["image"] == "${ACR}/mlp-retrain:${TAG}"
     environment = {item["name"]: item.get("value") for item in container["env"]}
-    assert environment["TRAINING_IMAGE"] == "demo.azurecr.io/mlp-training:abc123"
-    assert environment["MODEL_API_REPOSITORY"] == "demo.azurecr.io/mlp-model-api"
-    assert environment["IMAGE_TAG"] == "abc123"
+    assert environment["TRAINING_IMAGE"] == "${ACR}/mlp-training:${TAG}"
+    assert environment["MODEL_API_REPOSITORY"] == "${ACR}/mlp-model-api"
+    assert environment["IMAGE_TAG"] == "${TAG}"
     assert environment["DEPLOY_TARGET"] == "azure"
+
+
+def test_model_release_updates_the_terraform_deployment(tmp_path: Path) -> None:
+    """A model release rolls the existing AKS deployment to an explicit version."""
+    kubectl = tmp_path / "kubectl"
+    kubectl.write_text('#!/bin/sh\nprintf "%s\\n" "$*" >> "$KUBECTL_CALLS"\n')
+    kubectl.chmod(0o755)
+    calls = tmp_path / "calls.txt"
+    result = subprocess.run(
+        ["bash", "scripts/deploy.sh", "model-api", "serving", "abc123", "9"],
+        cwd=ROOT,
+        env={
+            **os.environ,
+            "PATH": f"{tmp_path}:{os.environ['PATH']}",
+            "KUBECTL_CALLS": str(calls),
+            "DEPLOY_TARGET": "azure",
+            "MODEL_API_REPOSITORY": "demo.azurecr.io/mlp-model-api",
+            "SKIP_SMOKE": "1",
+        },
+        capture_output=True,
+        text=True,
+        check=False,
+    )
+    assert result.returncode == 0, result.stderr
+    assert calls.read_text().splitlines() == [
+        "-n serving get deployment model-api",
+        "-n serving set image deployment/model-api "
+        "api=demo.azurecr.io/mlp-model-api:abc123",
+        "-n serving set env deployment/model-api MODEL_VERSION=9",
+        "-n serving rollout status deployment/model-api --timeout=5m",
+    ]
 
 
 def test_dispatch_forwards_cloud_image_tag(
@@ -229,12 +232,15 @@ def test_dashboard_serves_page_and_runs_commands_from_repository(
     from ui.app import ACTION_COMMANDS, app
 
     monkeypatch.chdir(tmp_path)
+    monkeypatch.setenv("DASHBOARD_PASSWORD", "cloud-test-password")
     monkeypatch.setitem(ACTION_COMMANDS, "verify-layout", "make help")
     with TestClient(app) as client:
-        page = client.get("/")
+        page = client.get("/", auth=("admin", "cloud-test-password"))
         assert page.status_code == 200
         assert "<html" in page.text.lower()
-        output = client.get("/api/stream/verify-layout")
+        output = client.get(
+            "/api/stream/verify-layout", auth=("admin", "cloud-test-password")
+        )
         assert "MLPlatform targets:" in output.text
         assert "COMPLETED SUCCESSFULLY (EXIT 0)" in output.text
 
@@ -447,6 +453,7 @@ def test_dashboard_prediction_uses_cloud_service_endpoint(
             },
         )
 
+    monkeypatch.setenv("DASHBOARD_PASSWORD", "cloud-test-password")
     monkeypatch.setattr(dashboard, "MODEL_API_URL", "http://model-api.serving.svc:8080")
     monkeypatch.setattr(
         dashboard.httpx,
@@ -455,7 +462,9 @@ def test_dashboard_prediction_uses_cloud_service_endpoint(
     )
     with TestClient(dashboard.app) as client:
         result = client.post(
-            "/api/predict", json={"customer_id": "7", "env": "retrained"}
+            "/api/predict",
+            json={"customer_id": "7", "env": "retrained"},
+            auth=("admin", "cloud-test-password"),
         )
         assert result.status_code == 200
         assert result.json()["status"] == "success"

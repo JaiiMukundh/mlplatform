@@ -6,18 +6,18 @@ label mechanism), ``both`` (default demo: shifted features + new mechanism).
 The script appends one new snapshot for every customer, uploads both Parquet
 files to MinIO, and runs incremental materialization so the online store and
 subsequent prediction traffic carry the drift. The champion-AUC-drop
-assertion (SPEC: >= 0.07 on new data) uses the local file model, whose
-weights are bit-identical to the registered champion (proven in P6.7), and
+assertion (SPEC: >= 0.07 on new data) loads the registered champion from
+MLflow and
 applies to scenarios with a concept change.
 """
 
 from __future__ import annotations
 
 import argparse
+import os
 import subprocess
 from pathlib import Path
 
-import joblib
 import numpy as np
 import pandas as pd
 from ml.data.schemas import (
@@ -111,7 +111,12 @@ def main() -> int:
     validate_features(new_features)
     validate_labels(new_labels)
 
-    model = joblib.load("artifacts/model.joblib")
+    import mlflow.sklearn
+
+    mlflow.set_tracking_uri(
+        os.environ.get("MLFLOW_TRACKING_URI", "http://mlflow.data.svc:5000")
+    )
+    model = mlflow.sklearn.load_model("models:/loan-default@champion")
     baseline = labels.loc[labels[TIMESTAMP_COLUMN] == labels[TIMESTAMP_COLUMN].max()]
     baseline_features = features.merge(
         baseline[[ENTITY_COLUMN, TIMESTAMP_COLUMN]],

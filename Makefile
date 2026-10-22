@@ -2,7 +2,7 @@ DOCKER_NETWORK ?= default
 SHELL := /usr/bin/env bash
 .DEFAULT_GOAL := help
 
-.PHONY: help lint fmt test seed-data train publish-feast-data train-azure azure azure-check azure-plan azure-apply azure-destroy azure-kill check-infra check-actions check-charts check-images smoke-images secret-scan security tools
+.PHONY: help lint fmt test seed-data publish-feast-data train-azure azure azure-check azure-plan azure-apply azure-destroy azure-kill check-infra check-actions check-manifests check-images smoke-images secret-scan security tools
 
 help: ## Show the supported project commands.
 	@awk 'BEGIN {FS = ":.*## "; printf "MLPlatform targets:\n\n"} /^[a-zA-Z0-9_-]+:.*## / {printf "  %-22s %s\n", $$1, $$2}' $(MAKEFILE_LIST)
@@ -18,18 +18,18 @@ fmt: ## Format all implemented Python code.
 test: ## Run the unit test suite and coverage gate.
 	@uv run --all-groups pytest --cov=mlp_common --cov=model_api --cov-report=term-missing
 
-.PHONY: check-infra secret-scan github-login github-push tools check-actions check-charts security azure azure-check
+.PHONY: check-infra secret-scan github-login tools check-actions check-manifests security azure azure-check
 tools: ## Install checksum-verified Linux CI tools (TOOLSET="...").
 	@python3 scripts/tools.py $(or $(TOOLSET),actionlint gitleaks hadolint kubeconform trivy)
 
 check-actions: ## Validate GitHub Actions workflows.
 	@actionlint -shellcheck=""
 
-check-charts: ## Validate rendered Kubernetes manifests and vendored CRD schemas.
-	@uv run --all-groups python scripts/tools.py check-charts
+check-manifests: ## Validate Terraform-managed AKS resources against pinned schemas.
+	@uv run --all-groups python scripts/tools.py check-manifests
 
 .PHONY: check-images
-check-images: ## Build and import-smoke all six container targets without deploying.
+check-images: ## Build and import-smoke all seven container targets without deploying.
 	@hadolint infra/Dockerfile
 	@for service in model-api drift-monitor remediator training retrain mlflow dashboard; do \
 		docker build --network "$(DOCKER_NETWORK)" --file infra/Dockerfile --target "$$service" --tag "mlp-check-$$service" . || exit 1; \
@@ -44,10 +44,10 @@ smoke-images: ## Import real service entry points and ensure models/data are abs
 		docker run --rm --entrypoint python "mlp-check-$$service" -c "import $$module; print('$$service entry point OK')" || exit 1; \
 	done
 	@docker run --rm --entrypoint sh mlp-check-model-api -c 'test ! -e /app/data/features.parquet && test ! -e /app/artifacts/model.joblib'
-	@docker run --rm --entrypoint bash mlp-check-retrain -c 'helm template model-api infra/charts/model-api >/dev/null && test -r infra/jobs/gate-job.yaml && for script in scripts/*.sh; do bash -n "$$script" || exit 1; done'
+	@docker run --rm --entrypoint bash mlp-check-retrain -c 'test -r infra/jobs/gate-job.yaml && for script in scripts/*.sh; do bash -n "$$script" || exit 1; done'
 
 security: ## Reject critical dependency vulnerabilities; report IaC findings.
-	@trivy fs --scanners vuln --file-patterns "pip:training.txt" --severity CRITICAL --exit-code 1 --skip-dirs .venv,.terraform --skip-files PROGRESS.md .
+	@trivy fs --scanners vuln --file-patterns "pip:training.txt" --severity CRITICAL --exit-code 1 --skip-dirs .venv,.terraform .
 	@trivy config --severity HIGH,CRITICAL --exit-code 0 infra
 
 .PHONY: image-scan
@@ -59,11 +59,12 @@ azure-check: ## Check cloud workflow configuration and human confirmation withou
 
 azure: ## Run a manually selected cloud operation (ACTION=plan by default).
 	@bash scripts/azure.sh $(or $(ACTION),plan)
-check-infra: ## Validate Azure Terraform, cloud Helm charts, and shell syntax.
+check-infra: ## Validate both Azure Terraform roots and cloud shell syntax.
 	@terraform fmt -check -recursive infra
 	@terraform -chdir=infra/envs/azure init -backend=false -input=false -lockfile=readonly
 	@terraform -chdir=infra/envs/azure validate
-	@for chart in infra/charts/*; do helm lint "$$chart" || exit 1; done
+	@terraform -chdir=infra/envs/aks init -backend=false -input=false -lockfile=readonly
+	@terraform -chdir=infra/envs/aks validate
 	@for script in scripts/*.sh; do bash -n "$$script" || exit 1; done
 
 secret-scan: ## Scan Git history and staged changes for credentials (redacted output).
@@ -74,8 +75,6 @@ github-login: ## Authenticate GitHub CLI and Git without sharing credentials.
 	@gh auth login --hostname github.com --git-protocol https --web
 	@gh auth setup-git
 
-github-push: ## Push the verified current branch to origin without force.
-	@git push --set-upstream origin HEAD
 
 .PHONY: lock-training
 lock-training: ## Refresh the fully pinned training environment while preserving constraints.
@@ -86,9 +85,6 @@ publish-feast-data: ## Publish Parquet data to the MinIO feast-offline bucket.
 
 seed-data: ## Prepare deterministic UCI Taiwan feature snapshots.
 	@uv run --all-groups python -m ml.data.generate --out data --seed 42
-
-train: ## Train and evaluate a model locally.
-	@uv run --all-groups python -m ml.train --mode file --data-dir data --artifacts-dir artifacts
 
 azure-init: ## Initialize Terraform Azure provider (no credentials required).
 	@terraform -chdir=infra/envs/azure init -backend=false

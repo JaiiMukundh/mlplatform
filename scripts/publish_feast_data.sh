@@ -1,11 +1,11 @@
 #!/usr/bin/env bash
-# Upload generated Feast Parquet data to the cloud MinIO service via runner port-forward.
+# Upload generated Feast Parquet data to the cloud MinIO service.
 set -Eeuo pipefail
 [[ "${DEPLOY_TARGET:-}" == azure ]] || { echo "DEPLOY_TARGET=azure is required" >&2; exit 2; }
 
 export FEAST_MINIO_USER="$(kubectl -n data get secret minio-auth -o jsonpath='{.data.root-user}' | base64 -d)"
 export FEAST_MINIO_PASSWORD="$(kubectl -n data get secret minio-auth -o jsonpath='{.data.root-password}' | base64 -d)"
-export FEAST_MINIO_ENDPOINT="${MINIO_ENDPOINT:-http://localhost:9000}"
+export FEAST_MINIO_ENDPOINT="${MINIO_ENDPOINT:-http://minio.data.svc:9000}"
 
 python - <<'UPLOAD'
 import boto3

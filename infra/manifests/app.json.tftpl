@@ -1,0 +1,2055 @@
+{
+  "apps_v1__Deployment__observability__dashboard": {
+    "apiVersion": "apps/v1",
+    "kind": "Deployment",
+    "metadata": {
+      "name": "dashboard",
+      "namespace": "observability"
+    },
+    "spec": {
+      "replicas": 1,
+      "selector": {
+        "matchLabels": {
+          "app": "dashboard"
+        }
+      },
+      "template": {
+        "metadata": {
+          "labels": {
+            "app": "dashboard"
+          }
+        },
+        "spec": {
+          "containers": [
+            {
+              "env": [
+                {
+                  "name": "DEPLOY_TARGET",
+                  "value": "azure"
+                },
+                {
+                  "name": "PYTHONPATH",
+                  "value": "/app"
+                },
+                {
+                  "name": "CLUSTER_NAME",
+                  "value": "${CLUSTER_NAME}"
+                },
+                {
+                  "name": "PUBLIC_IP_NAME",
+                  "value": "${PUBLIC_IP_NAME}"
+                },
+                {
+                  "name": "AZURE_RESOURCE_GROUP",
+                  "value": "${RESOURCE_GROUP}"
+                },
+                {
+                  "name": "AZURE_ALLOWED_CIDR",
+                  "value": "${ALLOWED_CIDR}"
+                },
+                {
+                  "name": "IMAGE_TAG",
+                  "value": "${IMAGE_TAG}"
+                },
+                {
+                  "name": "TRAINING_IMAGE",
+                  "value": "${TRAINING_IMAGE}"
+                },
+                {
+                  "name": "MODEL_API_REPOSITORY",
+                  "value": "${MODEL_API_REPOSITORY}"
+                },
+                {
+                  "name": "MODEL_API_URL",
+                  "value": "http://model-api.serving.svc:8080"
+                },
+                {
+                  "name": "SMOKE_BASE_URL",
+                  "value": "http://model-api.serving.svc:8080"
+                },
+                {
+                  "name": "PROMETHEUS_URL",
+                  "value": "http://kube-prometheus-stack-prometheus.observability.svc:9090"
+                },
+                {
+                  "name": "MLFLOW_TRACKING_URI",
+                  "value": "http://mlflow.data.svc:5000"
+                },
+                {
+                  "name": "MINIO_ENDPOINT",
+                  "value": "http://minio.data.svc:9000"
+                },
+                {
+                  "name": "MLFLOW_S3_ENDPOINT_URL",
+                  "value": "http://minio.data.svc:9000"
+                },
+                {
+                  "name": "AWS_DEFAULT_REGION",
+                  "value": "us-east-1"
+                },
+                {
+                  "name": "PUBLIC_HOST",
+                  "value": "${PUBLIC_HOST}"
+                },
+                {
+                  "name": "DASHBOARD_PASSWORD",
+                  "valueFrom": {
+                    "secretKeyRef": {
+                      "key": "admin-password",
+                      "name": "grafana-admin"
+                    }
+                  }
+                },
+                {
+                  "name": "AWS_ACCESS_KEY_ID",
+                  "valueFrom": {
+                    "secretKeyRef": {
+                      "key": "access-key",
+                      "name": "dashboard-data"
+                    }
+                  }
+                },
+                {
+                  "name": "AWS_SECRET_ACCESS_KEY",
+                  "valueFrom": {
+                    "secretKeyRef": {
+                      "key": "secret-key",
+                      "name": "dashboard-data"
+                    }
+                  }
+                }
+              ],
+              "image": "${DASHBOARD_IMAGE}",
+              "livenessProbe": {
+                "httpGet": {
+                  "path": "/healthz",
+                  "port": "https",
+                  "scheme": "HTTPS"
+                },
+                "periodSeconds": 20
+              },
+              "name": "dashboard",
+              "ports": [
+                {
+                  "containerPort": 8050,
+                  "name": "https"
+                }
+              ],
+              "readinessProbe": {
+                "httpGet": {
+                  "path": "/healthz",
+                  "port": "https",
+                  "scheme": "HTTPS"
+                }
+              },
+              "resources": {
+                "limits": {
+                  "cpu": "1000m",
+                  "memory": "2Gi"
+                },
+                "requests": {
+                  "cpu": "100m",
+                  "memory": "512Mi"
+                }
+              },
+              "startupProbe": {
+                "failureThreshold": 60,
+                "httpGet": {
+                  "path": "/healthz",
+                  "port": "https",
+                  "scheme": "HTTPS"
+                },
+                "periodSeconds": 5
+              },
+              "volumeMounts": [
+                {
+                  "mountPath": "/app/tls",
+                  "name": "tls",
+                  "readOnly": true
+                },
+                {
+                  "mountPath": "/app/data",
+                  "name": "data"
+                },
+                {
+                  "mountPath": "/app/artifacts",
+                  "name": "artifacts"
+                }
+              ]
+            }
+          ],
+          "securityContext": {
+            "fsGroup": 10001,
+            "runAsNonRoot": true,
+            "runAsUser": 10001
+          },
+          "serviceAccountName": "dashboard",
+          "volumes": [
+            {
+              "name": "tls",
+              "secret": {
+                "secretName": "dashboard-tls"
+              }
+            },
+            {
+              "emptyDir": {},
+              "name": "data"
+            },
+            {
+              "emptyDir": {},
+              "name": "artifacts"
+            }
+          ]
+        }
+      }
+    }
+  },
+  "apps_v1__Deployment__observability__drift-monitor": {
+    "apiVersion": "apps/v1",
+    "kind": "Deployment",
+    "metadata": {
+      "labels": {
+        "app.kubernetes.io/name": "drift-monitor"
+      },
+      "name": "drift-monitor",
+      "namespace": "observability"
+    },
+    "spec": {
+      "replicas": 1,
+      "selector": {
+        "matchLabels": {
+          "app.kubernetes.io/name": "drift-monitor"
+        }
+      },
+      "template": {
+        "metadata": {
+          "labels": {
+            "app.kubernetes.io/name": "drift-monitor"
+          }
+        },
+        "spec": {
+          "containers": [
+            {
+              "env": [
+                {
+                  "name": "DATABASE_URL",
+                  "valueFrom": {
+                    "secretKeyRef": {
+                      "key": "database-url",
+                      "name": "drift-monitor-db"
+                    }
+                  }
+                },
+                {
+                  "name": "MLFLOW_TRACKING_URI",
+                  "value": "http://mlflow.data.svc:5000"
+                },
+                {
+                  "name": "DRIFT_INTERVAL_SECONDS",
+                  "value": "10"
+                },
+                {
+                  "name": "DRIFT_WINDOW_SIZE",
+                  "value": "1000"
+                },
+                {
+                  "name": "DRIFT_MIN_SAMPLES",
+                  "value": "100"
+                },
+                {
+                  "name": "DRIFT_PSI_THRESHOLD",
+                  "value": "0.25"
+                },
+                {
+                  "name": "DRIFT_KS_D_THRESHOLD",
+                  "value": "0.2"
+                },
+                {
+                  "name": "DRIFT_KS_P",
+                  "value": "0.01"
+                },
+                {
+                  "name": "DRIFT_MIN_FEATURES",
+                  "value": "2"
+                },
+                {
+                  "name": "DRIFT_CONSECUTIVE",
+                  "value": "2"
+                },
+                {
+                  "name": "RETRAIN_COOLDOWN_SECONDS",
+                  "value": "30"
+                },
+                {
+                  "name": "LOG_LEVEL",
+                  "value": "INFO"
+                }
+              ],
+              "image": "${ACR}/mlp-drift-monitor:${TAG}",
+              "imagePullPolicy": "Always",
+              "livenessProbe": {
+                "httpGet": {
+                  "path": "/healthz",
+                  "port": "http"
+                }
+              },
+              "name": "drift-monitor",
+              "ports": [
+                {
+                  "containerPort": 8080,
+                  "name": "http"
+                }
+              ],
+              "readinessProbe": {
+                "httpGet": {
+                  "path": "/healthz",
+                  "port": "http"
+                }
+              },
+              "resources": {
+                "limits": {
+                  "cpu": "1",
+                  "memory": "1Gi"
+                },
+                "requests": {
+                  "cpu": "200m",
+                  "memory": "512Mi"
+                }
+              },
+              "securityContext": {
+                "allowPrivilegeEscalation": false,
+                "capabilities": {
+                  "drop": [
+                    "ALL"
+                  ]
+                },
+                "readOnlyRootFilesystem": true,
+                "runAsNonRoot": true,
+                "runAsUser": 10001
+              },
+              "startupProbe": {
+                "failureThreshold": 12,
+                "httpGet": {
+                  "path": "/healthz",
+                  "port": "http"
+                },
+                "periodSeconds": 5
+              },
+              "volumeMounts": [
+                {
+                  "mountPath": "/tmp",
+                  "name": "tmp"
+                }
+              ]
+            }
+          ],
+          "securityContext": {
+            "fsGroup": 10001,
+            "runAsGroup": 10001,
+            "runAsNonRoot": true,
+            "runAsUser": 10001,
+            "seccompProfile": {
+              "type": "RuntimeDefault"
+            }
+          },
+          "serviceAccountName": "drift-monitor",
+          "volumes": [
+            {
+              "emptyDir": {},
+              "name": "tmp"
+            }
+          ]
+        }
+      }
+    }
+  },
+  "apps_v1__Deployment__observability__remediator": {
+    "apiVersion": "apps/v1",
+    "kind": "Deployment",
+    "metadata": {
+      "labels": {
+        "app.kubernetes.io/name": "remediator"
+      },
+      "name": "remediator",
+      "namespace": "observability"
+    },
+    "spec": {
+      "replicas": 1,
+      "selector": {
+        "matchLabels": {
+          "app.kubernetes.io/name": "remediator"
+        }
+      },
+      "template": {
+        "metadata": {
+          "labels": {
+            "app.kubernetes.io/name": "remediator"
+          }
+        },
+        "spec": {
+          "containers": [
+            {
+              "env": [
+                {
+                  "name": "GRAFANA_URL",
+                  "value": "http://kube-prometheus-stack-grafana.observability.svc:80"
+                },
+                {
+                  "name": "GRAFANA_USER",
+                  "valueFrom": {
+                    "secretKeyRef": {
+                      "key": "admin-user",
+                      "name": "grafana-admin"
+                    }
+                  }
+                },
+                {
+                  "name": "GRAFANA_PASSWORD",
+                  "valueFrom": {
+                    "secretKeyRef": {
+                      "key": "admin-password",
+                      "name": "grafana-admin"
+                    }
+                  }
+                }
+              ],
+              "image": "${ACR}/mlp-remediator:${TAG}",
+              "imagePullPolicy": "IfNotPresent",
+              "livenessProbe": {
+                "httpGet": {
+                  "path": "/healthz",
+                  "port": "http"
+                }
+              },
+              "name": "remediator",
+              "ports": [
+                {
+                  "containerPort": 8080,
+                  "name": "http"
+                }
+              ],
+              "readinessProbe": {
+                "httpGet": {
+                  "path": "/readyz",
+                  "port": "http"
+                }
+              },
+              "resources": {
+                "limits": {
+                  "cpu": "250m",
+                  "memory": "256Mi"
+                },
+                "requests": {
+                  "cpu": "50m",
+                  "memory": "128Mi"
+                }
+              },
+              "securityContext": {
+                "allowPrivilegeEscalation": false,
+                "capabilities": {
+                  "drop": [
+                    "ALL"
+                  ]
+                },
+                "readOnlyRootFilesystem": true,
+                "runAsNonRoot": true,
+                "runAsUser": 10001
+              },
+              "startupProbe": {
+                "failureThreshold": 12,
+                "httpGet": {
+                  "path": "/healthz",
+                  "port": "http"
+                },
+                "periodSeconds": 5
+              },
+              "volumeMounts": [
+                {
+                  "mountPath": "/tmp",
+                  "name": "tmp"
+                }
+              ]
+            }
+          ],
+          "securityContext": {
+            "fsGroup": 10001,
+            "runAsGroup": 10001,
+            "runAsNonRoot": true,
+            "runAsUser": 10001,
+            "seccompProfile": {
+              "type": "RuntimeDefault"
+            }
+          },
+          "serviceAccountName": "remediator",
+          "volumes": [
+            {
+              "emptyDir": {},
+              "name": "tmp"
+            }
+          ]
+        }
+      }
+    }
+  },
+  "apps_v1__Deployment__serving__model-api": {
+    "apiVersion": "apps/v1",
+    "kind": "Deployment",
+    "metadata": {
+      "labels": {
+        "app.kubernetes.io/instance": "model-api",
+        "app.kubernetes.io/name": "model-api",
+        "app.kubernetes.io/version": "${TAG}"
+      },
+      "name": "model-api",
+      "namespace": "serving"
+    },
+    "spec": {
+      "replicas": 2,
+      "selector": {
+        "matchLabels": {
+          "app.kubernetes.io/instance": "model-api",
+          "app.kubernetes.io/name": "model-api"
+        }
+      },
+      "strategy": {
+        "rollingUpdate": {
+          "maxSurge": 1,
+          "maxUnavailable": 0
+        },
+        "type": "RollingUpdate"
+      },
+      "template": {
+        "metadata": {
+          "labels": {
+            "app.kubernetes.io/instance": "model-api",
+            "app.kubernetes.io/name": "model-api"
+          }
+        },
+        "spec": {
+          "affinity": {
+            "podAntiAffinity": {
+              "preferredDuringSchedulingIgnoredDuringExecution": [
+                {
+                  "podAffinityTerm": {
+                    "labelSelector": {
+                      "matchExpressions": [
+                        {
+                          "key": "app.kubernetes.io/name",
+                          "operator": "In",
+                          "values": [
+                            "model-api"
+                          ]
+                        }
+                      ]
+                    },
+                    "topologyKey": "kubernetes.io/hostname"
+                  },
+                  "weight": 100
+                }
+              ]
+            }
+          },
+          "containers": [
+            {
+              "env": [
+                {
+                  "name": "MODEL_NAME",
+                  "value": "loan-default"
+                },
+                {
+                  "name": "MODEL_VERSION",
+                  "value": "${VERSION}"
+                },
+                {
+                  "name": "MODEL_SOURCE",
+                  "value": "mlflow"
+                },
+                {
+                  "name": "FEATURE_SOURCE",
+                  "value": "feast"
+                },
+                {
+                  "name": "FEATURE_SERVICE",
+                  "value": "loan_default_v1"
+                },
+                {
+                  "name": "MLFLOW_TRACKING_URI",
+                  "value": "http://mlflow.data.svc:5000"
+                },
+                {
+                  "name": "REDIS_URL",
+                  "value": "redis://redis.data.svc:6379/0"
+                },
+                {
+                  "name": "LOG_LEVEL",
+                  "value": "INFO"
+                },
+                {
+                  "name": "ENABLE_CHAOS",
+                  "value": "true"
+                },
+                {
+                  "name": "DATABASE_URL",
+                  "valueFrom": {
+                    "secretKeyRef": {
+                      "key": "database-url",
+                      "name": "postgres-app"
+                    }
+                  }
+                }
+              ],
+              "image": "${ACR}/mlp-model-api:${TAG}",
+              "imagePullPolicy": "Always",
+              "livenessProbe": {
+                "httpGet": {
+                  "path": "/healthz",
+                  "port": "http"
+                }
+              },
+              "name": "api",
+              "ports": [
+                {
+                  "containerPort": 8080,
+                  "name": "http"
+                }
+              ],
+              "readinessProbe": {
+                "httpGet": {
+                  "path": "/readyz",
+                  "port": "http"
+                }
+              },
+              "resources": {
+                "limits": {
+                  "cpu": "1",
+                  "memory": "1Gi"
+                },
+                "requests": {
+                  "cpu": "250m",
+                  "memory": "512Mi"
+                }
+              },
+              "securityContext": {
+                "allowPrivilegeEscalation": false,
+                "capabilities": {
+                  "drop": [
+                    "ALL"
+                  ]
+                },
+                "readOnlyRootFilesystem": true,
+                "runAsNonRoot": true,
+                "runAsUser": 10001
+              },
+              "startupProbe": {
+                "failureThreshold": 30,
+                "httpGet": {
+                  "path": "/healthz",
+                  "port": "http"
+                },
+                "periodSeconds": 2
+              },
+              "volumeMounts": [
+                {
+                  "mountPath": "/tmp",
+                  "name": "tmp"
+                }
+              ]
+            }
+          ],
+          "securityContext": {
+            "fsGroup": 10001,
+            "runAsGroup": 10001,
+            "runAsNonRoot": true,
+            "runAsUser": 10001,
+            "seccompProfile": {
+              "type": "RuntimeDefault"
+            }
+          },
+          "topologySpreadConstraints": [
+            {
+              "labelSelector": {
+                "matchLabels": {
+                  "app.kubernetes.io/instance": "model-api",
+                  "app.kubernetes.io/name": "model-api"
+                }
+              },
+              "maxSkew": 1,
+              "topologyKey": "kubernetes.io/hostname",
+              "whenUnsatisfiable": "ScheduleAnyway"
+            }
+          ],
+          "volumes": [
+            {
+              "emptyDir": {},
+              "name": "tmp"
+            }
+          ]
+        }
+      }
+    }
+  },
+  "apps_v1__Deployment__staging__model-api-staging": {
+    "apiVersion": "apps/v1",
+    "kind": "Deployment",
+    "metadata": {
+      "labels": {
+        "app.kubernetes.io/instance": "model-api-staging",
+        "app.kubernetes.io/name": "model-api",
+        "app.kubernetes.io/version": "${TAG}"
+      },
+      "name": "model-api-staging",
+      "namespace": "staging"
+    },
+    "spec": {
+      "replicas": 2,
+      "selector": {
+        "matchLabels": {
+          "app.kubernetes.io/instance": "model-api-staging",
+          "app.kubernetes.io/name": "model-api"
+        }
+      },
+      "strategy": {
+        "rollingUpdate": {
+          "maxSurge": 1,
+          "maxUnavailable": 0
+        },
+        "type": "RollingUpdate"
+      },
+      "template": {
+        "metadata": {
+          "labels": {
+            "app.kubernetes.io/instance": "model-api-staging",
+            "app.kubernetes.io/name": "model-api"
+          }
+        },
+        "spec": {
+          "affinity": {
+            "podAntiAffinity": {
+              "preferredDuringSchedulingIgnoredDuringExecution": [
+                {
+                  "podAffinityTerm": {
+                    "labelSelector": {
+                      "matchExpressions": [
+                        {
+                          "key": "app.kubernetes.io/name",
+                          "operator": "In",
+                          "values": [
+                            "model-api"
+                          ]
+                        }
+                      ]
+                    },
+                    "topologyKey": "kubernetes.io/hostname"
+                  },
+                  "weight": 100
+                }
+              ]
+            }
+          },
+          "containers": [
+            {
+              "env": [
+                {
+                  "name": "MODEL_NAME",
+                  "value": "loan-default"
+                },
+                {
+                  "name": "MODEL_VERSION",
+                  "value": "${VERSION}"
+                },
+                {
+                  "name": "MODEL_SOURCE",
+                  "value": "mlflow"
+                },
+                {
+                  "name": "FEATURE_SOURCE",
+                  "value": "feast"
+                },
+                {
+                  "name": "FEATURE_SERVICE",
+                  "value": "loan_default_v1"
+                },
+                {
+                  "name": "MLFLOW_TRACKING_URI",
+                  "value": "http://mlflow.data.svc:5000"
+                },
+                {
+                  "name": "REDIS_URL",
+                  "value": "redis://redis.data.svc:6379/0"
+                },
+                {
+                  "name": "LOG_LEVEL",
+                  "value": "INFO"
+                },
+                {
+                  "name": "ENABLE_CHAOS",
+                  "value": "true"
+                },
+                {
+                  "name": "DATABASE_URL",
+                  "valueFrom": {
+                    "secretKeyRef": {
+                      "key": "database-url",
+                      "name": "postgres-app"
+                    }
+                  }
+                }
+              ],
+              "image": "${ACR}/mlp-model-api:${TAG}",
+              "imagePullPolicy": "Always",
+              "livenessProbe": {
+                "httpGet": {
+                  "path": "/healthz",
+                  "port": "http"
+                }
+              },
+              "name": "api",
+              "ports": [
+                {
+                  "containerPort": 8080,
+                  "name": "http"
+                }
+              ],
+              "readinessProbe": {
+                "httpGet": {
+                  "path": "/readyz",
+                  "port": "http"
+                }
+              },
+              "resources": {
+                "limits": {
+                  "cpu": "1",
+                  "memory": "1Gi"
+                },
+                "requests": {
+                  "cpu": "250m",
+                  "memory": "512Mi"
+                }
+              },
+              "securityContext": {
+                "allowPrivilegeEscalation": false,
+                "capabilities": {
+                  "drop": [
+                    "ALL"
+                  ]
+                },
+                "readOnlyRootFilesystem": true,
+                "runAsNonRoot": true,
+                "runAsUser": 10001
+              },
+              "startupProbe": {
+                "failureThreshold": 30,
+                "httpGet": {
+                  "path": "/healthz",
+                  "port": "http"
+                },
+                "periodSeconds": 2
+              },
+              "volumeMounts": [
+                {
+                  "mountPath": "/tmp",
+                  "name": "tmp"
+                }
+              ]
+            }
+          ],
+          "securityContext": {
+            "fsGroup": 10001,
+            "runAsGroup": 10001,
+            "runAsNonRoot": true,
+            "runAsUser": 10001,
+            "seccompProfile": {
+              "type": "RuntimeDefault"
+            }
+          },
+          "topologySpreadConstraints": [
+            {
+              "labelSelector": {
+                "matchLabels": {
+                  "app.kubernetes.io/instance": "model-api-staging",
+                  "app.kubernetes.io/name": "model-api"
+                }
+              },
+              "maxSkew": 1,
+              "topologyKey": "kubernetes.io/hostname",
+              "whenUnsatisfiable": "ScheduleAnyway"
+            }
+          ],
+          "volumes": [
+            {
+              "emptyDir": {},
+              "name": "tmp"
+            }
+          ]
+        }
+      }
+    }
+  },
+  "autoscaling_v2__HorizontalPodAutoscaler__serving__model-api": {
+    "apiVersion": "autoscaling/v2",
+    "kind": "HorizontalPodAutoscaler",
+    "metadata": {
+      "labels": {
+        "app.kubernetes.io/instance": "model-api",
+        "app.kubernetes.io/name": "model-api",
+        "app.kubernetes.io/version": "${TAG}"
+      },
+      "name": "model-api",
+      "namespace": "serving"
+    },
+    "spec": {
+      "behavior": {
+        "scaleDown": {
+          "stabilizationWindowSeconds": 60
+        }
+      },
+      "maxReplicas": 6,
+      "metrics": [
+        {
+          "resource": {
+            "name": "cpu",
+            "target": {
+              "averageUtilization": 60,
+              "type": "Utilization"
+            }
+          },
+          "type": "Resource"
+        }
+      ],
+      "minReplicas": 2,
+      "scaleTargetRef": {
+        "apiVersion": "apps/v1",
+        "kind": "Deployment",
+        "name": "model-api"
+      }
+    }
+  },
+  "autoscaling_v2__HorizontalPodAutoscaler__staging__model-api-staging": {
+    "apiVersion": "autoscaling/v2",
+    "kind": "HorizontalPodAutoscaler",
+    "metadata": {
+      "labels": {
+        "app.kubernetes.io/instance": "model-api-staging",
+        "app.kubernetes.io/name": "model-api",
+        "app.kubernetes.io/version": "${TAG}"
+      },
+      "name": "model-api-staging",
+      "namespace": "staging"
+    },
+    "spec": {
+      "behavior": {
+        "scaleDown": {
+          "stabilizationWindowSeconds": 60
+        }
+      },
+      "maxReplicas": 6,
+      "metrics": [
+        {
+          "resource": {
+            "name": "cpu",
+            "target": {
+              "averageUtilization": 60,
+              "type": "Utilization"
+            }
+          },
+          "type": "Resource"
+        }
+      ],
+      "minReplicas": 2,
+      "scaleTargetRef": {
+        "apiVersion": "apps/v1",
+        "kind": "Deployment",
+        "name": "model-api-staging"
+      }
+    }
+  },
+  "monitoring.coreos.com_v1__ServiceMonitor__observability__drift-monitor": {
+    "apiVersion": "monitoring.coreos.com/v1",
+    "kind": "ServiceMonitor",
+    "metadata": {
+      "labels": {
+        "app.kubernetes.io/name": "drift-monitor"
+      },
+      "name": "drift-monitor",
+      "namespace": "observability"
+    },
+    "spec": {
+      "endpoints": [
+        {
+          "interval": "15s",
+          "path": "/metrics",
+          "port": "http"
+        }
+      ],
+      "jobLabel": "app.kubernetes.io/name",
+      "selector": {
+        "matchLabels": {
+          "app.kubernetes.io/name": "drift-monitor"
+        }
+      }
+    }
+  },
+  "monitoring.coreos.com_v1__ServiceMonitor__serving__model-api": {
+    "apiVersion": "monitoring.coreos.com/v1",
+    "kind": "ServiceMonitor",
+    "metadata": {
+      "labels": {
+        "app.kubernetes.io/instance": "model-api",
+        "app.kubernetes.io/name": "model-api",
+        "app.kubernetes.io/version": "${TAG}"
+      },
+      "name": "model-api",
+      "namespace": "serving"
+    },
+    "spec": {
+      "endpoints": [
+        {
+          "interval": "15s",
+          "path": "/metrics",
+          "port": "http"
+        }
+      ],
+      "jobLabel": "app.kubernetes.io/name",
+      "selector": {
+        "matchLabels": {
+          "app.kubernetes.io/instance": "model-api",
+          "app.kubernetes.io/name": "model-api"
+        }
+      }
+    }
+  },
+  "monitoring.coreos.com_v1__ServiceMonitor__staging__model-api-staging": {
+    "apiVersion": "monitoring.coreos.com/v1",
+    "kind": "ServiceMonitor",
+    "metadata": {
+      "labels": {
+        "app.kubernetes.io/instance": "model-api-staging",
+        "app.kubernetes.io/name": "model-api",
+        "app.kubernetes.io/version": "${TAG}"
+      },
+      "name": "model-api-staging",
+      "namespace": "staging"
+    },
+    "spec": {
+      "endpoints": [
+        {
+          "interval": "15s",
+          "path": "/metrics",
+          "port": "http"
+        }
+      ],
+      "jobLabel": "app.kubernetes.io/name",
+      "selector": {
+        "matchLabels": {
+          "app.kubernetes.io/instance": "model-api-staging",
+          "app.kubernetes.io/name": "model-api"
+        }
+      }
+    }
+  },
+  "networking.k8s.io_v1__NetworkPolicy__serving__model-api": {
+    "apiVersion": "networking.k8s.io/v1",
+    "kind": "NetworkPolicy",
+    "metadata": {
+      "labels": {
+        "app.kubernetes.io/instance": "model-api",
+        "app.kubernetes.io/name": "model-api",
+        "app.kubernetes.io/version": "${TAG}"
+      },
+      "name": "model-api",
+      "namespace": "serving"
+    },
+    "spec": {
+      "egress": [
+        {
+          "ports": [
+            {
+              "port": 53,
+              "protocol": "UDP"
+            },
+            {
+              "port": 53,
+              "protocol": "TCP"
+            }
+          ],
+          "to": [
+            {
+              "namespaceSelector": {}
+            }
+          ]
+        },
+        {
+          "ports": [
+            {
+              "port": 6379,
+              "protocol": "TCP"
+            },
+            {
+              "port": 5432,
+              "protocol": "TCP"
+            },
+            {
+              "port": 5000,
+              "protocol": "TCP"
+            },
+            {
+              "port": 9000,
+              "protocol": "TCP"
+            }
+          ],
+          "to": [
+            {
+              "namespaceSelector": {
+                "matchLabels": {
+                  "kubernetes.io/metadata.name": "data"
+                }
+              }
+            }
+          ]
+        }
+      ],
+      "ingress": [
+        {
+          "ports": [
+            {
+              "port": 8080,
+              "protocol": "TCP"
+            }
+          ]
+        }
+      ],
+      "podSelector": {
+        "matchLabels": {
+          "app.kubernetes.io/instance": "model-api",
+          "app.kubernetes.io/name": "model-api"
+        }
+      },
+      "policyTypes": [
+        "Ingress",
+        "Egress"
+      ]
+    }
+  },
+  "networking.k8s.io_v1__NetworkPolicy__serving__model-api-default-deny": {
+    "apiVersion": "networking.k8s.io/v1",
+    "kind": "NetworkPolicy",
+    "metadata": {
+      "labels": {
+        "app.kubernetes.io/instance": "model-api",
+        "app.kubernetes.io/name": "model-api",
+        "app.kubernetes.io/version": "${TAG}"
+      },
+      "name": "model-api-default-deny",
+      "namespace": "serving"
+    },
+    "spec": {
+      "podSelector": {},
+      "policyTypes": [
+        "Ingress",
+        "Egress"
+      ]
+    }
+  },
+  "networking.k8s.io_v1__NetworkPolicy__staging__model-api-staging": {
+    "apiVersion": "networking.k8s.io/v1",
+    "kind": "NetworkPolicy",
+    "metadata": {
+      "labels": {
+        "app.kubernetes.io/instance": "model-api-staging",
+        "app.kubernetes.io/name": "model-api",
+        "app.kubernetes.io/version": "${TAG}"
+      },
+      "name": "model-api-staging",
+      "namespace": "staging"
+    },
+    "spec": {
+      "egress": [
+        {
+          "ports": [
+            {
+              "port": 53,
+              "protocol": "UDP"
+            },
+            {
+              "port": 53,
+              "protocol": "TCP"
+            }
+          ],
+          "to": [
+            {
+              "namespaceSelector": {}
+            }
+          ]
+        },
+        {
+          "ports": [
+            {
+              "port": 6379,
+              "protocol": "TCP"
+            },
+            {
+              "port": 5432,
+              "protocol": "TCP"
+            },
+            {
+              "port": 5000,
+              "protocol": "TCP"
+            },
+            {
+              "port": 9000,
+              "protocol": "TCP"
+            }
+          ],
+          "to": [
+            {
+              "namespaceSelector": {
+                "matchLabels": {
+                  "kubernetes.io/metadata.name": "data"
+                }
+              }
+            }
+          ]
+        }
+      ],
+      "ingress": [
+        {
+          "ports": [
+            {
+              "port": 8080,
+              "protocol": "TCP"
+            }
+          ]
+        }
+      ],
+      "podSelector": {
+        "matchLabels": {
+          "app.kubernetes.io/instance": "model-api-staging",
+          "app.kubernetes.io/name": "model-api"
+        }
+      },
+      "policyTypes": [
+        "Ingress",
+        "Egress"
+      ]
+    }
+  },
+  "networking.k8s.io_v1__NetworkPolicy__staging__model-api-staging-default-deny": {
+    "apiVersion": "networking.k8s.io/v1",
+    "kind": "NetworkPolicy",
+    "metadata": {
+      "labels": {
+        "app.kubernetes.io/instance": "model-api-staging",
+        "app.kubernetes.io/name": "model-api",
+        "app.kubernetes.io/version": "${TAG}"
+      },
+      "name": "model-api-staging-default-deny",
+      "namespace": "staging"
+    },
+    "spec": {
+      "podSelector": {},
+      "policyTypes": [
+        "Ingress",
+        "Egress"
+      ]
+    }
+  },
+  "policy_v1__PodDisruptionBudget__serving__model-api": {
+    "apiVersion": "policy/v1",
+    "kind": "PodDisruptionBudget",
+    "metadata": {
+      "labels": {
+        "app.kubernetes.io/instance": "model-api",
+        "app.kubernetes.io/name": "model-api",
+        "app.kubernetes.io/version": "${TAG}"
+      },
+      "name": "model-api",
+      "namespace": "serving"
+    },
+    "spec": {
+      "minAvailable": 1,
+      "selector": {
+        "matchLabels": {
+          "app.kubernetes.io/instance": "model-api",
+          "app.kubernetes.io/name": "model-api"
+        }
+      }
+    }
+  },
+  "policy_v1__PodDisruptionBudget__staging__model-api-staging": {
+    "apiVersion": "policy/v1",
+    "kind": "PodDisruptionBudget",
+    "metadata": {
+      "labels": {
+        "app.kubernetes.io/instance": "model-api-staging",
+        "app.kubernetes.io/name": "model-api",
+        "app.kubernetes.io/version": "${TAG}"
+      },
+      "name": "model-api-staging",
+      "namespace": "staging"
+    },
+    "spec": {
+      "minAvailable": 1,
+      "selector": {
+        "matchLabels": {
+          "app.kubernetes.io/instance": "model-api-staging",
+          "app.kubernetes.io/name": "model-api"
+        }
+      }
+    }
+  },
+  "rbac.authorization.k8s.io_v1__ClusterRoleBinding__data__retrain-namespaces": {
+    "apiVersion": "rbac.authorization.k8s.io/v1",
+    "kind": "ClusterRoleBinding",
+    "metadata": {
+      "name": "retrain-namespaces"
+    },
+    "roleRef": {
+      "apiGroup": "rbac.authorization.k8s.io",
+      "kind": "ClusterRole",
+      "name": "retrain-namespaces"
+    },
+    "subjects": [
+      {
+        "kind": "ServiceAccount",
+        "name": "retrain",
+        "namespace": "data"
+      }
+    ]
+  },
+  "rbac.authorization.k8s.io_v1__ClusterRoleBinding__observability__dashboard-operations": {
+    "apiVersion": "rbac.authorization.k8s.io/v1",
+    "kind": "ClusterRoleBinding",
+    "metadata": {
+      "name": "dashboard-operations"
+    },
+    "roleRef": {
+      "apiGroup": "rbac.authorization.k8s.io",
+      "kind": "ClusterRole",
+      "name": "dashboard-operations"
+    },
+    "subjects": [
+      {
+        "kind": "ServiceAccount",
+        "name": "dashboard",
+        "namespace": "observability"
+      }
+    ]
+  },
+  "rbac.authorization.k8s.io_v1__ClusterRole__data__retrain-namespaces": {
+    "apiVersion": "rbac.authorization.k8s.io/v1",
+    "kind": "ClusterRole",
+    "metadata": {
+      "name": "retrain-namespaces"
+    },
+    "rules": [
+      {
+        "apiGroups": [
+          ""
+        ],
+        "resources": [
+          "namespaces"
+        ],
+        "verbs": [
+          "get",
+          "list",
+          "create"
+        ]
+      }
+    ]
+  },
+  "rbac.authorization.k8s.io_v1__ClusterRole__observability__dashboard-operations": {
+    "apiVersion": "rbac.authorization.k8s.io/v1",
+    "kind": "ClusterRole",
+    "metadata": {
+      "name": "dashboard-operations"
+    },
+    "rules": [
+      {
+        "apiGroups": [
+          "",
+          "apps",
+          "batch",
+          "autoscaling",
+          "policy",
+          "monitoring.coreos.com",
+          "networking.k8s.io"
+        ],
+        "resources": [
+          "nodes",
+          "namespaces",
+          "pods",
+          "pods/log",
+          "pods/exec",
+          "services",
+          "secrets",
+          "configmaps",
+          "deployments",
+          "replicasets",
+          "jobs",
+          "horizontalpodautoscalers",
+          "poddisruptionbudgets",
+          "servicemonitors",
+          "networkpolicies"
+        ],
+        "verbs": [
+          "get",
+          "list",
+          "watch",
+          "create",
+          "update",
+          "patch",
+          "delete"
+        ]
+      }
+    ]
+  },
+  "rbac.authorization.k8s.io_v1__RoleBinding__data__drift-monitor": {
+    "apiVersion": "rbac.authorization.k8s.io/v1",
+    "kind": "RoleBinding",
+    "metadata": {
+      "name": "drift-monitor",
+      "namespace": "data"
+    },
+    "roleRef": {
+      "apiGroup": "rbac.authorization.k8s.io",
+      "kind": "Role",
+      "name": "drift-monitor"
+    },
+    "subjects": [
+      {
+        "kind": "ServiceAccount",
+        "name": "drift-monitor",
+        "namespace": "observability"
+      }
+    ]
+  },
+  "rbac.authorization.k8s.io_v1__RoleBinding__data__retrain-jobs": {
+    "apiVersion": "rbac.authorization.k8s.io/v1",
+    "kind": "RoleBinding",
+    "metadata": {
+      "name": "retrain-jobs",
+      "namespace": "data"
+    },
+    "roleRef": {
+      "apiGroup": "rbac.authorization.k8s.io",
+      "kind": "Role",
+      "name": "retrain-jobs"
+    },
+    "subjects": [
+      {
+        "kind": "ServiceAccount",
+        "name": "retrain",
+        "namespace": "data"
+      }
+    ]
+  },
+  "rbac.authorization.k8s.io_v1__RoleBinding__serving__remediator": {
+    "apiVersion": "rbac.authorization.k8s.io/v1",
+    "kind": "RoleBinding",
+    "metadata": {
+      "name": "remediator",
+      "namespace": "serving"
+    },
+    "roleRef": {
+      "apiGroup": "rbac.authorization.k8s.io",
+      "kind": "Role",
+      "name": "remediator"
+    },
+    "subjects": [
+      {
+        "kind": "ServiceAccount",
+        "name": "remediator",
+        "namespace": "observability"
+      }
+    ]
+  },
+  "rbac.authorization.k8s.io_v1__RoleBinding__serving__retrain-release": {
+    "apiVersion": "rbac.authorization.k8s.io/v1",
+    "kind": "RoleBinding",
+    "metadata": {
+      "name": "retrain-release",
+      "namespace": "serving"
+    },
+    "roleRef": {
+      "apiGroup": "rbac.authorization.k8s.io",
+      "kind": "Role",
+      "name": "retrain-release"
+    },
+    "subjects": [
+      {
+        "kind": "ServiceAccount",
+        "name": "retrain",
+        "namespace": "data"
+      }
+    ]
+  },
+  "rbac.authorization.k8s.io_v1__RoleBinding__staging__retrain-release": {
+    "apiVersion": "rbac.authorization.k8s.io/v1",
+    "kind": "RoleBinding",
+    "metadata": {
+      "name": "retrain-release",
+      "namespace": "staging"
+    },
+    "roleRef": {
+      "apiGroup": "rbac.authorization.k8s.io",
+      "kind": "Role",
+      "name": "retrain-release"
+    },
+    "subjects": [
+      {
+        "kind": "ServiceAccount",
+        "name": "retrain",
+        "namespace": "data"
+      }
+    ]
+  },
+  "rbac.authorization.k8s.io_v1__Role__data__drift-monitor": {
+    "apiVersion": "rbac.authorization.k8s.io/v1",
+    "kind": "Role",
+    "metadata": {
+      "name": "drift-monitor",
+      "namespace": "data"
+    },
+    "rules": [
+      {
+        "apiGroups": [
+          "batch"
+        ],
+        "resources": [
+          "jobs"
+        ],
+        "verbs": [
+          "create",
+          "get",
+          "list"
+        ]
+      },
+      {
+        "apiGroups": [
+          ""
+        ],
+        "resources": [
+          "configmaps"
+        ],
+        "verbs": [
+          "get"
+        ]
+      }
+    ]
+  },
+  "rbac.authorization.k8s.io_v1__Role__data__retrain-jobs": {
+    "apiVersion": "rbac.authorization.k8s.io/v1",
+    "kind": "Role",
+    "metadata": {
+      "name": "retrain-jobs",
+      "namespace": "data"
+    },
+    "rules": [
+      {
+        "apiGroups": [
+          "batch"
+        ],
+        "resources": [
+          "jobs"
+        ],
+        "verbs": [
+          "create",
+          "get",
+          "list",
+          "delete"
+        ]
+      },
+      {
+        "apiGroups": [
+          ""
+        ],
+        "resources": [
+          "pods",
+          "pods/log"
+        ],
+        "verbs": [
+          "get",
+          "list"
+        ]
+      },
+      {
+        "apiGroups": [
+          ""
+        ],
+        "resources": [
+          "secrets",
+          "configmaps"
+        ],
+        "verbs": [
+          "get",
+          "list"
+        ]
+      }
+    ]
+  },
+  "rbac.authorization.k8s.io_v1__Role__serving__remediator": {
+    "apiVersion": "rbac.authorization.k8s.io/v1",
+    "kind": "Role",
+    "metadata": {
+      "name": "remediator",
+      "namespace": "serving"
+    },
+    "rules": [
+      {
+        "apiGroups": [
+          "apps"
+        ],
+        "resources": [
+          "deployments"
+        ],
+        "verbs": [
+          "get",
+          "list",
+          "patch"
+        ]
+      },
+      {
+        "apiGroups": [
+          "autoscaling"
+        ],
+        "resources": [
+          "horizontalpodautoscalers"
+        ],
+        "verbs": [
+          "get",
+          "list",
+          "patch"
+        ]
+      }
+    ]
+  },
+  "rbac.authorization.k8s.io_v1__Role__serving__retrain-release": {
+    "apiVersion": "rbac.authorization.k8s.io/v1",
+    "kind": "Role",
+    "metadata": {
+      "name": "retrain-release",
+      "namespace": "serving"
+    },
+    "rules": [
+      {
+        "apiGroups": [
+          "apps"
+        ],
+        "resources": [
+          "deployments",
+          "replicasets"
+        ],
+        "verbs": [
+          "get",
+          "list",
+          "create",
+          "update",
+          "patch",
+          "delete"
+        ]
+      },
+      {
+        "apiGroups": [
+          ""
+        ],
+        "resources": [
+          "pods",
+          "pods/log",
+          "services",
+          "configmaps",
+          "namespaces"
+        ],
+        "verbs": [
+          "get",
+          "list",
+          "create",
+          "update",
+          "patch"
+        ]
+      },
+      {
+        "apiGroups": [
+          ""
+        ],
+        "resources": [
+          "secrets"
+        ],
+        "verbs": [
+          "get",
+          "list",
+          "create",
+          "update",
+          "patch",
+          "delete"
+        ]
+      },
+      {
+        "apiGroups": [
+          "autoscaling"
+        ],
+        "resources": [
+          "horizontalpodautoscalers"
+        ],
+        "verbs": [
+          "get",
+          "list",
+          "create",
+          "update",
+          "patch"
+        ]
+      },
+      {
+        "apiGroups": [
+          "policy"
+        ],
+        "resources": [
+          "poddisruptionbudgets"
+        ],
+        "verbs": [
+          "get",
+          "list",
+          "create",
+          "update",
+          "patch"
+        ]
+      },
+      {
+        "apiGroups": [
+          "monitoring.coreos.com"
+        ],
+        "resources": [
+          "servicemonitors"
+        ],
+        "verbs": [
+          "get",
+          "list",
+          "create",
+          "update",
+          "patch"
+        ]
+      },
+      {
+        "apiGroups": [
+          "networking.k8s.io"
+        ],
+        "resources": [
+          "networkpolicies"
+        ],
+        "verbs": [
+          "get",
+          "list",
+          "create",
+          "update",
+          "patch",
+          "delete"
+        ]
+      }
+    ]
+  },
+  "rbac.authorization.k8s.io_v1__Role__staging__retrain-release": {
+    "apiVersion": "rbac.authorization.k8s.io/v1",
+    "kind": "Role",
+    "metadata": {
+      "name": "retrain-release",
+      "namespace": "staging"
+    },
+    "rules": [
+      {
+        "apiGroups": [
+          "apps"
+        ],
+        "resources": [
+          "deployments",
+          "replicasets"
+        ],
+        "verbs": [
+          "get",
+          "list",
+          "create",
+          "update",
+          "patch",
+          "delete"
+        ]
+      },
+      {
+        "apiGroups": [
+          ""
+        ],
+        "resources": [
+          "pods",
+          "pods/log",
+          "services",
+          "configmaps",
+          "namespaces"
+        ],
+        "verbs": [
+          "get",
+          "list",
+          "create",
+          "update",
+          "patch"
+        ]
+      },
+      {
+        "apiGroups": [
+          ""
+        ],
+        "resources": [
+          "secrets"
+        ],
+        "verbs": [
+          "get",
+          "list",
+          "create",
+          "update",
+          "patch",
+          "delete"
+        ]
+      },
+      {
+        "apiGroups": [
+          "autoscaling"
+        ],
+        "resources": [
+          "horizontalpodautoscalers"
+        ],
+        "verbs": [
+          "get",
+          "list",
+          "create",
+          "update",
+          "patch"
+        ]
+      },
+      {
+        "apiGroups": [
+          "policy"
+        ],
+        "resources": [
+          "poddisruptionbudgets"
+        ],
+        "verbs": [
+          "get",
+          "list",
+          "create",
+          "update",
+          "patch"
+        ]
+      },
+      {
+        "apiGroups": [
+          "monitoring.coreos.com"
+        ],
+        "resources": [
+          "servicemonitors"
+        ],
+        "verbs": [
+          "get",
+          "list",
+          "create",
+          "update",
+          "patch"
+        ]
+      },
+      {
+        "apiGroups": [
+          "networking.k8s.io"
+        ],
+        "resources": [
+          "networkpolicies"
+        ],
+        "verbs": [
+          "get",
+          "list",
+          "create",
+          "update",
+          "patch",
+          "delete"
+        ]
+      }
+    ]
+  },
+  "v1__ConfigMap__data__retrain-job-template": {
+    "apiVersion": "v1",
+    "data": {
+      "pod-spec.json": "{\n  \"restartPolicy\": \"OnFailure\",\n  \"serviceAccountName\": \"retrain\",\n  \"containers\": [\n    {\n      \"name\": \"retrain\",\n      \"image\": \"${ACR}/mlp-retrain:${TAG}\",\n      \"imagePullPolicy\": \"Always\",\n      \"resources\": {\"limits\":{\"cpu\":\"1900m\",\"memory\":\"3Gi\"},\"requests\":{\"cpu\":\"500m\",\"memory\":\"1Gi\"}},\n      \"env\": [\n        {\"name\": \"MLFLOW_TRACKING_URI\", \"value\": \"http://mlflow.data.svc:5000\" },\n        {\"name\": \"FEAST_S3_ENDPOINT_URL\", \"value\": \"http://minio.data.svc:9000\" },\n        {\"name\": \"TRIGGER\", \"value\": \"drift\"},\n        {\"name\": \"TRIGGER_MODE\", \"value\": \"in_cluster\" },\n        {\"name\": \"PUBLIC_IP_NAME\", \"value\": \"${PUBLIC_IP_NAME}\" },\n        {\"name\": \"AZURE_RESOURCE_GROUP\", \"value\": \"${RESOURCE_GROUP}\" },\n        {\"name\": \"AZURE_ALLOWED_CIDR\", \"value\": \"${ALLOWED_CIDR}\" },\n        {\"name\": \"DEPLOY_TARGET\", \"value\": \"azure\" },\n        {\"name\": \"MODEL_API_REPOSITORY\", \"value\": \"${ACR}/mlp-model-api\" },\n        {\"name\": \"TRAINING_IMAGE\", \"value\": \"${ACR}/mlp-training:${TAG}\" },\n        {\"name\": \"IMAGE_TAG\", \"value\": \"${TAG}\" },\n        {\"name\": \"STAGING_URL\", \"value\": \"http://model-api-staging.staging.svc:8080\" },\n        {\"name\": \"PROD_URL\", \"value\": \"http://model-api.serving.svc:8080\" },\n        {\"name\": \"STAGING_SMOKE_URL\", \"value\": \"http://model-api-staging.staging.svc:8080\" },\n        {\"name\": \"PROD_SMOKE_URL\", \"value\": \"http://model-api.serving.svc:8080\" },\n        {\"name\": \"AWS_EC2_METADATA_DISABLED\", \"value\": \"true\"},\n        {\"name\": \"MPLCONFIGDIR\", \"value\": \"/tmp\"},\n        {\"name\": \"HOME\", \"value\": \"/tmp\"},\n        {\"name\": \"LOADCHECK_TOTAL\", \"value\": \"300\"},\n        {\"name\": \"LOADCHECK_RPS\", \"value\": \"30\"},\n        {\"name\": \"GATE_REPORT_OUT\", \"value\": \"/tmp/gate_report.json\"},\n        {\"name\": \"GATE_REPORT\", \"value\": \"/tmp/gate_report.json\"},\n        {\"name\": \"POSTGRES_USER\", \"valueFrom\": {\"secretKeyRef\": {\"name\": \"postgres-auth\", \"key\": \"username\"}}},\n        {\"name\": \"POSTGRES_PASSWORD\", \"valueFrom\": {\"secretKeyRef\": {\"name\": \"postgres-auth\", \"key\": \"postgres-password\"}}},\n        {\"name\": \"POSTGRES_HOST\", \"value\": \"postgres.data.svc\"},\n        {\"name\": \"POSTGRES_PORT\", \"value\": \"5432\"},\n        {\"name\": \"FEAST_POSTGRES_DB\", \"value\": \"feast\"},\n        {\"name\": \"REDIS_HOST\", \"value\": \"redis.data.svc\"},\n        {\"name\": \"REDIS_PORT\", \"value\": \"6379\"},\n        {\"name\": \"AWS_ACCESS_KEY_ID\", \"valueFrom\": {\"secretKeyRef\": {\"name\": \"minio-auth\", \"key\": \"root-user\"}}},\n        {\"name\": \"AWS_SECRET_ACCESS_KEY\", \"valueFrom\": {\"secretKeyRef\": {\"name\": \"minio-auth\", \"key\": \"root-password\"}}}\n      ],\n      \"command\": [\"/bin/bash\", \"-c\"],\n      \"args\": [\"set -Eeuo pipefail\\n# Use the pod ServiceAccount token for Kubernetes API calls.\\ncat > /tmp/kubeconfig <<KUBECONFIG\\napiVersion: v1\\nkind: Config\\nclusters:\\n- name: in-cluster\\n  cluster:\\n    server: https://$${KUBERNETES_SERVICE_HOST}:$${KUBERNETES_SERVICE_PORT_HTTPS}\\n    certificate-authority: /var/run/secrets/kubernetes.io/serviceaccount/ca.crt\\nusers:\\n- name: retrain\\n  user:\\n    token: $(cat /var/run/secrets/kubernetes.io/serviceaccount/token)\\ncontexts:\\n- name: in-cluster\\n  context:\\n    cluster: in-cluster\\n    user: retrain\\ncurrent-context: in-cluster\\nKUBECONFIG\\nexport KUBECONFIG=/tmp/kubeconfig\\ncd /app\\npython -m feature_repo.render_config\\npython -m retrain.main\\n\"]\n    }\n  ]\n}\n"
+    },
+    "kind": "ConfigMap",
+    "metadata": {
+      "name": "retrain-job-template",
+      "namespace": "data"
+    }
+  },
+  "v1__ServiceAccount__data__retrain": {
+    "apiVersion": "v1",
+    "kind": "ServiceAccount",
+    "metadata": {
+      "name": "retrain",
+      "namespace": "data"
+    }
+  },
+  "v1__ServiceAccount__observability__dashboard": {
+    "apiVersion": "v1",
+    "kind": "ServiceAccount",
+    "metadata": {
+      "name": "dashboard",
+      "namespace": "observability"
+    }
+  },
+  "v1__ServiceAccount__observability__drift-monitor": {
+    "apiVersion": "v1",
+    "kind": "ServiceAccount",
+    "metadata": {
+      "name": "drift-monitor",
+      "namespace": "observability"
+    }
+  },
+  "v1__ServiceAccount__observability__remediator": {
+    "apiVersion": "v1",
+    "kind": "ServiceAccount",
+    "metadata": {
+      "name": "remediator",
+      "namespace": "observability"
+    }
+  },
+  "v1__Service__observability__dashboard": {
+    "apiVersion": "v1",
+    "kind": "Service",
+    "metadata": {
+      "annotations": {
+        "service.beta.kubernetes.io/azure-load-balancer-resource-group": "${RESOURCE_GROUP}",
+        "service.beta.kubernetes.io/azure-pip-name": "${PUBLIC_IP_NAME}"
+      },
+      "name": "dashboard",
+      "namespace": "observability"
+    },
+    "spec": {
+      "loadBalancerSourceRanges": [
+        "${ALLOWED_CIDR}",
+        "${RUNNER_CIDR}"
+      ],
+      "ports": [
+        {
+          "name": "https",
+          "port": 443,
+          "targetPort": "https"
+        }
+      ],
+      "selector": {
+        "app": "dashboard"
+      },
+      "type": "LoadBalancer"
+    }
+  },
+  "v1__Service__observability__drift-monitor": {
+    "apiVersion": "v1",
+    "kind": "Service",
+    "metadata": {
+      "labels": {
+        "app.kubernetes.io/name": "drift-monitor"
+      },
+      "name": "drift-monitor",
+      "namespace": "observability"
+    },
+    "spec": {
+      "ports": [
+        {
+          "name": "http",
+          "port": 8080,
+          "targetPort": "http"
+        }
+      ],
+      "selector": {
+        "app.kubernetes.io/name": "drift-monitor"
+      },
+      "type": "ClusterIP"
+    }
+  },
+  "v1__Service__observability__remediator": {
+    "apiVersion": "v1",
+    "kind": "Service",
+    "metadata": {
+      "labels": {
+        "app.kubernetes.io/name": "remediator"
+      },
+      "name": "remediator",
+      "namespace": "observability"
+    },
+    "spec": {
+      "ports": [
+        {
+          "name": "http",
+          "port": 8080,
+          "targetPort": "http"
+        }
+      ],
+      "selector": {
+        "app.kubernetes.io/name": "remediator"
+      },
+      "type": "ClusterIP"
+    }
+  },
+  "v1__Service__serving__model-api": {
+    "apiVersion": "v1",
+    "kind": "Service",
+    "metadata": {
+      "annotations": {
+        "service.beta.kubernetes.io/azure-load-balancer-resource-group": "${RESOURCE_GROUP}",
+        "service.beta.kubernetes.io/azure-pip-name": "${PUBLIC_IP_NAME}"
+      },
+      "labels": {
+        "app.kubernetes.io/instance": "model-api",
+        "app.kubernetes.io/name": "model-api",
+        "app.kubernetes.io/version": "${TAG}"
+      },
+      "name": "model-api",
+      "namespace": "serving"
+    },
+    "spec": {
+      "loadBalancerSourceRanges": [
+        "${ALLOWED_CIDR}",
+        "${RUNNER_CIDR}"
+      ],
+      "ports": [
+        {
+          "name": "http",
+          "nodePort": 30080,
+          "port": 8080,
+          "targetPort": "http"
+        }
+      ],
+      "selector": {
+        "app.kubernetes.io/instance": "model-api",
+        "app.kubernetes.io/name": "model-api"
+      },
+      "type": "LoadBalancer"
+    }
+  },
+  "v1__Service__staging__model-api-staging": {
+    "apiVersion": "v1",
+    "kind": "Service",
+    "metadata": {
+      "labels": {
+        "app.kubernetes.io/instance": "model-api-staging",
+        "app.kubernetes.io/name": "model-api",
+        "app.kubernetes.io/version": "${TAG}"
+      },
+      "name": "model-api-staging",
+      "namespace": "staging"
+    },
+    "spec": {
+      "ports": [
+        {
+          "name": "http",
+          "port": 8080,
+          "targetPort": "http"
+        }
+      ],
+      "selector": {
+        "app.kubernetes.io/instance": "model-api-staging",
+        "app.kubernetes.io/name": "model-api"
+      },
+      "type": "ClusterIP"
+    }
+  }
+}
