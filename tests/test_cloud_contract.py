@@ -69,6 +69,14 @@ def test_azure_verification_checks_live_model_api_metrics() -> None:
     assert "^model_info{" in script
 
 
+def test_azure_verify_temporarily_allows_and_restores_its_runner() -> None:
+    """Read-only cloud checks work across ephemeral runner IP changes."""
+    script = (ROOT / "scripts/azure.sh").read_text()
+    assert 'if [[ "${ACTION}" == verify ]]' in script
+    assert "--api-server-authorized-ip-ranges" in script
+    assert "trap restore_aks_api_access EXIT" in script
+
+
 def test_github_oidc_session_refreshes_for_long_azure_provisioning(
     tmp_path: Path,
 ) -> None:

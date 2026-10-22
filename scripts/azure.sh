@@ -300,6 +300,34 @@ case "${ACTION}" in
   sleep) az aks stop --resource-group "${RG}" --name "${CLUSTER}"; exit ;;
   wake) az aks start --resource-group "${RG}" --name "${CLUSTER}"; exit ;;
 esac
+# Verification can run on a different ephemeral GitHub runner than deploy.
+# Add only that runner /32 to the AKS API allowlist for this job, then restore
+# the previous list even if a smoke check fails.
+restore_aks_api_access() {
+  if [[ "${RESTORE_API_SERVER_ACCESS:-0}" == 1 ]]; then
+    az aks update --resource-group "${RG}" --name "${CLUSTER}" \
+      --api-server-authorized-ip-ranges "${ORIGINAL_API_SERVER_RANGES}" \
+      --output none
+  fi
+}
+if [[ "${ACTION}" == verify ]]; then
+  original_ranges_json="$(az aks show --resource-group "${RG}" --name "${CLUSTER}" \
+    --query apiServerAccessProfile.authorizedIpRanges -o json)"
+  ORIGINAL_API_SERVER_RANGES="$(python3 -c '
+import json,sys
+print(",".join(json.loads(sys.argv[1]) or []))' "${original_ranges_json}")"
+  if [[ -n "${ORIGINAL_API_SERVER_RANGES}" && ",${ORIGINAL_API_SERVER_RANGES}," != *",${RUNNER_CIDR},"* ]]; then
+    extended_ranges="$(python3 -c '
+import json,sys
+ranges=json.loads(sys.argv[1]) or []
+ranges.append(sys.argv[2])
+print(",".join(dict.fromkeys(ranges)))' "${original_ranges_json}" "${RUNNER_CIDR}")"
+    export ORIGINAL_API_SERVER_RANGES RESTORE_API_SERVER_ACCESS=1
+    trap restore_aks_api_access EXIT
+    az aks update --resource-group "${RG}" --name "${CLUSTER}" \
+      --api-server-authorized-ip-ranges "${extended_ranges}" --output none
+  fi
+fi
 # AKS creation can outlast GitHub's five-minute OIDC assertion. Exchange a new
 # job-scoped token before requesting Kubernetes credentials or pushing images.
 refresh_azure_oidc_login
