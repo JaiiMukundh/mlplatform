@@ -350,6 +350,10 @@ verify() {
   curl --fail --silent --show-error -H 'Content-Type: application/json' \
     -H "Authorization: Bearer ${MODEL_API_TOKEN}" \
     -d '{"customer_ids":[7]}' "http://${address}:8080/predict"
+  metrics="$(curl --fail --silent --show-error "http://${address}:8080/metrics")"
+  grep -q '^http_requests_total' <<<"${metrics}"
+  grep -q '^model_info{' <<<"${metrics}"
+  echo "Model API metrics: request and loaded-model series are present"
   verify_dashboard
   echo "Model API: http://${address}:8080"
   [[ -z "${GITHUB_STEP_SUMMARY:-}" ]] || echo "Model API: http://${address}:8080" >> "${GITHUB_STEP_SUMMARY}"

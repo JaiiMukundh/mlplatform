@@ -61,6 +61,14 @@ def test_azure_resolves_mlflow_aliases_from_registered_model_search() -> None:
     assert "registered-models/alias?name=" not in script
 
 
+def test_azure_verification_checks_live_model_api_metrics() -> None:
+    """Cloud verification must exercise metrics from the deployed API process."""
+    script = (ROOT / "scripts/azure.sh").read_text()
+    assert "http://${address}:8080/metrics" in script
+    assert "^http_requests_total" in script
+    assert "^model_info{" in script
+
+
 def test_github_oidc_session_refreshes_for_long_azure_provisioning(
     tmp_path: Path,
 ) -> None:
