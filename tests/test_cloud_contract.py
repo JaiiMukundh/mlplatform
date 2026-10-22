@@ -75,6 +75,10 @@ def test_azure_verify_temporarily_allows_and_restores_its_runner() -> None:
     assert 'if [[ "${ACTION}" == verify ]]' in script
     assert "--api-server-authorized-ip-ranges" in script
     assert "trap restore_aks_api_access EXIT" in script
+    assert "patch service model-api" in script
+    assert "patch service dashboard" in script
+    assert "ORIGINAL_MODEL_API_RANGES" in script
+    assert "ORIGINAL_DASHBOARD_RANGES" in script
 
 
 def test_github_oidc_session_refreshes_for_long_azure_provisioning(

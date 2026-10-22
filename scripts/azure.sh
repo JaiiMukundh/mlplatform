@@ -304,11 +304,21 @@ esac
 # Add only that runner /32 to the AKS API allowlist for this job, then restore
 # the previous list even if a smoke check fails.
 restore_aks_api_access() {
+  local status=0
+  if [[ "${RESTORE_VERIFY_INGRESS:-0}" == 1 ]]; then
+    kubectl -n serving patch service model-api --type merge \
+      -p "$(python3 -c 'import json,sys; print(json.dumps({"spec":{"loadBalancerSourceRanges":json.loads(sys.argv[1])}}))' "${ORIGINAL_MODEL_API_RANGES}")" \
+      || status=1
+    kubectl -n observability patch service dashboard --type merge \
+      -p "$(python3 -c 'import json,sys; print(json.dumps({"spec":{"loadBalancerSourceRanges":json.loads(sys.argv[1])}}))' "${ORIGINAL_DASHBOARD_RANGES}")" \
+      || status=1
+  fi
   if [[ "${RESTORE_API_SERVER_ACCESS:-0}" == 1 ]]; then
     az aks update --resource-group "${RG}" --name "${CLUSTER}" \
       --api-server-authorized-ip-ranges "${ORIGINAL_API_SERVER_RANGES}" \
-      --output none
+      --output none || status=1
   fi
+  return "${status}"
 }
 if [[ "${ACTION}" == verify ]]; then
   original_ranges_json="$(az aks show --resource-group "${RG}" --name "${CLUSTER}" \
@@ -335,6 +345,21 @@ az aks get-credentials --resource-group "${RG}" --name "${CLUSTER}" --overwrite-
 export PUBLIC_IP_NAME="$("${TF[@]}" output -raw public_ip_name)"
 export PUBLIC_HOST="$("${TF[@]}" output -raw public_host)"
 export AZURE_RESOURCE_GROUP="${RG}"
+
+if [[ "${ACTION}" == verify ]]; then
+  ORIGINAL_MODEL_API_RANGES="$(kubectl -n serving get service model-api -o json | python3 -c 'import json,sys; print(json.dumps(json.load(sys.stdin)["spec"].get("loadBalancerSourceRanges", [])))')"
+  ORIGINAL_DASHBOARD_RANGES="$(kubectl -n observability get service dashboard -o json | python3 -c 'import json,sys; print(json.dumps(json.load(sys.stdin)["spec"].get("loadBalancerSourceRanges", [])))')"
+  MODEL_API_RANGES="$(python3 -c 'import json,sys; ranges=json.loads(sys.argv[1]); ranges.append(sys.argv[2]); print(json.dumps(list(dict.fromkeys(ranges))))' "${ORIGINAL_MODEL_API_RANGES}" "${RUNNER_CIDR}")"
+  DASHBOARD_RANGES="$(python3 -c 'import json,sys; ranges=json.loads(sys.argv[1]); ranges.append(sys.argv[2]); print(json.dumps(list(dict.fromkeys(ranges))))' "${ORIGINAL_DASHBOARD_RANGES}" "${RUNNER_CIDR}")"
+  if [[ "${MODEL_API_RANGES}" != "${ORIGINAL_MODEL_API_RANGES}" || "${DASHBOARD_RANGES}" != "${ORIGINAL_DASHBOARD_RANGES}" ]]; then
+    export ORIGINAL_MODEL_API_RANGES ORIGINAL_DASHBOARD_RANGES RESTORE_VERIFY_INGRESS=1
+    trap restore_aks_api_access EXIT
+    kubectl -n serving patch service model-api --type merge \
+      -p "$(python3 -c 'import json,sys; print(json.dumps({"spec":{"loadBalancerSourceRanges":json.loads(sys.argv[1])}}))' "${MODEL_API_RANGES}")"
+    kubectl -n observability patch service dashboard --type merge \
+      -p "$(python3 -c 'import json,sys; print(json.dumps({"spec":{"loadBalancerSourceRanges":json.loads(sys.argv[1])}}))' "${DASHBOARD_RANGES}")"
+  fi
+fi
 
 verify_dashboard() {
   if ! kubectl -n observability rollout status deployment/dashboard --timeout=600s; then
