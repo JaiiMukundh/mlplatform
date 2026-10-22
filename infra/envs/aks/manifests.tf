@@ -28,19 +28,19 @@ resource "kubernetes_manifest" "crds" {
 }
 
 resource "kubernetes_manifest" "data" {
-  for_each   = var.stage == "bootstrap" ? {} : local.manifests.data
+  for_each   = { for key, manifest in local.manifests.data : key => manifest if var.stage != "bootstrap" }
   manifest   = each.value
   depends_on = [kubernetes_namespace_v1.platform, kubernetes_secret_v1.postgres, kubernetes_secret_v1.minio]
 }
 
 resource "kubernetes_manifest" "observability" {
-  for_each   = var.stage == "bootstrap" ? {} : local.manifests.observability
+  for_each   = { for key, manifest in local.manifests.observability : key => manifest if var.stage != "bootstrap" }
   manifest   = each.value
   depends_on = [kubernetes_manifest.crds, kubernetes_secret_v1.grafana]
 }
 
 resource "kubernetes_manifest" "app" {
-  for_each   = var.stage == "app" ? local.manifests.app : {}
+  for_each   = { for key, manifest in local.manifests.app : key => manifest if var.stage == "app" }
   manifest   = each.value
   depends_on = [kubernetes_manifest.data, kubernetes_manifest.observability, kubernetes_secret_v1.dashboard_tls, kubernetes_secret_v1.dashboard_data, kubernetes_secret_v1.postgres_app]
 }
