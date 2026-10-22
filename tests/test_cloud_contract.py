@@ -127,6 +127,11 @@ def test_dashboard_action_keeps_the_terraform_allowlist() -> None:
         for item in resources.values()
         if item["kind"] == "Service" and item["metadata"]["name"] == "dashboard"
     )
+    deployment = next(
+        item
+        for item in resources.values()
+        if item["kind"] == "Deployment" and item["metadata"]["name"] == "dashboard"
+    )
     assert service["spec"]["loadBalancerSourceRanges"] == [
         "${ALLOWED_CIDR}",
         "${RUNNER_CIDR}",
@@ -138,6 +143,10 @@ def test_dashboard_action_keeps_the_terraform_allowlist() -> None:
     assert "inputs.action == 'deploy' || inputs.action == 'dashboard'" in workflow
     assert "https://${PUBLIC_HOST}/healthz" in deploy_script
     assert "--connect-timeout 10 --max-time 15" in deploy_script
+    dashboard_container = deployment["spec"]["template"]["spec"]["containers"][0]
+    assert dashboard_container["startupProbe"]["failureThreshold"] == 120
+    assert "deployment/dashboard --timeout=600s" in deploy_script
+    assert "kubectl -n observability describe pods -l app=dashboard" in deploy_script
 
 
 def test_model_api_load_balancer_preserves_source_ip_and_bounds_retries() -> None:

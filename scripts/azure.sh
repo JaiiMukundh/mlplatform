@@ -309,7 +309,14 @@ export PUBLIC_HOST="$("${TF[@]}" output -raw public_host)"
 export AZURE_RESOURCE_GROUP="${RG}"
 
 verify_dashboard() {
-  kubectl -n observability rollout status deployment/dashboard --timeout=300s
+  if ! kubectl -n observability rollout status deployment/dashboard --timeout=600s; then
+    echo 'Dashboard rollout did not become ready; collecting pod diagnostics.' >&2
+    kubectl -n observability get pods -l app=dashboard -o wide >&2 || true
+    kubectl -n observability describe pods -l app=dashboard >&2 || true
+    kubectl -n observability logs deployment/dashboard --all-containers=true --tail=200 >&2 || true
+    kubectl -n observability get events --sort-by=.lastTimestamp >&2 || true
+    return 1
+  fi
   curl --insecure --fail --silent --show-error --connect-timeout 10 --max-time 15 \
     --retry 6 --retry-all-errors --retry-delay 2 \
     "https://${PUBLIC_HOST}/healthz"
