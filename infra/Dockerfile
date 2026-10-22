@@ -31,22 +31,27 @@ RUN groupadd --system --gid 10001 mlplatform \
 
 WORKDIR /app
 ENV PATH=/opt/venv/bin:$PATH
+COPY --chown=10001:10001 core/mlp_common/ mlp_common/
+ENV PYTHONPATH=/app
 
 USER 10001:10001
 EXPOSE 8080
 
 FROM runtime AS model-api
 COPY --from=model-api-builder /opt/venv /opt/venv
+COPY --chown=10001:10001 core/model_api/ model_api/
 ENV PATH=/opt/venv/bin:$PATH
 CMD ["uvicorn", "model_api.main:app", "--host", "0.0.0.0", "--port", "8080", "--workers", "1", "--no-access-log"]
 
 FROM runtime AS drift-monitor
 COPY --from=drift-monitor-builder /opt/venv /opt/venv
+COPY --chown=10001:10001 core/drift_monitor/ drift_monitor/
 ENV PATH=/opt/venv/bin:$PATH
 CMD ["uvicorn", "drift_monitor.main:app", "--host", "0.0.0.0", "--port", "8080", "--workers", "1", "--no-access-log"]
 
 FROM runtime AS remediator
 COPY --from=remediator-builder /opt/venv /opt/venv
+COPY --chown=10001:10001 core/remediator/ remediator/
 ENV PATH=/opt/venv/bin:$PATH
 CMD ["uvicorn", "remediator.main:app", "--host", "0.0.0.0", "--port", "8080", "--workers", "1", "--no-access-log"]
 
@@ -128,6 +133,7 @@ USER 10001:10001
 
 FROM dashboard-tools AS dashboard
 COPY --from=dashboard-builder /opt/venv /opt/venv
+COPY --chown=10001:10001 core/mlp_common/ mlp_common/
 COPY --chown=10001:10001 ui/ ui/
 COPY --chown=10001:10001 scripts/ scripts/
 COPY --chown=10001:10001 infra/jobs/ infra/jobs/
