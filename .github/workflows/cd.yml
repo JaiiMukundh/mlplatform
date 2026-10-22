@@ -21,6 +21,7 @@ on:
 permissions:
   contents: read
   actions: write
+  checks: read
   id-token: write
 concurrency:
   group: azure-platform
@@ -86,8 +87,16 @@ jobs:
         env:
           GH_TOKEN: ${{ github.token }}
         run: |
-          conclusion="$(gh api "repos/$GITHUB_REPOSITORY/actions/workflows/ci.yml/runs?head_sha=$GITHUB_SHA&status=completed" --jq '.workflow_runs[0].conclusion')"
-          test "$conclusion" = success || { echo "CI must succeed for $GITHUB_SHA before deployment" >&2; exit 1; }
+          checks="$(gh api "repos/$GITHUB_REPOSITORY/commits/$GITHUB_SHA/check-runs" \
+            --jq '[.check_runs[] | select(.name == "quality" or .name == "security") | .conclusion]')"
+          CHECKS="$checks" python3 - <<'PY'
+          import json
+          import os
+
+          conclusions = json.loads(os.environ["CHECKS"])
+          if len(conclusions) != 2 or any(item != "success" for item in conclusions):
+              raise SystemExit(f"CI checks are not both successful for this commit: {conclusions}")
+          PY
       - name: Run the selected cloud operation
         env:
           GH_TOKEN: ${{ github.token }}
