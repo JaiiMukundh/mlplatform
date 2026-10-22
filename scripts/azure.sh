@@ -335,9 +335,12 @@ verify() {
     sleep 5
   done
   [[ -n "${address}" ]] || { echo 'Azure LoadBalancer has no address' >&2; exit 1; }
+  MODEL_API_TOKEN="$(kubectl -n serving get secret model-api-token -o jsonpath='{.data.token}' | base64 -d)"
+  export MODEL_API_TOKEN
   curl --fail --silent --show-error --retry 12 --retry-all-errors --retry-delay 5 "http://${address}:8080/readyz"
-  curl --fail --silent --show-error "http://${address}:8080/model-info"
+  curl --fail --silent --show-error -H "Authorization: Bearer ${MODEL_API_TOKEN}" "http://${address}:8080/model-info"
   curl --fail --silent --show-error -H 'Content-Type: application/json' \
+    -H "Authorization: Bearer ${MODEL_API_TOKEN}" \
     -d '{"customer_ids":[7]}' "http://${address}:8080/predict"
   verify_dashboard
   echo "Model API: http://${address}:8080"

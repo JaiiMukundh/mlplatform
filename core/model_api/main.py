@@ -3,6 +3,8 @@
 from __future__ import annotations
 
 import logging
+import os
+import secrets
 import time
 import uuid
 from collections.abc import AsyncIterator
@@ -94,6 +96,18 @@ def create_app(
         status = 500
         path = request.url.path
         try:
+            api_token = os.environ.get("MODEL_API_TOKEN", "")
+            if api_token and path not in {"/healthz", "/readyz", "/metrics"}:
+                supplied = request.headers.get("authorization", "")
+                supplied = supplied.removeprefix("Bearer ")
+                if not secrets.compare_digest(supplied, api_token):
+                    response = JSONResponse(
+                        status_code=401, content={"detail": "API token required"}
+                    )
+                    response.headers["www-authenticate"] = "Bearer"
+                    status = response.status_code
+                    response.headers["x-request-id"] = request_id
+                    return response
             response = await call_next(request)
             status = response.status_code
             response.headers["x-request-id"] = request_id

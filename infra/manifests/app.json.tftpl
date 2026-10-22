@@ -1,4 +1,51 @@
 {
+  "networking.k8s.io_v1__NetworkPolicy__observability__platform-ingress": {
+    "apiVersion": "networking.k8s.io/v1",
+    "kind": "NetworkPolicy",
+    "metadata": {
+      "name": "platform-ingress",
+      "namespace": "observability"
+    },
+    "spec": {
+      "podSelector": {},
+      "policyTypes": [
+        "Ingress"
+      ],
+      "ingress": [
+        {
+          "from": [
+            {
+              "namespaceSelector": {
+                "matchLabels": {
+                  "kubernetes.io/metadata.name": "observability"
+                }
+              }
+            }
+          ]
+        },
+        {
+          "from": [
+            {
+              "ipBlock": {
+                "cidr": "${ALLOWED_CIDR}"
+              }
+            },
+            {
+              "ipBlock": {
+                "cidr": "${RUNNER_CIDR}"
+              }
+            }
+          ],
+          "ports": [
+            {
+              "protocol": "TCP",
+              "port": 8050
+            }
+          ]
+        }
+      ]
+    }
+  },
   "apps_v1__Deployment__observability__dashboard": {
     "apiVersion": "apps/v1",
     "kind": "Deployment",
@@ -115,6 +162,15 @@
                     "secretKeyRef": {
                       "key": "secret-key",
                       "name": "dashboard-data"
+                    }
+                  }
+                },
+                {
+                  "name": "MODEL_API_TOKEN",
+                  "valueFrom": {
+                    "secretKeyRef": {
+                      "name": "model-api-token",
+                      "key": "token"
                     }
                   }
                 }
@@ -596,6 +652,15 @@
                       "name": "postgres-app"
                     }
                   }
+                },
+                {
+                  "name": "MODEL_API_TOKEN",
+                  "valueFrom": {
+                    "secretKeyRef": {
+                      "name": "model-api-token",
+                      "key": "token"
+                    }
+                  }
                 }
               ],
               "image": "${ACR}/mlp-model-api:${TAG}",
@@ -791,6 +856,15 @@
                     "secretKeyRef": {
                       "key": "database-url",
                       "name": "postgres-app"
+                    }
+                  }
+                },
+                {
+                  "name": "MODEL_API_TOKEN",
+                  "valueFrom": {
+                    "secretKeyRef": {
+                      "name": "model-api-token",
+                      "key": "token"
                     }
                   }
                 }
@@ -1110,6 +1184,39 @@
       ],
       "ingress": [
         {
+          "from": [
+            {
+              "namespaceSelector": {
+                "matchLabels": {
+                  "kubernetes.io/metadata.name": "observability"
+                }
+              }
+            },
+            {
+              "namespaceSelector": {
+                "matchLabels": {
+                  "kubernetes.io/metadata.name": "data"
+                }
+              }
+            },
+            {
+              "namespaceSelector": {
+                "matchLabels": {
+                  "kubernetes.io/metadata.name": "serving"
+                }
+              }
+            },
+            {
+              "ipBlock": {
+                "cidr": "${ALLOWED_CIDR}"
+              }
+            },
+            {
+              "ipBlock": {
+                "cidr": "${RUNNER_CIDR}"
+              }
+            }
+          ],
           "ports": [
             {
               "port": 8080,
@@ -1213,6 +1320,36 @@
       ],
       "ingress": [
         {
+          "from": [
+            {
+              "namespaceSelector": {
+                "matchLabels": {
+                  "kubernetes.io/metadata.name": "observability"
+                }
+              }
+            },
+            {
+              "namespaceSelector": {
+                "matchLabels": {
+                  "kubernetes.io/metadata.name": "data"
+                }
+              }
+            },
+            {
+              "namespaceSelector": {
+                "matchLabels": {
+                  "kubernetes.io/metadata.name": "serving"
+                }
+              }
+            },
+            {
+              "namespaceSelector": {
+                "matchLabels": {
+                  "kubernetes.io/metadata.name": "staging"
+                }
+              }
+            }
+          ],
           "ports": [
             {
               "port": 8080,
@@ -1872,7 +2009,7 @@
   "v1__ConfigMap__data__retrain-job-template": {
     "apiVersion": "v1",
     "data": {
-      "pod-spec.json": "{\n  \"restartPolicy\": \"OnFailure\",\n  \"serviceAccountName\": \"retrain\",\n  \"containers\": [\n    {\n      \"name\": \"retrain\",\n      \"image\": \"${ACR}/mlp-retrain:${TAG}\",\n      \"imagePullPolicy\": \"Always\",\n      \"resources\": {\"limits\":{\"cpu\":\"1900m\",\"memory\":\"3Gi\"},\"requests\":{\"cpu\":\"500m\",\"memory\":\"1Gi\"}},\n      \"env\": [\n        {\"name\": \"MLFLOW_TRACKING_URI\", \"value\": \"http://mlflow.data.svc:5000\" },\n        {\"name\": \"FEAST_S3_ENDPOINT_URL\", \"value\": \"http://minio.data.svc:9000\" },\n        {\"name\": \"TRIGGER\", \"value\": \"drift\"},\n        {\"name\": \"TRIGGER_MODE\", \"value\": \"in_cluster\" },\n        {\"name\": \"PUBLIC_IP_NAME\", \"value\": \"${PUBLIC_IP_NAME}\" },\n        {\"name\": \"AZURE_RESOURCE_GROUP\", \"value\": \"${RESOURCE_GROUP}\" },\n        {\"name\": \"AZURE_ALLOWED_CIDR\", \"value\": \"${ALLOWED_CIDR}\" },\n        {\"name\": \"DEPLOY_TARGET\", \"value\": \"azure\" },\n        {\"name\": \"MODEL_API_REPOSITORY\", \"value\": \"${ACR}/mlp-model-api\" },\n        {\"name\": \"TRAINING_IMAGE\", \"value\": \"${ACR}/mlp-training:${TAG}\" },\n        {\"name\": \"IMAGE_TAG\", \"value\": \"${TAG}\" },\n        {\"name\": \"STAGING_URL\", \"value\": \"http://model-api-staging.staging.svc:8080\" },\n        {\"name\": \"PROD_URL\", \"value\": \"http://model-api.serving.svc:8080\" },\n        {\"name\": \"STAGING_SMOKE_URL\", \"value\": \"http://model-api-staging.staging.svc:8080\" },\n        {\"name\": \"PROD_SMOKE_URL\", \"value\": \"http://model-api.serving.svc:8080\" },\n        {\"name\": \"AWS_EC2_METADATA_DISABLED\", \"value\": \"true\"},\n        {\"name\": \"MPLCONFIGDIR\", \"value\": \"/tmp\"},\n        {\"name\": \"HOME\", \"value\": \"/tmp\"},\n        {\"name\": \"LOADCHECK_TOTAL\", \"value\": \"300\"},\n        {\"name\": \"LOADCHECK_RPS\", \"value\": \"30\"},\n        {\"name\": \"GATE_REPORT_OUT\", \"value\": \"/tmp/gate_report.json\"},\n        {\"name\": \"GATE_REPORT\", \"value\": \"/tmp/gate_report.json\"},\n        {\"name\": \"POSTGRES_USER\", \"valueFrom\": {\"secretKeyRef\": {\"name\": \"postgres-auth\", \"key\": \"username\"}}},\n        {\"name\": \"POSTGRES_PASSWORD\", \"valueFrom\": {\"secretKeyRef\": {\"name\": \"postgres-auth\", \"key\": \"postgres-password\"}}},\n        {\"name\": \"POSTGRES_HOST\", \"value\": \"postgres.data.svc\"},\n        {\"name\": \"POSTGRES_PORT\", \"value\": \"5432\"},\n        {\"name\": \"FEAST_POSTGRES_DB\", \"value\": \"feast\"},\n        {\"name\": \"REDIS_HOST\", \"value\": \"redis.data.svc\"},\n        {\"name\": \"REDIS_PORT\", \"value\": \"6379\"},\n        {\"name\": \"AWS_ACCESS_KEY_ID\", \"valueFrom\": {\"secretKeyRef\": {\"name\": \"minio-auth\", \"key\": \"root-user\"}}},\n        {\"name\": \"AWS_SECRET_ACCESS_KEY\", \"valueFrom\": {\"secretKeyRef\": {\"name\": \"minio-auth\", \"key\": \"root-password\"}}}\n      ],\n      \"command\": [\"/bin/bash\", \"-c\"],\n      \"args\": [\"set -Eeuo pipefail\\n# Use the pod ServiceAccount token for Kubernetes API calls.\\ncat > /tmp/kubeconfig <<KUBECONFIG\\napiVersion: v1\\nkind: Config\\nclusters:\\n- name: in-cluster\\n  cluster:\\n    server: https://$${KUBERNETES_SERVICE_HOST}:$${KUBERNETES_SERVICE_PORT_HTTPS}\\n    certificate-authority: /var/run/secrets/kubernetes.io/serviceaccount/ca.crt\\nusers:\\n- name: retrain\\n  user:\\n    token: $(cat /var/run/secrets/kubernetes.io/serviceaccount/token)\\ncontexts:\\n- name: in-cluster\\n  context:\\n    cluster: in-cluster\\n    user: retrain\\ncurrent-context: in-cluster\\nKUBECONFIG\\nexport KUBECONFIG=/tmp/kubeconfig\\ncd /app\\npython -m feature_repo.render_config\\npython -m retrain.main\\n\"]\n    }\n  ]\n}\n"
+      "pod-spec.json": "{\n  \"restartPolicy\": \"OnFailure\",\n  \"serviceAccountName\": \"retrain\",\n  \"containers\": [\n    {\n      \"name\": \"retrain\",\n      \"image\": \"${ACR}/mlp-retrain:${TAG}\",\n      \"imagePullPolicy\": \"Always\",\n      \"resources\": {\n        \"limits\": {\n          \"cpu\": \"1900m\",\n          \"memory\": \"3Gi\"\n        },\n        \"requests\": {\n          \"cpu\": \"500m\",\n          \"memory\": \"1Gi\"\n        }\n      },\n      \"env\": [\n        {\n          \"name\": \"MLFLOW_TRACKING_URI\",\n          \"value\": \"http://mlflow.data.svc:5000\"\n        },\n        {\n          \"name\": \"FEAST_S3_ENDPOINT_URL\",\n          \"value\": \"http://minio.data.svc:9000\"\n        },\n        {\n          \"name\": \"TRIGGER\",\n          \"value\": \"drift\"\n        },\n        {\n          \"name\": \"TRIGGER_MODE\",\n          \"value\": \"in_cluster\"\n        },\n        {\n          \"name\": \"PUBLIC_IP_NAME\",\n          \"value\": \"${PUBLIC_IP_NAME}\"\n        },\n        {\n          \"name\": \"AZURE_RESOURCE_GROUP\",\n          \"value\": \"${RESOURCE_GROUP}\"\n        },\n        {\n          \"name\": \"AZURE_ALLOWED_CIDR\",\n          \"value\": \"${ALLOWED_CIDR}\"\n        },\n        {\n          \"name\": \"DEPLOY_TARGET\",\n          \"value\": \"azure\"\n        },\n        {\n          \"name\": \"MODEL_API_REPOSITORY\",\n          \"value\": \"${ACR}/mlp-model-api\"\n        },\n        {\n          \"name\": \"TRAINING_IMAGE\",\n          \"value\": \"${ACR}/mlp-training:${TAG}\"\n        },\n        {\n          \"name\": \"IMAGE_TAG\",\n          \"value\": \"${TAG}\"\n        },\n        {\n          \"name\": \"STAGING_URL\",\n          \"value\": \"http://model-api-staging.staging.svc:8080\"\n        },\n        {\n          \"name\": \"PROD_URL\",\n          \"value\": \"http://model-api.serving.svc:8080\"\n        },\n        {\n          \"name\": \"STAGING_SMOKE_URL\",\n          \"value\": \"http://model-api-staging.staging.svc:8080\"\n        },\n        {\n          \"name\": \"PROD_SMOKE_URL\",\n          \"value\": \"http://model-api.serving.svc:8080\"\n        },\n        {\n          \"name\": \"AWS_EC2_METADATA_DISABLED\",\n          \"value\": \"true\"\n        },\n        {\n          \"name\": \"MPLCONFIGDIR\",\n          \"value\": \"/tmp\"\n        },\n        {\n          \"name\": \"HOME\",\n          \"value\": \"/tmp\"\n        },\n        {\n          \"name\": \"LOADCHECK_TOTAL\",\n          \"value\": \"300\"\n        },\n        {\n          \"name\": \"LOADCHECK_RPS\",\n          \"value\": \"30\"\n        },\n        {\n          \"name\": \"GATE_REPORT_OUT\",\n          \"value\": \"/tmp/gate_report.json\"\n        },\n        {\n          \"name\": \"GATE_REPORT\",\n          \"value\": \"/tmp/gate_report.json\"\n        },\n        {\n          \"name\": \"POSTGRES_USER\",\n          \"valueFrom\": {\n            \"secretKeyRef\": {\n              \"name\": \"postgres-auth\",\n              \"key\": \"username\"\n            }\n          }\n        },\n        {\n          \"name\": \"POSTGRES_PASSWORD\",\n          \"valueFrom\": {\n            \"secretKeyRef\": {\n              \"name\": \"postgres-auth\",\n              \"key\": \"postgres-password\"\n            }\n          }\n        },\n        {\n          \"name\": \"POSTGRES_HOST\",\n          \"value\": \"postgres.data.svc\"\n        },\n        {\n          \"name\": \"POSTGRES_PORT\",\n          \"value\": \"5432\"\n        },\n        {\n          \"name\": \"FEAST_POSTGRES_DB\",\n          \"value\": \"feast\"\n        },\n        {\n          \"name\": \"REDIS_HOST\",\n          \"value\": \"redis.data.svc\"\n        },\n        {\n          \"name\": \"REDIS_PORT\",\n          \"value\": \"6379\"\n        },\n        {\n          \"name\": \"AWS_ACCESS_KEY_ID\",\n          \"valueFrom\": {\n            \"secretKeyRef\": {\n              \"name\": \"minio-auth\",\n              \"key\": \"root-user\"\n            }\n          }\n        },\n        {\n          \"name\": \"AWS_SECRET_ACCESS_KEY\",\n          \"valueFrom\": {\n            \"secretKeyRef\": {\n              \"name\": \"minio-auth\",\n              \"key\": \"root-password\"\n            }\n          }\n        },\n        {\n          \"name\": \"MODEL_API_TOKEN\",\n          \"valueFrom\": {\n            \"secretKeyRef\": {\n              \"name\": \"model-api-token\",\n              \"key\": \"token\"\n            }\n          }\n        }\n      ],\n      \"command\": [\n        \"/bin/bash\",\n        \"-c\"\n      ],\n      \"args\": [\n        \"set -Eeuo pipefail\\n# Use the pod ServiceAccount token for Kubernetes API calls.\\ncat > /tmp/kubeconfig <<KUBECONFIG\\napiVersion: v1\\nkind: Config\\nclusters:\\n- name: in-cluster\\n  cluster:\\n    server: https://$${KUBERNETES_SERVICE_HOST}:$${KUBERNETES_SERVICE_PORT_HTTPS}\\n    certificate-authority: /var/run/secrets/kubernetes.io/serviceaccount/ca.crt\\nusers:\\n- name: retrain\\n  user:\\n    token: $(cat /var/run/secrets/kubernetes.io/serviceaccount/token)\\ncontexts:\\n- name: in-cluster\\n  context:\\n    cluster: in-cluster\\n    user: retrain\\ncurrent-context: in-cluster\\nKUBECONFIG\\nexport KUBECONFIG=/tmp/kubeconfig\\ncd /app\\npython -m feature_repo.render_config\\npython -m retrain.main\\n\"\n      ]\n    }\n  ]\n}"
     },
     "kind": "ConfigMap",
     "metadata": {

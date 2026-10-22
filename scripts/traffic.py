@@ -8,6 +8,7 @@ from __future__ import annotations
 
 import argparse
 import asyncio
+import os
 import random
 import statistics
 import sys
@@ -26,7 +27,14 @@ async def one_batch(
     started = time.perf_counter()
     try:
         response = await client.post(
-            f"{url}/predict", json={"customer_ids": ids}, timeout=10.0
+            f"{url}/predict",
+            json={"customer_ids": ids},
+            headers=(
+                {"Authorization": f"Bearer {os.environ['MODEL_API_TOKEN']}"}
+                if os.environ.get("MODEL_API_TOKEN")
+                else {}
+            ),
+            timeout=10.0,
         )
         ok = response.status_code == 200
     except httpx.HTTPError:

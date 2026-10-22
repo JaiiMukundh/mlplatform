@@ -88,6 +88,11 @@ ACTIVE_DRIFT_QUERY = (
 RUNNING_JOBS: dict[str, dict[str, Any]] = {}
 
 MODEL_API_URL = os.environ.get("MODEL_API_URL", "http://model-api.serving.svc:8080")
+MODEL_API_HEADERS = (
+    {"Authorization": f"Bearer {os.environ['MODEL_API_TOKEN']}"}
+    if os.environ.get("MODEL_API_TOKEN")
+    else {}
+)
 PROMETHEUS_URL = os.environ.get(
     "PROMETHEUS_URL", "http://kube-prometheus-stack-prometheus.observability.svc:9090"
 )
@@ -317,7 +322,9 @@ async def get_system_status() -> dict[str, Any]:
     # 2. Model API
     async with httpx.AsyncClient(timeout=1.5) as client:
         try:
-            resp = await client.get(f"{MODEL_API_URL}/model-info")
+            resp = await client.get(
+                f"{MODEL_API_URL}/model-info", headers=MODEL_API_HEADERS
+            )
             if resp.status_code == 200:
                 status["serving_model"] = resp.json()
         except Exception:
@@ -649,7 +656,9 @@ async def execute_burst_test(
         async def single_call(cid: int):
             try:
                 r = await client.post(
-                    f"{MODEL_API_URL}/predict", json={"customer_ids": [str(cid)]}
+                    f"{MODEL_API_URL}/predict",
+                    json={"customer_ids": [str(cid)]},
+                    headers=MODEL_API_HEADERS,
                 )
                 return r.status_code == 200
             except Exception:
@@ -688,6 +697,7 @@ async def execute_predict(req: PredictRequest) -> dict[str, Any]:
             resp = await client.post(
                 f"{MODEL_API_URL}/predict",
                 json={"customer_ids": [cid_int]},
+                headers=MODEL_API_HEADERS,
             )
             elapsed_ms = round((time.perf_counter() - t0) * 1000, 2)
             if resp.status_code == 200:
@@ -875,22 +885,21 @@ async def get_score_diagnostic(customer_id: int) -> dict[str, Any]:
             badge_class = "bg-[#1D7A4D] text-white"
             pathology = "✓ Calibrated prediction with sharp bimodal separation."
 
-        p_retrained = 0.0407
-        ent_retrained = 0.246
-        live_mver = "10"
+        p_retrained: float | None = None
+        live_mver: str | None = None
         try:
             async with httpx.AsyncClient(timeout=1.5) as client:
                 resp = await client.post(
                     f"{MODEL_API_URL}/predict",
                     json={"customer_ids": [customer_id]},
+                    headers=MODEL_API_HEADERS,
                 )
                 if resp.status_code == 200:
                     cdata = resp.json()
                     preds = cdata.get("predictions", [])
                     if preds:
-                        p_retrained = float(preds[0].get("default_probability", 0.0407))
-                        ent_retrained = round(_shannon_entropy(p_retrained), 3)
-                        live_mver = str(cdata.get("model_version", "10"))
+                        p_retrained = float(preds[0]["default_probability"])
+                        live_mver = str(cdata["model_version"])
         except Exception:
             pass
 
@@ -917,18 +926,29 @@ async def get_score_diagnostic(customer_id: int) -> dict[str, Any]:
                 "limit_bal": limit_drift,
                 "pay_0": int(pay0_drift),
             },
-            "retrained_reality": {
-                "probability": round(p_retrained, 4),
-                "probability_pct": round(p_retrained * 100, 1),
-                "verdict": (
-                    "APPROVED // RESTORED"
-                    if p_retrained < 0.5
-                    else "REJECTED // SUBPRIME"
-                ),
-                "entropy": ent_retrained,
-                "confidence_pct": round(abs(p_retrained - 0.5) * 200, 1),
-                "model_version": f"v{live_mver}",
-            },
+            "retrained_reality": (
+                {
+                    "probability": round(p_retrained, 4),
+                    "probability_pct": round(p_retrained * 100, 1),
+                    "verdict": (
+                        "APPROVED // RESTORED"
+                        if p_retrained < 0.5
+                        else "REJECTED // SUBPRIME"
+                    ),
+                    "entropy": round(_shannon_entropy(p_retrained), 3),
+                    "confidence_pct": round(abs(p_retrained - 0.5) * 200, 1),
+                    "model_version": f"v{live_mver}",
+                }
+                if p_retrained is not None and live_mver is not None
+                else {
+                    "probability": None,
+                    "probability_pct": None,
+                    "verdict": "UNAVAILABLE",
+                    "entropy": None,
+                    "confidence_pct": None,
+                    "model_version": None,
+                }
+            ),
             "drift_threshold": {
                 "metric": "Population Stability Index (PSI)",
                 "critical_value": 0.25,
@@ -1035,7 +1055,9 @@ async def get_retrain_status() -> dict[str, Any]:
     # 3. Live Serving Version
     try:
         async with httpx.AsyncClient(timeout=1.5) as client:
-            r = await client.get(f"{MODEL_API_URL}/model-info")
+            r = await client.get(
+                f"{MODEL_API_URL}/model-info", headers=MODEL_API_HEADERS
+            )
             if r.status_code == 200:
                 status["serving_version"] = r.json().get("version", "unknown")
     except Exception as e:

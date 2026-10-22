@@ -1,4 +1,19 @@
 {
+  "networking.k8s.io_v1__NetworkPolicy__data__platform-ingress": {
+    "apiVersion": "networking.k8s.io/v1",
+    "kind": "NetworkPolicy",
+    "metadata": {"name": "platform-ingress", "namespace": "data"},
+    "spec": {
+      "podSelector": {},
+      "policyTypes": ["Ingress"],
+      "ingress": [{"from": [
+        {"namespaceSelector": {"matchLabels": {"kubernetes.io/metadata.name": "data"}}},
+        {"namespaceSelector": {"matchLabels": {"kubernetes.io/metadata.name": "serving"}}},
+        {"namespaceSelector": {"matchLabels": {"kubernetes.io/metadata.name": "staging"}}},
+        {"namespaceSelector": {"matchLabels": {"kubernetes.io/metadata.name": "observability"}}}
+      ]}]
+    }
+  },
   "apps_v1__Deployment__data__minio": {
     "apiVersion": "apps/v1",
     "kind": "Deployment",

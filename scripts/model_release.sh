@@ -95,13 +95,13 @@ fi
 
 echo "--- step 6: verify all pods serve ${VERSION} ---"
 for _ in $(seq 1 24); do
-  INFO="$(curl -s "${PROD_URL}/model-info" || true)"
+  INFO="$(curl -s -H "Authorization: Bearer ${MODEL_API_TOKEN}" "${PROD_URL}/model-info" || true)"
   if echo "${INFO}" | grep -q "\"version\":\"${VERSION}\""; then
     break
   fi
   sleep 5
 done
-INFO="$(curl -s "${PROD_URL}/model-info")"
+INFO="$(curl -s -H "Authorization: Bearer ${MODEL_API_TOKEN}" "${PROD_URL}/model-info")"
 echo "${INFO}"
 echo "${INFO}" | grep -q "\"version\":\"${VERSION}\"" ||
   rollback_prod "model-info does not report ${VERSION}"

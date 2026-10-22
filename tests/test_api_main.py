@@ -57,6 +57,33 @@ def test_health_readiness_metrics_and_model_info(api_client: TestClient) -> None
     assert "feature_fetch_duration_seconds" in metrics
 
 
+def test_configured_api_token_protects_model_routes_but_keeps_probes_public(
+    monkeypatch,
+) -> None:  # type: ignore[no-untyped-def]
+    monkeypatch.setenv("MODEL_API_TOKEN", "test-model-token")
+    application = create_app(
+        ModelApiSettings(),
+        feature_source=FakeFeatureSource(),
+        model_source=FakeModelSource(),
+    )
+    with TestClient(application) as client:
+        assert client.get("/healthz").status_code == 200
+        assert client.get("/metrics").status_code == 200
+        assert client.get("/model-info").status_code == 401
+        assert (
+            client.get(
+                "/model-info", headers={"Authorization": "Bearer wrong"}
+            ).status_code
+            == 401
+        )
+        assert (
+            client.get(
+                "/model-info", headers={"Authorization": "Bearer test-model-token"}
+            ).status_code
+            == 200
+        )
+
+
 def test_readiness_is_false_before_lifespan_loads_providers() -> None:
     """Readiness fails closed before startup has loaded both providers."""
     application = create_app(

@@ -87,15 +87,46 @@ jobs:
         env:
           GH_TOKEN: ${{ github.token }}
         run: |
-          checks="$(gh api "repos/$GITHUB_REPOSITORY/commits/$GITHUB_SHA/check-runs" \
-            --jq '[.check_runs[] | select(.name == "quality" or .name == "security") | .conclusion]')"
-          CHECKS="$checks" python3 - <<'PY'
+          python3 - <<'PY'
           import json
           import os
+          import subprocess
+          import time
 
-          conclusions = json.loads(os.environ["CHECKS"])
-          if len(conclusions) != 2 or any(item != "success" for item in conclusions):
-              raise SystemExit(f"CI checks are not both successful for this commit: {conclusions}")
+          repository = os.environ["GITHUB_REPOSITORY"]
+          sha = os.environ["GITHUB_SHA"]
+          required = {"quality", "security"}
+          for _ in range(60):
+              result = subprocess.run(
+                  ["gh", "api", f"repos/{repository}/commits/{sha}/check-runs"],
+                  check=True, capture_output=True, text=True,
+              )
+              checks = [
+                  item for item in json.loads(result.stdout)["check_runs"]
+                  if item["name"] in required
+              ]
+              latest = {}
+              for item in checks:
+                  previous = latest.get(item["name"])
+                  if previous is None or item["started_at"] > previous["started_at"]:
+                      latest[item["name"]] = item
+              if set(latest) == required and all(
+                  item["status"] == "completed" and item["conclusion"] == "success"
+                  for item in latest.values()
+              ):
+                  print("Required CI checks passed for this commit.")
+                  break
+              failures = {
+                  name: item["conclusion"]
+                  for name, item in latest.items()
+                  if item["status"] == "completed" and item["conclusion"] != "success"
+              }
+              if failures:
+                  raise SystemExit(f"Required CI checks failed: {failures}")
+              print("Waiting for CI checks to complete for this commit...")
+              time.sleep(15)
+          else:
+              raise SystemExit("Timed out waiting for required CI checks.")
           PY
       - name: Run the selected cloud operation
         env:

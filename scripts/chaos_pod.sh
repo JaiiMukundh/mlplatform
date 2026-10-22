@@ -16,8 +16,12 @@ start="$(date +%s)"
 kubectl delete pod "${victim}" -n "${NAMESPACE}" >/dev/null
 
 errors=0
+auth_header=()
+if [[ -n "${MODEL_API_TOKEN:-}" ]]; then
+  auth_header=(-H "Authorization: Bearer ${MODEL_API_TOKEN}")
+fi
 for _ in $(seq 1 30); do
-  code="$(curl -s -o /dev/null -w '%{http_code}' -X POST "${BASE_URL}/predict" -H 'content-type: application/json' -d '{"customer_ids":[1]}' || echo 000)"
+  code="$(curl -s -o /dev/null -w '%{http_code}' -X POST "${BASE_URL}/predict" -H 'content-type: application/json' "${auth_header[@]}" -d '{"customer_ids":[1]}' || echo 000)"
   if [[ "${code}" != "200" ]]; then
     errors=$((errors + 1))
   fi

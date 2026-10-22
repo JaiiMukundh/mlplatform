@@ -20,6 +20,11 @@ resource "random_password" "grafana" {
   special = false
 }
 
+resource "random_password" "model_api_token" {
+  length  = 64
+  special = false
+}
+
 resource "kubernetes_secret_v1" "postgres" {
   metadata {
     name      = "postgres-auth"
@@ -53,6 +58,16 @@ resource "kubernetes_secret_v1" "grafana" {
     admin-user     = "admin"
     admin-password = random_password.grafana.result
   }
+  depends_on = [kubernetes_namespace_v1.platform]
+}
+
+resource "kubernetes_secret_v1" "model_api_token" {
+  for_each = toset(["data", "serving", "staging", "observability"])
+  metadata {
+    name      = "model-api-token"
+    namespace = each.value
+  }
+  data       = { token = random_password.model_api_token.result }
   depends_on = [kubernetes_namespace_v1.platform]
 }
 

@@ -19,6 +19,14 @@ This sends a deployment request to GitHub. The app runs on AKS; the command does
 
 The repository’s `azure` GitHub Environment must already have its Azure variables and OIDC identity configured. For a new Azure subscription, an administrator can run `make azure-connect` while signed in with Azure CLI and GitHub CLI. That one-time setup creates the GitHub deployment identity and repository variables; it does not create the application cluster. Azure deployments require the `DEPLOY` confirmation and a successful CI run for the exact commit.
 
+The model API requires a bearer token for prediction and model information routes. After connecting `kubectl` to the AKS cluster, retrieve it without printing it in the terminal and call the API:
+
+```bash
+export MODEL_API_TOKEN="$(kubectl -n serving get secret model-api-token -o jsonpath='{.data.token}' | base64 -d)"
+curl -H "Authorization: Bearer ${MODEL_API_TOKEN}" https://<model-api-address>/model-info
+unset MODEL_API_TOKEN
+```
+
 To stop and delete the project’s Azure app, AKS cluster and Terraform state, run:
 
 ```bash

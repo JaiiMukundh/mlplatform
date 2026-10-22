@@ -11,8 +11,9 @@ resource "azurerm_kubernetes_cluster" "this" {
   node_os_upgrade_channel = "None"
   kubernetes_version      = var.kubernetes_version
 
-  oidc_issuer_enabled       = true
-  workload_identity_enabled = true
+  oidc_issuer_enabled               = true
+  workload_identity_enabled         = true
+  role_based_access_control_enabled = true
 
   api_server_access_profile {
     authorized_ip_ranges = var.api_server_authorized_ip_ranges
@@ -39,6 +40,7 @@ resource "azurerm_kubernetes_cluster" "this" {
   network_profile {
     network_plugin      = "azure"
     network_plugin_mode = "overlay"
+    network_policy      = "cilium"
     network_data_plane  = "cilium"
     pod_cidr            = "10.244.0.0/16"
     load_balancer_sku   = "standard"

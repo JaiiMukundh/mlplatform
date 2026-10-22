@@ -12,6 +12,7 @@ from __future__ import annotations
 import argparse
 import concurrent.futures
 import json
+import os
 import random
 import sys
 import time
@@ -27,7 +28,16 @@ def _one(url: str, customer_id: int, timeout: float) -> tuple[float, bool]:
     started = time.perf_counter()
     try:
         request = urllib.request.Request(
-            f"{url}/predict", data=body, headers={"content-type": "application/json"}
+            f"{url}/predict",
+            data=body,
+            headers={
+                "content-type": "application/json",
+                **(
+                    {"Authorization": f"Bearer {os.environ['MODEL_API_TOKEN']}"}
+                    if os.environ.get("MODEL_API_TOKEN")
+                    else {}
+                ),
+            },
         )
         with urllib.request.urlopen(request, timeout=timeout) as response:
             ok = response.status == 200
