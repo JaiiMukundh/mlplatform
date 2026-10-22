@@ -13,6 +13,14 @@ spec:
   template:
     spec:
       restartPolicy: Never
+      securityContext:
+        runAsNonRoot: true
+        runAsUser: 10001
+        fsGroup: 10001
+        seccompProfile: {type: RuntimeDefault}
+      volumes:
+        - name: tmp
+          emptyDir: {}
       containers:
         - name: gate
           image: __TRAINING_IMAGE__
@@ -21,6 +29,14 @@ spec:
             requests: {cpu: 500m, memory: 1Gi}
             limits: {cpu: "2", memory: 2Gi}
           imagePullPolicy: Always
+          securityContext:
+            allowPrivilegeEscalation: false
+            capabilities: {drop: [ALL]}
+            readOnlyRootFilesystem: true
+            runAsNonRoot: true
+            runAsUser: 10001
+          volumeMounts:
+            - {name: tmp, mountPath: /tmp}
           env:
             - {name: MLFLOW_TRACKING_URI, value: http://mlflow.data.svc:5000}
             - {name: CANDIDATE_VERSION, value: "__CANDIDATE__"}
@@ -28,6 +44,7 @@ spec:
             # put /app on sys.path the way `python -m` does.
             - {name: PYTHONPATH, value: /app}
             - {name: MPLCONFIGDIR, value: /tmp}
+            - {name: HOME, value: /tmp}
           command: ["/bin/bash", "-c"]
           args:
             - |

@@ -13,6 +13,14 @@ spec:
   template:
     spec:
       restartPolicy: OnFailure
+      securityContext:
+        runAsNonRoot: true
+        runAsUser: 10001
+        fsGroup: 10001
+        seccompProfile: {type: RuntimeDefault}
+      volumes:
+        - name: tmp
+          emptyDir: {}
       containers:
         - name: feast-apply
           image: __TRAINING_IMAGE__
@@ -22,6 +30,14 @@ spec:
             requests: {cpu: 100m, memory: 256Mi}
             limits: {cpu: "2", memory: 2Gi}
           imagePullPolicy: Always
+          securityContext:
+            allowPrivilegeEscalation: false
+            capabilities: {drop: [ALL]}
+            readOnlyRootFilesystem: true
+            runAsNonRoot: true
+            runAsUser: 10001
+          volumeMounts:
+            - {name: tmp, mountPath: /tmp}
           env:
             - name: POSTGRES_USER
               valueFrom: {secretKeyRef: {name: postgres-auth, key: username}}
@@ -39,11 +55,14 @@ spec:
             - {name: AWS_EC2_METADATA_DISABLED, value: "true"}
             - {name: FEAST_S3_ENDPOINT_URL, value: http://minio.data.svc:9000}
             - {name: MPLCONFIGDIR, value: /tmp}
+            - {name: HOME, value: /tmp}
           command: ["/bin/bash", "-c"]
           args:
             - |
               set -Eeuo pipefail
               cd /app
-              python -m feature_repo.render_config
-              feast -c feature_repo apply
-              feast -c feature_repo feature-views list
+              mkdir -p /tmp/feature_repo
+              cp /app/feature_repo/definitions.py /tmp/feature_repo/
+              python -m feature_repo.render_config --output /tmp/feature_repo/feature_store.yaml
+              feast -c /tmp/feature_repo apply
+              feast -c /tmp/feature_repo feature-views list

@@ -48,7 +48,7 @@ smoke-images: ## Import real service entry points and ensure models/data are abs
 
 security: ## Reject critical dependency vulnerabilities; report IaC findings.
 	@trivy fs --scanners vuln --severity HIGH,CRITICAL --exit-code 1 --skip-dirs .venv,.terraform .
-	@trivy config --severity HIGH,CRITICAL --exit-code 0 infra
+	@trivy config --severity HIGH,CRITICAL --exit-code 1 infra
 
 .PHONY: image-scan
 image-scan: ## Reject critical vulnerabilities in the model-api smoke-test image.

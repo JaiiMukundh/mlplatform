@@ -13,6 +13,14 @@ spec:
   template:
     spec:
       restartPolicy: OnFailure
+      securityContext:
+        runAsNonRoot: true
+        runAsUser: 10001
+        fsGroup: 10001
+        seccompProfile: {type: RuntimeDefault}
+      volumes:
+        - name: tmp
+          emptyDir: {}
       containers:
         - name: train-mlflow
           image: __TRAINING_IMAGE__
@@ -21,6 +29,14 @@ spec:
             requests: {cpu: 500m, memory: 1Gi}
             limits: {cpu: 1900m, memory: 3Gi}
           imagePullPolicy: Always
+          securityContext:
+            allowPrivilegeEscalation: false
+            capabilities: {drop: [ALL]}
+            readOnlyRootFilesystem: true
+            runAsNonRoot: true
+            runAsUser: 10001
+          volumeMounts:
+            - {name: tmp, mountPath: /tmp}
           env:
             - name: POSTGRES_USER
               valueFrom: {secretKeyRef: {name: postgres-auth, key: username}}
@@ -41,12 +57,15 @@ spec:
             - {name: TRIGGER, value: __TRIGGER__}
             - {name: GIT_SHA, value: __GIT_SHA__}
             - {name: MPLCONFIGDIR, value: /tmp}
+            - {name: HOME, value: /tmp}
           command: ["/bin/bash", "-c"]
           args:
             - |
               set -Eeuo pipefail
               cd /app
-              python -m feature_repo.render_config
+              mkdir -p /tmp/feature_repo
+              cp /app/feature_repo/definitions.py /tmp/feature_repo/
+              python -m feature_repo.render_config --output /tmp/feature_repo/feature_store.yaml
               python - <<'EOF'
               import os
               import pyarrow.fs
@@ -64,4 +83,4 @@ spec:
               )
               print("downloaded labels.parquet")
               EOF
-              python -m ml.train --data-dir /tmp/ml-data __SHUFFLE_FLAG__
+              python -m ml.train --data-dir /tmp/ml-data --feast-repo /tmp/feature_repo __SHUFFLE_FLAG__

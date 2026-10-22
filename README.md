@@ -23,7 +23,7 @@ The model API requires a bearer token for prediction and model information route
 
 ```bash
 export MODEL_API_TOKEN="$(kubectl -n serving get secret model-api-token -o jsonpath='{.data.token}' | base64 -d)"
-curl -H "Authorization: Bearer ${MODEL_API_TOKEN}" https://<model-api-address>/model-info
+curl -H "Authorization: Bearer ${MODEL_API_TOKEN}" http://<model-api-address>:8080/model-info
 unset MODEL_API_TOKEN
 ```
 
