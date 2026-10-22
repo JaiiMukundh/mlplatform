@@ -31,6 +31,27 @@ def test_public_service_exposes_only_configured_port() -> None:
     ]
 
 
+def test_loki_caches_fit_the_small_aks_node_pool() -> None:
+    """Cache sizing must not reserve more RAM than either AKS node can provide."""
+    resources = json.loads(
+        (ROOT / "infra/manifests/observability.json.tftpl").read_text()
+    )
+    cache_budgets = {
+        "loki-chunks-cache": (128, 192, 256),
+        "loki-results-cache": (64, 96, 128),
+    }
+    for name, (cache_mb, request_mb, limit_mb) in cache_budgets.items():
+        workload = next(
+            item
+            for item in resources.values()
+            if item["kind"] == "StatefulSet" and item["metadata"]["name"] == name
+        )
+        container = workload["spec"]["template"]["spec"]["containers"][0]
+        assert f"-m {cache_mb}" in container["args"]
+        assert container["resources"]["requests"]["memory"] == f"{request_mb}Mi"
+        assert container["resources"]["limits"]["memory"] == f"{limit_mb}Mi"
+
+
 def test_github_oidc_session_refreshes_for_long_azure_provisioning(
     tmp_path: Path,
 ) -> None:

@@ -1667,7 +1667,7 @@
           "containers": [
             {
               "args": [
-                "-m 8192",
+                "-m 128",
                 "--extended=modern,track_sizes",
                 "-I 5m",
                 "-c 16384",
@@ -1705,11 +1705,11 @@
               },
               "resources": {
                 "limits": {
-                  "memory": "9830Mi"
+                  "memory": "256Mi"
                 },
                 "requests": {
                   "cpu": "500m",
-                  "memory": "9830Mi"
+                  "memory": "192Mi"
                 }
               },
               "securityContext": {
@@ -1831,7 +1831,7 @@
           "containers": [
             {
               "args": [
-                "-m 1024",
+                "-m 64",
                 "--extended=modern,track_sizes",
                 "-I 5m",
                 "-c 16384",
@@ -1869,11 +1869,11 @@
               },
               "resources": {
                 "limits": {
-                  "memory": "1229Mi"
+                  "memory": "128Mi"
                 },
                 "requests": {
                   "cpu": "500m",
-                  "memory": "1229Mi"
+                  "memory": "96Mi"
                 }
               },
               "securityContext": {
