@@ -69,7 +69,7 @@ def run_loadcheck(url: str, total: int, rps: float, seed: int = 7) -> dict[str, 
 def parse_args() -> argparse.Namespace:
     """Parse load-check CLI options."""
     parser = argparse.ArgumentParser(description=__doc__)
-    parser.add_argument("--url", default="http://localhost:8081")
+    parser.add_argument("--url", default="http://model-api.serving.svc:8080")
     parser.add_argument("--total", type=int, default=2000)
     parser.add_argument("--rps", type=float, default=20.0)
     return parser.parse_args()

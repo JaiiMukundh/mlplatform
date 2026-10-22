@@ -14,7 +14,6 @@ NODE_COUNT="${AZURE_NODE_COUNT:-1}"
 need() { command -v "$1" >/dev/null || { echo "MISSING: $1 not installed" >&2; exit 1; }; }
 need az
 need kubectl
-need helm
 need terraform
 need docker
 

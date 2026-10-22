@@ -1,9 +1,7 @@
 """Release dispatch for retrained candidates (P8.4).
 
-``TRIGGER_MODE=github`` POSTs a ``model-candidate-ready`` repository dispatch
-(the human provisions ``GITHUB_DISPATCH_TOKEN``). ``local`` runs the exact
-same release scripts the workflow would run, so the loop closes with no
-GitHub connectivity. Standard library only.
+``TRIGGER_MODE=github`` POSTs a ``model-candidate-ready`` repository dispatch.
+``in_cluster`` runs the release script in an AKS Job. Standard library only.
 """
 
 from __future__ import annotations
@@ -29,7 +27,7 @@ def dispatch_candidate(
     """Announce a candidate version; return how it was released."""
     if release_script is None:
         release_script = "scripts/model_release.sh"
-    mode = trigger_mode or os.environ.get("TRIGGER_MODE", "local")
+    mode = trigger_mode or os.environ.get("TRIGGER_MODE", "in_cluster")
     if mode == "github":
         repo = github_repo or os.environ.get("GITHUB_REPO", "")
         token = github_token or os.environ.get("GITHUB_DISPATCH_TOKEN", "")
@@ -58,9 +56,13 @@ def dispatch_candidate(
                 extra={"version": str(version), "status": response.status},
             )
         return "github"
-    LOGGER.info("running local release", extra={"version": str(version), "mode": mode})
+    if mode != "in_cluster":
+        raise ValueError(f"unsupported TRIGGER_MODE: {mode}")
+    LOGGER.info(
+        "running in-cluster release", extra={"version": str(version), "mode": mode}
+    )
     command = ["bash", release_script, str(version)]
     if image_tag := os.environ.get("IMAGE_TAG"):
         command.append(image_tag)
     subprocess.run(command, check=True, cwd=workdir)
-    return "local"
+    return "in_cluster"

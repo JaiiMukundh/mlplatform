@@ -7,6 +7,32 @@ source scripts/azure_oidc.sh
 WORKFLOW_ACTION="${ACTION:-plan}"
 ACTION="${1:-plan}"
 TF=(terraform -chdir=infra/envs/azure)
+AKS_TF=(terraform -chdir=infra/envs/aks)
+
+aks_init() {
+  "${AKS_TF[@]}" init -input=false -lockfile=readonly \
+    -backend-config="storage_account_name=${TF_STATE_ACCOUNT}" \
+    -backend-config="container_name=tfstate" \
+    -backend-config="key=mlplatform-aks.tfstate" \
+    -backend-config="use_azuread_auth=true" -backend-config="use_oidc=true"
+}
+
+aks_vars() {
+  export TF_VAR_acr="$("${TF[@]}" output -raw acr_login_server)"
+  export TF_VAR_public_ip_name="$("${TF[@]}" output -raw public_ip_name)"
+  export TF_VAR_public_host="$("${TF[@]}" output -raw public_host)"
+  export TF_VAR_resource_group="$("${TF[@]}" output -raw resource_group_name)"
+  export TF_VAR_cluster_name="$("${TF[@]}" output -raw cluster_name)"
+  export TF_VAR_allowed_cidr="${AZURE_ALLOWED_CIDR}"
+  export TF_VAR_runner_cidr="$(curl --fail --silent --show-error https://api.ipify.org)/32"
+  export TF_VAR_image_tag="${TAG:-$(git rev-parse HEAD)}"
+  export TF_VAR_model_version="${CHAMPION:-1}"
+}
+
+aks_apply() {
+  export TF_VAR_stage="$1"
+  "${AKS_TF[@]}" apply -input=false -auto-approve
+}
 
 if [[ "${ACTION}" == connect ]]; then
   REPO="$(gh repo view --json nameWithOwner --jq .nameWithOwner)"
@@ -238,6 +264,14 @@ if [[ "${ACTION}" == deploy ]]; then
   fi
 fi
 if [[ "${ACTION}" == destroy ]]; then
+  RG="$("${TF[@]}" output -raw resource_group_name)"
+  CLUSTER="$("${TF[@]}" output -raw cluster_name)"
+  refresh_azure_oidc_login
+  az aks get-credentials --resource-group "${RG}" --name "${CLUSTER}" --overwrite-existing
+  aks_vars
+  export TF_VAR_stage=app
+  aks_init
+  "${AKS_TF[@]}" destroy -input=false -auto-approve
   "${TF[@]}" plan -destroy -out=destroy.tfplan
   "${TF[@]}" apply -input=false destroy.tfplan
   exit
@@ -297,9 +331,6 @@ verify() {
 }
 [[ "${ACTION}" == verify ]] && { verify; exit; }
 if [[ "${ACTION}" == dashboard ]]; then
-  RUNNER_CIDR="$(curl --fail --silent --show-error https://api.ipify.org)/32"
-  kubectl -n observability patch service dashboard --type=merge \
-    -p="{\"spec\":{\"ports\":[{\"name\":\"https\",\"port\":443,\"protocol\":\"TCP\",\"targetPort\":\"https\"}],\"loadBalancerSourceRanges\":[\"${AZURE_ALLOWED_CIDR}\",\"${RUNNER_CIDR}\"]}}"
   verify_dashboard
   exit
 fi
@@ -327,42 +358,15 @@ for service in training model-api mlflow remediator drift-monitor retrain dashbo
   docker build --file infra/Dockerfile --target "${service}" --tag "${ACR}/mlp-${service}:${TAG}" .
   docker push "${ACR}/mlp-${service}:${TAG}"
 done
-for namespace in data serving staging observability; do
-  kubectl create namespace "${namespace}" --dry-run=client -o yaml | kubectl apply -f -
-done
-if ! kubectl -n data get secret postgres-auth >/dev/null 2>&1; then
-  kubectl -n data create secret generic postgres-auth --from-literal=username=mlp --from-literal=postgres-password="$(openssl rand -hex 16)"
-fi
-if ! kubectl -n data get secret minio-auth >/dev/null 2>&1; then
-  kubectl -n data create secret generic minio-auth --from-literal=root-user=minioadmin --from-literal=root-password="$(openssl rand -hex 16)"
-fi
-if ! kubectl -n observability get secret grafana-admin >/dev/null 2>&1; then
-  kubectl -n observability create secret generic grafana-admin --from-literal=admin-user=admin --from-literal=admin-password="$(openssl rand -hex 16)"
-fi
-helm_apply() {
-  local release="$1" namespace="$2" chart="$3"; shift 3
-  helm upgrade --install "${release}" "${chart}" -n "${namespace}" --atomic --wait --timeout 15m "$@"
-}
-helm_apply kube-prometheus-stack observability infra/vendor/kube-prometheus-stack-91.8.2.tgz -f infra/charts/observability/values-prometheus.yaml
-helm_apply loki observability infra/vendor/loki-7.3.0.tgz -f infra/charts/observability/values-loki.yaml
-helm_apply alloy observability infra/vendor/alloy-1.13.0.tgz -f infra/charts/observability/values-alloy.yaml
-helm_apply observability-content observability infra/charts/observability
-for service in postgres minio; do
-  helm_apply "${service}" data "infra/charts/${service}" --set auth.createSecret=false --set "auth.existingSecret=${service}-auth"
-done
-helm_apply redis data infra/charts/redis
-helm_apply mlflow data infra/charts/mlflow \
-  --set "image.repository=${ACR}/mlp-mlflow,image.tag=${TAG},resources.requests.memory=256Mi"
-
-public_service() {
-  local namespace="$1" name="$2" port="$3"
-  kubectl -n "${namespace}" get service "${name}" -o json | \
-    PUBLIC_PORT="${port}" python3 scripts/azure_public_service.py | kubectl replace -f -
-}
-public_service observability kube-prometheus-stack-grafana 3000
-public_service observability kube-prometheus-stack-alertmanager 9093
-public_service data mlflow 5000
-public_service data minio-external 9000
+aks_vars
+aks_init
+aks_apply bootstrap
+aks_apply platform
+kubectl -n data rollout status statefulset/postgres --timeout=10m
+kubectl -n data rollout status deployment/minio --timeout=10m
+kubectl -n data wait --for=condition=complete job/postgres-init --timeout=10m
+kubectl -n data wait --for=condition=complete job/minio-buckets --timeout=10m
+kubectl -n data rollout status deployment/mlflow --timeout=10m
 
 # Port-forwards exist only on the ephemeral Actions runner, never on the laptop.
 PF_PIDS=()
@@ -380,7 +384,7 @@ print(next((a["version"] for m in models if m["name"]=="loan-default" for a in m
 export TRAINING_IMAGE="${ACR}/mlp-training:${TAG}"
 if [[ -z "${CHAMPION}" ]]; then
   make seed-data
-  DEPLOY_TARGET=azure make publish-feast-data
+  DEPLOY_TARGET=azure MINIO_ENDPOINT=http://127.0.0.1:9000 make publish-feast-data
   for job in apply-job.yaml materialize-job.yaml verify-job.yaml; do
     sed "s|__TRAINING_IMAGE__|${TRAINING_IMAGE}|g" "infra/jobs/feast-${job}" > /tmp/mlp-feast-job.yaml
     bash scripts/run_job.sh /tmp/mlp-feast-job.yaml data
@@ -393,36 +397,8 @@ if ! curl --fail --silent 'http://localhost:5000/api/2.0/mlflow/registered-model
     -d "{\"name\":\"loan-default\",\"alias\":\"baseline\",\"version\":\"${CHAMPION}\"}" \
     http://localhost:5000/api/2.0/mlflow/registered-models/alias
 fi
-SKIP_SMOKE=1 DEPLOY_TARGET=azure MODEL_API_REPOSITORY="${ACR}/mlp-model-api" \
-  bash scripts/deploy.sh model-api serving "${TAG}" --set "model.version=${CHAMPION}"
-helm_apply remediator observability infra/charts/remediator --set "image.repository=${ACR}/mlp-remediator,image.tag=${TAG}"
-PG_USER="$(kubectl -n data get secret postgres-auth -o jsonpath='{.data.username}' | base64 -d)"
-PG_PASS="$(kubectl -n data get secret postgres-auth -o jsonpath='{.data.postgres-password}' | base64 -d)"
-kubectl -n observability create secret generic drift-monitor-db \
-  --from-literal=database-url="postgresql+psycopg://${PG_USER}:${PG_PASS}@postgres.data.svc:5432/mlp" --dry-run=client -o yaml | kubectl apply -f -
-helm_apply retrain data infra/charts/retrain --set "image.repository=${ACR}/mlp-retrain,image.tag=${TAG}" \
-  --set "env.MODEL_API_REPOSITORY=${ACR}/mlp-model-api,env.TRAINING_IMAGE=${TRAINING_IMAGE},env.IMAGE_TAG=${TAG},env.DEPLOY_TARGET=azure,env.PUBLIC_IP_NAME=${PUBLIC_IP_NAME},env.AZURE_RESOURCE_GROUP=${RG},env.AZURE_ALLOWED_CIDR=${AZURE_ALLOWED_CIDR}"
-helm_apply drift-monitor observability infra/charts/drift-monitor --set "image.repository=${ACR}/mlp-drift-monitor,image.tag=${TAG}"
-MINIO_USER="$(kubectl -n data get secret minio-auth -o jsonpath='{.data.root-user}' | base64 -d)"
-MINIO_PASS="$(kubectl -n data get secret minio-auth -o jsonpath='{.data.root-password}' | base64 -d)"
-kubectl -n observability create secret generic dashboard-data \
-  --from-literal=access-key="${MINIO_USER}" --from-literal=secret-key="${MINIO_PASS}" --dry-run=client -o yaml | kubectl apply -f -
-if ! kubectl -n observability get secret dashboard-tls >/dev/null 2>&1; then
-  tls_dir="$(mktemp -d)"
-  openssl req -x509 -nodes -newkey rsa:2048 -days 2 \
-    -subj "/CN=${PUBLIC_HOST}" -addext "subjectAltName=DNS:${PUBLIC_HOST}" \
-    -keyout "${tls_dir}/tls.key" -out "${tls_dir}/tls.crt" >/dev/null 2>&1
-  kubectl -n observability create secret tls dashboard-tls --cert="${tls_dir}/tls.crt" --key="${tls_dir}/tls.key"
-  rm -rf "${tls_dir}"
-fi
-export DASHBOARD_IMAGE="${ACR}/mlp-dashboard:${TAG}" CLUSTER_NAME="${CLUSTER}" IMAGE_TAG="${TAG}" MODEL_API_REPOSITORY="${ACR}/mlp-model-api"
-python3 - <<'DASHBOARD_RENDER' | kubectl apply -f -
-import os,re
-from pathlib import Path
-manifest=Path("infra/dashboard.yaml").read_text()
-values={**os.environ,"RESOURCE_GROUP":os.environ["AZURE_RESOURCE_GROUP"],"ALLOWED_CIDR":os.environ["AZURE_ALLOWED_CIDR"]}
-print(re.sub(r"__([A-Z_]+)__",lambda match:values[match[1]],manifest))
-DASHBOARD_RENDER
+export TF_VAR_model_version="${CHAMPION}"
+aks_apply app
 
 verify
 SESSION_EXPIRES_AT="$(date -u -d '+2 hours' +%FT%TZ)"

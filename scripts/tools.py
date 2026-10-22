@@ -70,16 +70,9 @@ def install(name: str, destination: Path) -> None:
     print(f"{name}: installed verified binary")
 
 
-def check_charts() -> None:
-    """Validate rendered charts using schemas from the vendored operator CRDs."""
+def check_manifests() -> None:
+    """Validate Terraform-managed AKS manifests against pinned Kubernetes schemas."""
     import yaml
-
-    class SchemaLoader(yaml.SafeLoader):
-        """Keep literal '=' keys in upstream CRDs as strings."""
-
-    SchemaLoader.add_constructor(
-        "tag:yaml.org,2002:value", SchemaLoader.construct_scalar
-    )
 
     with tempfile.TemporaryDirectory(prefix="mlp-schemas-") as directory:
         root = Path(directory)
@@ -96,40 +89,33 @@ def check_charts() -> None:
                     raise ValueError("invalid vendored schema member")
                 target.parent.mkdir(parents=True, exist_ok=True)
                 target.write_bytes(stream.read())
-        with tarfile.open("infra/vendor/kube-prometheus-stack-91.8.2.tgz") as archive:
-            for member in archive:
-                if "/crds/crds/" not in member.name or not member.name.endswith(
-                    ".yaml"
-                ):
-                    continue
-                stream = archive.extractfile(member)
-                if stream is None:
-                    continue
-                for crd in yaml.load_all(stream, Loader=SchemaLoader):
-                    spec = crd["spec"]
-                    for version in spec["versions"]:
-                        path = (
-                            root
-                            / spec["group"]
-                            / (
-                                f"{spec['names']['kind'].lower()}_{version['name']}.json"
-                            )
-                        )
-                        path.parent.mkdir(parents=True, exist_ok=True)
-                        path.write_text(
-                            json.dumps(version["schema"]["openAPIV3Schema"])
-                        )
-        for chart in [
-            *sorted(Path("infra/charts").iterdir()),
-            Path("infra/dashboard.yaml"),
-        ]:
-            manifest = (
-                subprocess.run(
-                    ["helm", "template", str(chart)], check=True, capture_output=True
-                ).stdout
-                if chart.is_dir()
-                else chart.read_bytes()
-            )
+        for source in Path("infra/vendor/schemas").rglob("*.json"):
+            target = root / source.relative_to("infra/vendor/schemas")
+            target.parent.mkdir(parents=True, exist_ok=True)
+            target.write_bytes(source.read_bytes())
+        manifests = Path("infra/manifests")
+        crds = json.loads((manifests / "crds.json").read_text())
+        for crd in crds.values():
+            if (
+                crd["apiVersion"] != "apiextensions.k8s.io/v1"
+                or crd["kind"] != "CustomResourceDefinition"
+            ):
+                raise ValueError("invalid custom resource definition")
+            spec = crd["spec"]
+            for version in spec["versions"]:
+                path = (
+                    root
+                    / spec["group"]
+                    / f"{spec['names']['kind'].lower()}_{version['name']}.json"
+                )
+                path.parent.mkdir(parents=True, exist_ok=True)
+                path.write_text(json.dumps(version["schema"]["openAPIV3Schema"]))
+        for group in ("data", "observability", "app"):
+            resources = json.loads((manifests / f"{group}.json.tftpl").read_text())
+            payload = "---\n".join(
+                yaml.safe_dump(resource, sort_keys=False)
+                for resource in resources.values()
+            ).encode()
             subprocess.run(
                 [
                     "kubeconform",
@@ -142,7 +128,7 @@ def check_charts() -> None:
                         / "{{ .ResourceKind }}_{{ .ResourceAPIVersion }}.json"
                     ),
                 ],
-                input=manifest,
+                input=payload,
                 check=True,
             )
 
@@ -150,11 +136,11 @@ def check_charts() -> None:
 def main() -> None:
     """Install the requested tools; failures exit nonzero."""
     parser = argparse.ArgumentParser(description=__doc__)
-    parser.add_argument("tools", nargs="+", choices=[*TOOLS, "check-charts"])
+    parser.add_argument("tools", nargs="+", choices=[*TOOLS, "check-manifests"])
     args = parser.parse_args()
     for name in args.tools:
-        if name == "check-charts":
-            check_charts()
+        if name == "check-manifests":
+            check_manifests()
         else:
             install(name, Path.home() / ".local/bin")
 

@@ -1,4 +1,4 @@
-# Azure parity for kind-registry / ECR: Azure Container Registry (ACR) Basic SKU
+# Azure Container Registry (ACR) Basic SKU
 # with mapped repositories for all service images.
 
 data "azurerm_client_config" "current" {}

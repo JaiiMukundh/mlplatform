@@ -54,7 +54,7 @@ def main() -> int:
     parser.add_argument("--rps", type=int, default=10)
     parser.add_argument("--duration", type=int, default=30, help="seconds")
     parser.add_argument("--pool", choices=["baseline", "drifted"], default="baseline")
-    parser.add_argument("--url", default="http://localhost:8080")
+    parser.add_argument("--url", default="http://model-api.serving.svc:8080")
     parser.add_argument("--max-error-rate", type=float, default=0.01)
     parser.add_argument("--seed", type=int, default=7)
     args = parser.parse_args()

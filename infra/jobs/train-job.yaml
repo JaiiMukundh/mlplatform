@@ -64,4 +64,4 @@ spec:
               )
               print("downloaded labels.parquet")
               EOF
-              python -m ml.train --mode mlflow --data-dir /tmp/ml-data __SHUFFLE_FLAG__
+              python -m ml.train --data-dir /tmp/ml-data __SHUFFLE_FLAG__

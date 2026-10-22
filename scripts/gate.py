@@ -229,7 +229,7 @@ def parse_args() -> argparse.Namespace:
     parser.add_argument("--model", default="loan-default")
     parser.add_argument(
         "--tracking-uri",
-        default=os.environ.get("MLFLOW_TRACKING_URI", "http://localhost:5000"),
+        default=os.environ.get("MLFLOW_TRACKING_URI", "http://mlflow.data.svc:5000"),
     )
     parser.add_argument("--out", default="gate_report.json")
     parser.add_argument(

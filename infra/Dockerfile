@@ -10,20 +10,16 @@ COPY core/ core/
 RUN python -m pip install uv==0.13.0
 
 FROM builder AS model-api-builder
-RUN uv sync --frozen --only-group model-api --no-editable \
-    && uv pip install --python /opt/venv/bin/python --no-deps .
+RUN uv sync --frozen --only-group model-api --no-editable
 
 FROM builder AS drift-monitor-builder
-RUN uv sync --frozen --only-group drift-monitor --no-editable \
-    && uv pip install --python /opt/venv/bin/python --no-deps .
+RUN uv sync --frozen --only-group drift-monitor --no-editable
 
 FROM builder AS remediator-builder
-RUN uv sync --frozen --only-group remediator --no-editable \
-    && uv pip install --python /opt/venv/bin/python --no-deps .
+RUN uv sync --frozen --only-group remediator --no-editable
 
 FROM builder AS dashboard-builder
-RUN uv sync --frozen --only-group dashboard --no-editable \
-    && uv pip install --python /opt/venv/bin/python --no-deps .
+RUN uv sync --frozen --only-group dashboard --no-editable
 
 FROM python:3.11.17-slim-trixie@sha256:e88e9763f943ec1834f992a4b51e0f24500486803e8bc534e5767af9ea65f6ce AS runtime
 
@@ -92,25 +88,16 @@ RUN apt-get update && apt-get install -y --no-install-recommends curl jq \
 USER 10001:10001
 
 ARG KUBECTL_VERSION=v1.37.1
-ARG HELM_VERSION=v3.22.0
 ARG KUBECTL_SHA256=65691ff77eb6fa44c908b77a1082c9f092c3b9733b5cefabec0d1104890e21a8
-ARG HELM_SHA256=1e4ab49e429626cf6c6958d914248b78c9730803c2751b87627e171dc800e7bb
-ENV KUBECTL_VERSION=${KUBECTL_VERSION} HELM_VERSION=${HELM_VERSION}
+ENV KUBECTL_VERSION=${KUBECTL_VERSION}
 
 SHELL ["/bin/bash", "-o", "pipefail", "-c"]
 RUN curl -fsSL --retry 3 --retry-all-errors --connect-timeout 20 --max-time 180 -o /app/bin/kubectl "https://dl.k8s.io/release/${KUBECTL_VERSION}/bin/linux/amd64/kubectl" \
     && echo "${KUBECTL_SHA256}  /app/bin/kubectl" | sha256sum -c - \
-    && chmod +x /app/bin/kubectl \
-    && curl -fsSL --retry 3 --retry-all-errors --connect-timeout 20 --max-time 180 -o /tmp/helm.tar.gz "https://get.helm.sh/helm-${HELM_VERSION}-linux-amd64.tar.gz" \
-    && echo "${HELM_SHA256}  /tmp/helm.tar.gz" | sha256sum -c - \
-    && tar -xzf /tmp/helm.tar.gz -C /tmp \
-    && mv /tmp/linux-amd64/helm /app/bin/helm \
-    && chmod +x /app/bin/helm \
-    && rm -rf /tmp/linux-amd64
+    && chmod +x /app/bin/kubectl
 
 COPY --chown=10001:10001 core/retrain/ retrain/
 COPY --chown=10001:10001 scripts/model_release.sh scripts/deploy.sh scripts/smoke.sh scripts/loadcheck.py scripts/run_gate.sh scripts/run_job.sh scripts/
-COPY --chown=10001:10001 infra/charts/model-api infra/charts/model-api
 COPY --chown=10001:10001 infra/jobs/gate-job.yaml infra/jobs/gate-job.yaml
 
 
@@ -130,21 +117,13 @@ RUN apt-get update && apt-get install -y --no-install-recommends curl jq make \
     && mkdir -p /app/bin && chown 10001:10001 /app/bin
 
 ARG KUBECTL_VERSION=v1.37.1
-ARG HELM_VERSION=v3.22.0
 ARG KUBECTL_SHA256=65691ff77eb6fa44c908b77a1082c9f092c3b9733b5cefabec0d1104890e21a8
-ARG HELM_SHA256=1e4ab49e429626cf6c6958d914248b78c9730803c2751b87627e171dc800e7bb
-ENV KUBECTL_VERSION=${KUBECTL_VERSION} HELM_VERSION=${HELM_VERSION}
+ENV KUBECTL_VERSION=${KUBECTL_VERSION}
 
 SHELL ["/bin/bash", "-o", "pipefail", "-c"]
 RUN curl -fsSL --retry 3 --retry-all-errors --connect-timeout 20 --max-time 180 -o /app/bin/kubectl "https://dl.k8s.io/release/${KUBECTL_VERSION}/bin/linux/amd64/kubectl" \
     && echo "${KUBECTL_SHA256}  /app/bin/kubectl" | sha256sum -c - \
-    && chmod +x /app/bin/kubectl \
-    && curl -fsSL --retry 3 --retry-all-errors --connect-timeout 20 --max-time 180 -o /tmp/helm.tar.gz "https://get.helm.sh/helm-${HELM_VERSION}-linux-amd64.tar.gz" \
-    && echo "${HELM_SHA256}  /tmp/helm.tar.gz" | sha256sum -c - \
-    && tar -xzf /tmp/helm.tar.gz -C /tmp \
-    && mv /tmp/linux-amd64/helm /app/bin/helm \
-    && chmod +x /app/bin/helm \
-    && rm -rf /tmp/linux-amd64
+    && chmod +x /app/bin/kubectl
 USER 10001:10001
 
 FROM dashboard-tools AS dashboard

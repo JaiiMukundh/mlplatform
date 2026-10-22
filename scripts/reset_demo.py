@@ -59,9 +59,9 @@ def _resolve_version(requested: str) -> str:
 
 
 def _mlflow(path: str, method: str = "GET", payload: bytes | None = None) -> bytes:
-    """Call the MLflow tracking server from the host (registry APIs only)."""
+    """Call the in-cluster MLflow tracking server (registry APIs only)."""
     request = urllib.request.Request(
-        f"{os.environ.get('MLFLOW_TRACKING_URI', 'http://localhost:5000')}{path}",
+        f"{os.environ.get('MLFLOW_TRACKING_URI', 'http://mlflow.data.svc:5000')}{path}",
         data=payload,
         headers={"content-type": "application/json"},
         method=method,
@@ -106,49 +106,11 @@ def parse_args() -> argparse.Namespace:
     return parser.parse_args()
 
 
-def _recover_pending_staging_release() -> None:
-    """Roll staging back to its last deployed revision after an interruption."""
-    status = subprocess.run(
-        ["helm", "status", "model-api-staging", "-n", "staging"],
-        check=False,
-        capture_output=True,
-        text=True,
-    )
-    if "pending-" not in status.stdout:
-        return
-    history = subprocess.run(
-        ["helm", "history", "model-api-staging", "-n", "staging", "-o", "json"],
-        check=True,
-        capture_output=True,
-        text=True,
-    )
-    revisions = [
-        item["revision"]
-        for item in json.loads(history.stdout)
-        if item["status"] == "deployed"
-    ]
-    if not revisions:
-        raise RuntimeError("staging release is pending and has no deployed revision")
-    revision = max(revisions)
-    _run(
-        "helm",
-        "rollback",
-        "model-api-staging",
-        str(revision),
-        "-n",
-        "staging",
-        "--wait",
-        "--timeout",
-        "5m",
-    )
-
-
 def main() -> int:
     """Rebuild the baseline and redeploy the baseline champion."""
     args = parse_args()
     version = _resolve_version(args.version)
     end_date = _model_data_end(version)
-    _recover_pending_staging_release()
 
     _run(
         sys.executable,
@@ -192,8 +154,7 @@ def main() -> int:
         "model-api",
         "serving",
         os.environ.get("IMAGE_TAG", "dev"),
-        "--set",
-        f"model.version={version}",
+        version,
     )
     _run(
         "kubectl",

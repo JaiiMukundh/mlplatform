@@ -242,7 +242,7 @@
         <!-- Cluster Status Badge -->
         <div id="clusterHealthBadge" class="hidden md:flex items-center gap-2 px-2 py-0.5 bg-[#F8F6F0] border-2 border-black font-mono text-[11px] font-bold text-black">
           <span class="w-2 h-2 bg-[#1D7A4D]"></span>
-          <span>KIND // 3 NODES READY</span>
+          <span>AKS // 3 NODES READY</span>
         </div>
       </div>
 
@@ -369,7 +369,7 @@
               <span class="text-[#66645D]">MLflow Run ID:</span>
               <span id="metaRunId" class="text-black font-bold ml-1">561bbd7f190f4cb6965f3b86f9db6188</span>
             </div>
-            <a href="http://localhost:5000" target="_blank" class="text-black underline font-bold hover:text-[#1D7A4D]">
+            <a href="http://__PUBLIC_HOST__:5000" target="_blank" class="text-black underline font-bold hover:text-[#1D7A4D]">
               OPEN IN MLFLOW &rarr;
             </a>
           </div>
@@ -1122,7 +1122,7 @@
     ];
 
     document.getElementById('portalGrid').innerHTML = PORTALS.map(([target, port, title, detail, action], index) => `
-      <a href="http://localhost:${target}" target="_blank" class="cypher-panel p-3.5 flex flex-col justify-between hover:bg-[#F8F6F0] transition group">
+      <a href="http://__PUBLIC_HOST__:${target}" target="_blank" class="cypher-panel p-3.5 flex flex-col justify-between hover:bg-[#F8F6F0] transition group">
         <div>
           <div class="flex items-center justify-between border-b-2 border-black pb-2 mb-2">
             <span class="micro-label">PORTAL 06.0${index + 1}</span>
@@ -1250,7 +1250,7 @@
         const pill = document.getElementById('clusterHealthBadge');
         if (data.nodes_ready === data.nodes_total && data.nodes_total > 0) {
           pill.className = 'hidden sm:flex items-center gap-2 px-2.5 py-1 bg-[#F8F6F0] border-2 border-black font-mono text-xs font-bold text-black';
-          pill.innerHTML = `<span class="w-2 h-2 bg-[#1D7A4D]"></span><span>KIND // ${data.nodes_ready}/${data.nodes_total} NODES READY</span>`;
+          pill.innerHTML = `<span class="w-2 h-2 bg-[#1D7A4D]"></span><span>AKS // ${data.nodes_ready}/${data.nodes_total} NODES READY</span>`;
         }
 
         const driftPill = document.getElementById('driftStatePill');

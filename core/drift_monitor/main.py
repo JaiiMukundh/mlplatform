@@ -225,7 +225,7 @@ def _retrain_in_flight(namespace: str) -> bool:
 
     ``status.active`` alone misses freshly created Jobs (no status yet) and
     Jobs between container restarts, which let a second release start while
-    the first still holds helm's release lock. A Job counts as in flight
+    a prior retraining Job is still in flight. A Job counts as in flight
     until :func:`job_terminal` says otherwise.
     """
     from kubernetes import client as k8s_client

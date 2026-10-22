@@ -1,6 +1,0 @@
-apiVersion: v2
-name: model-api
-description: Loan-default prediction API for Azure Kubernetes Service.
-type: application
-version: 0.1.0
-appVersion: file-v1

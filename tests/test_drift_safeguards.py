@@ -104,7 +104,7 @@ def test_fresh_job_without_status_is_in_flight() -> None:
 
 
 def test_running_job_is_in_flight() -> None:
-    """An active Job suppresses overlapping releases (helm lock safety)."""
+    """An active Job suppresses overlapping releases (release overlap safety)."""
     assert job_terminal(active=1, failed=1, completion_time=None) is False
 
 

@@ -1,16 +1,14 @@
-"""Train the loan-default model; file mode for P1, Feast+MLflow mode for P6.4."""
+"""Train and register the loan-default model with Feast and MLflow."""
 
 from __future__ import annotations
 
 import argparse
-import json
 import os
 import tempfile
 from dataclasses import dataclass
 from pathlib import Path
 from typing import Any
 
-import joblib
 import pandas as pd
 from sklearn.ensemble import HistGradientBoostingClassifier
 
@@ -32,21 +30,6 @@ class TemporalSplits:
     test: pd.DataFrame
 
 
-def load_training_frame(data_directory: Path) -> pd.DataFrame:
-    """Join generated features to labels using both entity and event timestamp."""
-    features = pd.read_parquet(data_directory / "features.parquet")
-    labels = pd.read_parquet(data_directory / "labels.parquet")
-    frame = features.merge(
-        labels,
-        on=[ENTITY_COLUMN, TIMESTAMP_COLUMN],
-        how="inner",
-        validate="one_to_one",
-    )
-    if len(frame) != len(features) or len(frame) != len(labels):
-        raise ValueError("feature/label join dropped rows")
-    return frame.sort_values([TIMESTAMP_COLUMN, ENTITY_COLUMN]).reset_index(drop=True)
-
-
 def temporal_split(frame: pd.DataFrame) -> TemporalSplits:
     """Split sorted observations 70%/15%/15% without shuffling future into past."""
     if len(frame) < 20:
@@ -61,62 +44,6 @@ def temporal_split(frame: pd.DataFrame) -> TemporalSplits:
         validation=ordered.iloc[train_end:validation_end].copy(),
         test=ordered.iloc[validation_end:].copy(),
     )
-
-
-def build_model() -> HistGradientBoostingClassifier:
-    """Create the pinned deterministic gradient-boosted classifier."""
-    return HistGradientBoostingClassifier(**_model_hyperparameters())
-
-
-def _feature_schema(frame: pd.DataFrame) -> dict[str, Any]:
-    """Build the serving schema artifact in canonical feature order."""
-    return {
-        "features": [
-            {"name": column, "dtype": str(frame[column].dtype)}
-            for column in FEATURE_COLUMNS
-        ],
-        "entity": ENTITY_COLUMN,
-        "timestamp": TIMESTAMP_COLUMN,
-        "label": LABEL_COLUMN,
-    }
-
-
-def train_file_model(data_directory: Path, artifacts_directory: Path) -> dict[str, Any]:
-    """Train, evaluate, and persist the complete P1 artifact set."""
-    frame = load_training_frame(data_directory)
-    splits = temporal_split(frame)
-    model = build_model()
-    model.fit(splits.train[FEATURE_COLUMNS], splits.train[LABEL_COLUMN])
-
-    metrics: dict[str, Any] = {
-        "validation": evaluate_binary_classifier(
-            model,
-            splits.validation[FEATURE_COLUMNS],
-            splits.validation[LABEL_COLUMN],
-        ),
-        "test": evaluate_binary_classifier(
-            model, splits.test[FEATURE_COLUMNS], splits.test[LABEL_COLUMN]
-        ),
-        "rows": {
-            "train": len(splits.train),
-            "validation": len(splits.validation),
-            "test": len(splits.test),
-        },
-    }
-
-    artifacts_directory.mkdir(parents=True, exist_ok=True)
-    joblib.dump(model, artifacts_directory / "model.joblib")
-    (artifacts_directory / "metrics.json").write_text(
-        json.dumps(metrics, indent=2, sort_keys=True) + "\n", encoding="utf-8"
-    )
-    reference = splits.train[FEATURE_COLUMNS].sample(
-        n=min(10_000, len(splits.train)), random_state=42
-    )
-    reference.to_parquet(artifacts_directory / "reference.parquet", index=False)
-    (artifacts_directory / "feature_schema.json").write_text(
-        json.dumps(_feature_schema(frame), indent=2) + "\n", encoding="utf-8"
-    )
-    return metrics
 
 
 def build_entity_frame(labels: pd.DataFrame) -> pd.DataFrame:
@@ -137,7 +64,7 @@ def build_entity_frame(labels: pd.DataFrame) -> pd.DataFrame:
 
 
 def _model_hyperparameters() -> dict[str, Any]:
-    """Return the pinned hyperparameter contract shared by every training mode."""
+    """Return the pinned hyperparameters for cloud training."""
     return {
         "learning_rate": 0.08,
         "max_iter": 180,
@@ -296,13 +223,11 @@ def train_mlflow_model(
 def parse_args() -> argparse.Namespace:
     """Parse training CLI options."""
     parser = argparse.ArgumentParser(description=__doc__)
-    parser.add_argument("--mode", choices=["file", "mlflow"], default="file")
     parser.add_argument("--data-dir", type=Path, default=Path("data"))
-    parser.add_argument("--artifacts-dir", type=Path, default=Path("artifacts"))
     parser.add_argument("--feast-repo", type=Path, default=Path("feature_repo"))
     parser.add_argument(
         "--tracking-uri",
-        default=os.environ.get("MLFLOW_TRACKING_URI", "http://localhost:5000"),
+        default=os.environ.get("MLFLOW_TRACKING_URI", "http://mlflow.data.svc:5000"),
     )
     parser.add_argument("--experiment", default="loan-default")
     parser.add_argument("--model-name", default="loan-default")
@@ -321,32 +246,24 @@ def parse_args() -> argparse.Namespace:
 
 
 def main() -> None:
-    """Run the selected training mode and print its acceptance metrics."""
+    """Run Feast/MLflow training and print its acceptance metrics."""
     args = parse_args()
-    if args.mode != "file":
-        result = train_mlflow_model(
-            data_directory=args.data_dir,
-            feast_repo=args.feast_repo,
-            tracking_uri=args.tracking_uri,
-            experiment=args.experiment,
-            model_name=args.model_name,
-            feature_service_name=args.feature_service,
-            trigger=args.trigger,
-            git_sha=args.git_sha,
-            shuffle_labels=args.shuffle_labels,
-        )
-        print(
-            f"mlflow trained run_id={result['run_id']} "
-            f"version={result['version']} alias={result['alias']} "
-            f"validation_auc={result['validation']['auc']:.4f} "
-            f"test_auc={result['test']['auc']:.4f}"
-        )
-        return
-    metrics = train_file_model(args.data_dir, args.artifacts_dir)
+    result = train_mlflow_model(
+        data_directory=args.data_dir,
+        feast_repo=args.feast_repo,
+        tracking_uri=args.tracking_uri,
+        experiment=args.experiment,
+        model_name=args.model_name,
+        feature_service_name=args.feature_service,
+        trigger=args.trigger,
+        git_sha=args.git_sha,
+        shuffle_labels=args.shuffle_labels,
+    )
     print(
-        f"trained rows={metrics['rows']} "
-        f"validation_auc={metrics['validation']['auc']:.4f} "
-        f"test_auc={metrics['test']['auc']:.4f}"
+        f"mlflow trained run_id={result['run_id']} "
+        f"version={result['version']} alias={result['alias']} "
+        f"validation_auc={result['validation']['auc']:.4f} "
+        f"test_auc={result['test']['auc']:.4f}"
     )
 
 

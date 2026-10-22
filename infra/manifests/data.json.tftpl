@@ -1,0 +1,871 @@
+{
+  "apps_v1__Deployment__data__minio": {
+    "apiVersion": "apps/v1",
+    "kind": "Deployment",
+    "metadata": {
+      "labels": {
+        "app.kubernetes.io/instance": "minio",
+        "app.kubernetes.io/name": "minio",
+        "app.kubernetes.io/version": "2025.7.23"
+      },
+      "name": "minio",
+      "namespace": "data"
+    },
+    "spec": {
+      "replicas": 1,
+      "selector": {
+        "matchLabels": {
+          "app.kubernetes.io/instance": "minio",
+          "app.kubernetes.io/name": "minio"
+        }
+      },
+      "template": {
+        "metadata": {
+          "labels": {
+            "app.kubernetes.io/instance": "minio",
+            "app.kubernetes.io/name": "minio"
+          }
+        },
+        "spec": {
+          "containers": [
+            {
+              "args": [
+                "server",
+                "/data",
+                "--console-address",
+                ":9001"
+              ],
+              "env": [
+                {
+                  "name": "MINIO_ROOT_USER",
+                  "valueFrom": {
+                    "secretKeyRef": {
+                      "key": "root-user",
+                      "name": "minio-auth"
+                    }
+                  }
+                },
+                {
+                  "name": "MINIO_ROOT_PASSWORD",
+                  "valueFrom": {
+                    "secretKeyRef": {
+                      "key": "root-password",
+                      "name": "minio-auth"
+                    }
+                  }
+                }
+              ],
+              "image": "bitnamilegacy/minio:2025.7.23-debian-12-r3@sha256:953d489a81cc4de7975f90e07202189c4325da39b0b92470b6a13c7ea99e36cd",
+              "imagePullPolicy": "IfNotPresent",
+              "name": "minio",
+              "ports": [
+                {
+                  "containerPort": 9000,
+                  "name": "api"
+                },
+                {
+                  "containerPort": 9001,
+                  "name": "console"
+                }
+              ],
+              "resources": {
+                "limits": {
+                  "cpu": "500m",
+                  "memory": "512Mi"
+                },
+                "requests": {
+                  "cpu": "100m",
+                  "memory": "256Mi"
+                }
+              },
+              "securityContext": {
+                "allowPrivilegeEscalation": false,
+                "capabilities": {
+                  "drop": [
+                    "ALL"
+                  ]
+                },
+                "readOnlyRootFilesystem": false,
+                "runAsNonRoot": true
+              },
+              "volumeMounts": [
+                {
+                  "mountPath": "/data",
+                  "name": "data"
+                }
+              ]
+            }
+          ],
+          "securityContext": {
+            "fsGroup": 1001,
+            "runAsGroup": 1001,
+            "runAsNonRoot": true,
+            "runAsUser": 1001,
+            "seccompProfile": {
+              "type": "RuntimeDefault"
+            }
+          },
+          "volumes": [
+            {
+              "name": "data",
+              "persistentVolumeClaim": {
+                "claimName": "minio-data"
+              }
+            }
+          ]
+        }
+      }
+    }
+  },
+  "apps_v1__Deployment__data__mlflow": {
+    "apiVersion": "apps/v1",
+    "kind": "Deployment",
+    "metadata": {
+      "labels": {
+        "app.kubernetes.io/instance": "mlflow",
+        "app.kubernetes.io/name": "mlflow"
+      },
+      "name": "mlflow",
+      "namespace": "data"
+    },
+    "spec": {
+      "replicas": 1,
+      "selector": {
+        "matchLabels": {
+          "app.kubernetes.io/instance": "mlflow",
+          "app.kubernetes.io/name": "mlflow"
+        }
+      },
+      "template": {
+        "metadata": {
+          "labels": {
+            "app.kubernetes.io/instance": "mlflow",
+            "app.kubernetes.io/name": "mlflow"
+          }
+        },
+        "spec": {
+          "containers": [
+            {
+              "args": [
+                "server",
+                "--backend-store-uri",
+                "postgresql://$(POSTGRES_USER):$(POSTGRES_PASSWORD)@postgres.data.svc:5432/mlflow",
+                "--artifacts-destination",
+                "s3://mlflow-artifacts",
+                "--serve-artifacts",
+                "--host",
+                "0.0.0.0",
+                "--allowed-hosts",
+                "*",
+                "--port",
+                "5000"
+              ],
+              "command": [
+                "mlflow"
+              ],
+              "env": [
+                {
+                  "name": "POSTGRES_USER",
+                  "valueFrom": {
+                    "secretKeyRef": {
+                      "key": "username",
+                      "name": "postgres-auth"
+                    }
+                  }
+                },
+                {
+                  "name": "POSTGRES_PASSWORD",
+                  "valueFrom": {
+                    "secretKeyRef": {
+                      "key": "postgres-password",
+                      "name": "postgres-auth"
+                    }
+                  }
+                },
+                {
+                  "name": "MLFLOW_S3_ENDPOINT_URL",
+                  "value": "http://minio.data.svc:9000"
+                },
+                {
+                  "name": "AWS_ACCESS_KEY_ID",
+                  "valueFrom": {
+                    "secretKeyRef": {
+                      "key": "root-user",
+                      "name": "minio-auth"
+                    }
+                  }
+                },
+                {
+                  "name": "AWS_SECRET_ACCESS_KEY",
+                  "valueFrom": {
+                    "secretKeyRef": {
+                      "key": "root-password",
+                      "name": "minio-auth"
+                    }
+                  }
+                }
+              ],
+              "image": "${ACR}/mlp-mlflow:${TAG}",
+              "imagePullPolicy": "IfNotPresent",
+              "livenessProbe": {
+                "httpGet": {
+                  "path": "/",
+                  "port": "http"
+                }
+              },
+              "name": "mlflow",
+              "ports": [
+                {
+                  "containerPort": 5000,
+                  "name": "http"
+                }
+              ],
+              "readinessProbe": {
+                "httpGet": {
+                  "path": "/",
+                  "port": "http"
+                }
+              },
+              "resources": {
+                "limits": {
+                  "cpu": "2000m",
+                  "memory": "4Gi"
+                },
+                "requests": {
+                  "cpu": "200m",
+                  "memory": "256Mi"
+                }
+              },
+              "securityContext": {
+                "allowPrivilegeEscalation": false,
+                "capabilities": {
+                  "drop": [
+                    "ALL"
+                  ]
+                },
+                "readOnlyRootFilesystem": true,
+                "runAsNonRoot": true,
+                "runAsUser": 10001
+              },
+              "startupProbe": {
+                "failureThreshold": 18,
+                "httpGet": {
+                  "path": "/",
+                  "port": "http"
+                },
+                "periodSeconds": 10
+              },
+              "volumeMounts": [
+                {
+                  "mountPath": "/tmp",
+                  "name": "tmp"
+                }
+              ]
+            }
+          ],
+          "securityContext": {
+            "fsGroup": 10001,
+            "runAsGroup": 10001,
+            "runAsNonRoot": true,
+            "runAsUser": 10001,
+            "seccompProfile": {
+              "type": "RuntimeDefault"
+            }
+          },
+          "volumes": [
+            {
+              "emptyDir": {},
+              "name": "tmp"
+            }
+          ]
+        }
+      }
+    }
+  },
+  "apps_v1__Deployment__data__redis": {
+    "apiVersion": "apps/v1",
+    "kind": "Deployment",
+    "metadata": {
+      "labels": {
+        "app.kubernetes.io/instance": "redis",
+        "app.kubernetes.io/name": "redis",
+        "app.kubernetes.io/version": "7.2.16"
+      },
+      "name": "redis",
+      "namespace": "data"
+    },
+    "spec": {
+      "replicas": 1,
+      "selector": {
+        "matchLabels": {
+          "app.kubernetes.io/instance": "redis",
+          "app.kubernetes.io/name": "redis"
+        }
+      },
+      "template": {
+        "metadata": {
+          "labels": {
+            "app.kubernetes.io/instance": "redis",
+            "app.kubernetes.io/name": "redis"
+          }
+        },
+        "spec": {
+          "containers": [
+            {
+              "args": [
+                "--appendonly",
+                "no",
+                "--save",
+                "\"\""
+              ],
+              "image": "redis:7.2.16-alpine3.21@sha256:29e8589c3f9ba699b5f7aa4b3c7733c58852a3626439e619aa0ee78de08c6ca0",
+              "imagePullPolicy": "IfNotPresent",
+              "name": "redis",
+              "ports": [
+                {
+                  "containerPort": 6379,
+                  "name": "redis"
+                }
+              ],
+              "resources": {
+                "limits": {
+                  "cpu": "250m",
+                  "memory": "256Mi"
+                },
+                "requests": {
+                  "cpu": "50m",
+                  "memory": "128Mi"
+                }
+              },
+              "securityContext": {
+                "allowPrivilegeEscalation": false,
+                "capabilities": {
+                  "drop": [
+                    "ALL"
+                  ]
+                },
+                "readOnlyRootFilesystem": false,
+                "runAsNonRoot": true
+              }
+            }
+          ],
+          "securityContext": {
+            "fsGroup": 999,
+            "runAsGroup": 999,
+            "runAsNonRoot": true,
+            "runAsUser": 999,
+            "seccompProfile": {
+              "type": "RuntimeDefault"
+            }
+          }
+        }
+      }
+    }
+  },
+  "apps_v1__StatefulSet__data__postgres": {
+    "apiVersion": "apps/v1",
+    "kind": "StatefulSet",
+    "metadata": {
+      "labels": {
+        "app.kubernetes.io/instance": "postgres",
+        "app.kubernetes.io/name": "postgres",
+        "app.kubernetes.io/version": "16.15"
+      },
+      "name": "postgres",
+      "namespace": "data"
+    },
+    "spec": {
+      "replicas": 1,
+      "selector": {
+        "matchLabels": {
+          "app.kubernetes.io/instance": "postgres",
+          "app.kubernetes.io/name": "postgres"
+        }
+      },
+      "serviceName": "postgres",
+      "template": {
+        "metadata": {
+          "labels": {
+            "app.kubernetes.io/instance": "postgres",
+            "app.kubernetes.io/name": "postgres"
+          }
+        },
+        "spec": {
+          "containers": [
+            {
+              "env": [
+                {
+                  "name": "POSTGRES_USER",
+                  "valueFrom": {
+                    "secretKeyRef": {
+                      "key": "username",
+                      "name": "postgres-auth"
+                    }
+                  }
+                },
+                {
+                  "name": "POSTGRES_PASSWORD",
+                  "valueFrom": {
+                    "secretKeyRef": {
+                      "key": "postgres-password",
+                      "name": "postgres-auth"
+                    }
+                  }
+                },
+                {
+                  "name": "POSTGRES_DB",
+                  "value": "mlp"
+                },
+                {
+                  "name": "PGDATA",
+                  "value": "/var/lib/postgresql/data/pgdata"
+                }
+              ],
+              "image": "postgres:16.15-bookworm@sha256:efedf3595f1d6f415c08568ba171029bf54052e754cc9f030e3f2412b21f3d67",
+              "imagePullPolicy": "IfNotPresent",
+              "name": "postgres",
+              "ports": [
+                {
+                  "containerPort": 5432,
+                  "name": "postgres"
+                }
+              ],
+              "resources": {
+                "limits": {
+                  "cpu": "500m",
+                  "memory": "512Mi"
+                },
+                "requests": {
+                  "cpu": "100m",
+                  "memory": "256Mi"
+                }
+              },
+              "securityContext": {
+                "allowPrivilegeEscalation": false,
+                "capabilities": {
+                  "drop": [
+                    "ALL"
+                  ]
+                },
+                "readOnlyRootFilesystem": false,
+                "runAsNonRoot": true
+              },
+              "volumeMounts": [
+                {
+                  "mountPath": "/var/lib/postgresql/data",
+                  "name": "data"
+                }
+              ]
+            }
+          ],
+          "securityContext": {
+            "fsGroup": 999,
+            "runAsGroup": 999,
+            "runAsNonRoot": true,
+            "runAsUser": 999,
+            "seccompProfile": {
+              "type": "RuntimeDefault"
+            }
+          },
+          "volumes": [
+            {
+              "name": "data",
+              "persistentVolumeClaim": {
+                "claimName": "postgres-data"
+              }
+            }
+          ]
+        }
+      }
+    }
+  },
+  "batch_v1__Job__data__minio-buckets": {
+    "apiVersion": "batch/v1",
+    "kind": "Job",
+    "metadata": {
+      "labels": {
+        "app.kubernetes.io/instance": "minio",
+        "app.kubernetes.io/name": "minio",
+        "app.kubernetes.io/version": "2025.7.23"
+      },
+      "name": "minio-buckets",
+      "namespace": "data"
+    },
+    "spec": {
+      "backoffLimit": 5,
+      "template": {
+        "metadata": {
+          "labels": {
+            "app.kubernetes.io/instance": "minio",
+            "app.kubernetes.io/name": "minio"
+          }
+        },
+        "spec": {
+          "containers": [
+            {
+              "args": [
+                "set -Eeuo pipefail\n# Cold starts pull ~400MB of images; wait for the server instead\n# of burning the Job's backoff budget.\nfor i in $(seq 1 120); do\n  if mc alias set minio \"http://minio:9000\" \"$MINIO_USER\" \"$MINIO_PASSWORD\" >/dev/null 2>&1; then\n    break\n  fi\n  sleep 5\ndone\nmc alias set minio \"http://minio:9000\" \"$MINIO_USER\" \"$MINIO_PASSWORD\"\nmc mb --ignore-existing minio/mlflow-artifacts;\nmc mb --ignore-existing minio/feast-offline;\nmc mb --ignore-existing minio/ml-data;\nmc ls minio/\n"
+              ],
+              "command": [
+                "/bin/bash",
+                "-c"
+              ],
+              "env": [
+                {
+                  "name": "MINIO_USER",
+                  "valueFrom": {
+                    "secretKeyRef": {
+                      "key": "root-user",
+                      "name": "minio-auth"
+                    }
+                  }
+                },
+                {
+                  "name": "MINIO_PASSWORD",
+                  "valueFrom": {
+                    "secretKeyRef": {
+                      "key": "root-password",
+                      "name": "minio-auth"
+                    }
+                  }
+                },
+                {
+                  "name": "HOME",
+                  "value": "/home/mc"
+                }
+              ],
+              "image": "bitnamilegacy/minio-client:2025.7.21-debian-12-r2@sha256:7a6b4b93998903f1673d2bd2140ac26b807c4224627b743778c5a8f70db561f1",
+              "imagePullPolicy": "IfNotPresent",
+              "name": "buckets",
+              "securityContext": {
+                "allowPrivilegeEscalation": false,
+                "capabilities": {
+                  "drop": [
+                    "ALL"
+                  ]
+                },
+                "readOnlyRootFilesystem": true,
+                "runAsNonRoot": true
+              },
+              "volumeMounts": [
+                {
+                  "mountPath": "/home/mc",
+                  "name": "home"
+                }
+              ]
+            }
+          ],
+          "restartPolicy": "OnFailure",
+          "volumes": [
+            {
+              "emptyDir": {},
+              "name": "home"
+            }
+          ]
+        }
+      }
+    }
+  },
+  "batch_v1__Job__data__postgres-init": {
+    "apiVersion": "batch/v1",
+    "kind": "Job",
+    "metadata": {
+      "labels": {
+        "app.kubernetes.io/instance": "postgres",
+        "app.kubernetes.io/name": "postgres",
+        "app.kubernetes.io/version": "16.15"
+      },
+      "name": "postgres-init",
+      "namespace": "data"
+    },
+    "spec": {
+      "backoffLimit": 5,
+      "template": {
+        "metadata": {
+          "labels": {
+            "app.kubernetes.io/instance": "postgres",
+            "app.kubernetes.io/name": "postgres"
+          }
+        },
+        "spec": {
+          "containers": [
+            {
+              "command": [
+                "/bin/bash",
+                "-c",
+                "set -Eeuo pipefail\n# Cold starts pull ~160MB of images; wait for the server instead\n# of burning the Job's backoff budget.\nfor i in $(seq 1 120); do\n  if pg_isready -h \"$PGHOST\" -p \"$PGPORT\" -U \"$PGUSER\" >/dev/null 2>&1; then\n    break\n  fi\n  sleep 5\ndone\nfor db in mlp mlflow feast; do\n  psql -tc \"SELECT 1 FROM pg_database WHERE datname='$db'\" | grep -q 1 \\\n    || createdb \"$db\"\ndone\npsql -v ON_ERROR_STOP=1 <<'SQL'\nCREATE TABLE IF NOT EXISTS prediction_log (\n  id bigserial PRIMARY KEY,\n  ts timestamptz NOT NULL DEFAULT now(),\n  request_id text NOT NULL,\n  model_version text NOT NULL,\n  customer_id integer NOT NULL,\n  features jsonb NOT NULL,\n  score real NOT NULL\n);\nCREATE INDEX IF NOT EXISTS prediction_log_model_ts\n  ON prediction_log (model_version, ts);\nCREATE TABLE IF NOT EXISTS drift_state (\n  feature text PRIMARY KEY,\n  psi double precision NOT NULL,\n  threshold double precision NOT NULL,\n  updated_at timestamptz NOT NULL DEFAULT now()\n);\nCREATE TABLE IF NOT EXISTS labels_log (\n  customer_id integer NOT NULL,\n  label integer NOT NULL,\n  observed_at timestamptz NOT NULL DEFAULT now()\n);\nSQL\necho \"postgres init complete\"\n"
+              ],
+              "env": [
+                {
+                  "name": "PGHOST",
+                  "value": "postgres"
+                },
+                {
+                  "name": "PGPORT",
+                  "value": "5432"
+                },
+                {
+                  "name": "PGUSER",
+                  "valueFrom": {
+                    "secretKeyRef": {
+                      "key": "username",
+                      "name": "postgres-auth"
+                    }
+                  }
+                },
+                {
+                  "name": "PGPASSWORD",
+                  "valueFrom": {
+                    "secretKeyRef": {
+                      "key": "postgres-password",
+                      "name": "postgres-auth"
+                    }
+                  }
+                },
+                {
+                  "name": "PGDATABASE",
+                  "value": "mlp"
+                }
+              ],
+              "image": "postgres:16.15-bookworm@sha256:efedf3595f1d6f415c08568ba171029bf54052e754cc9f030e3f2412b21f3d67",
+              "imagePullPolicy": "IfNotPresent",
+              "name": "init"
+            }
+          ],
+          "restartPolicy": "OnFailure"
+        }
+      }
+    }
+  },
+  "v1__PersistentVolumeClaim__data__minio-data": {
+    "apiVersion": "v1",
+    "kind": "PersistentVolumeClaim",
+    "metadata": {
+      "labels": {
+        "app.kubernetes.io/instance": "minio",
+        "app.kubernetes.io/name": "minio",
+        "app.kubernetes.io/version": "2025.7.23"
+      },
+      "name": "minio-data",
+      "namespace": "data"
+    },
+    "spec": {
+      "accessModes": [
+        "ReadWriteOnce"
+      ],
+      "resources": {
+        "requests": {
+          "storage": "5Gi"
+        }
+      }
+    }
+  },
+  "v1__PersistentVolumeClaim__data__postgres-data": {
+    "apiVersion": "v1",
+    "kind": "PersistentVolumeClaim",
+    "metadata": {
+      "labels": {
+        "app.kubernetes.io/instance": "postgres",
+        "app.kubernetes.io/name": "postgres",
+        "app.kubernetes.io/version": "16.15"
+      },
+      "name": "postgres-data",
+      "namespace": "data"
+    },
+    "spec": {
+      "accessModes": [
+        "ReadWriteOnce"
+      ],
+      "resources": {
+        "requests": {
+          "storage": "5Gi"
+        }
+      }
+    }
+  },
+  "v1__Service__data__minio": {
+    "apiVersion": "v1",
+    "kind": "Service",
+    "metadata": {
+      "labels": {
+        "app.kubernetes.io/instance": "minio",
+        "app.kubernetes.io/name": "minio",
+        "app.kubernetes.io/version": "2025.7.23"
+      },
+      "name": "minio",
+      "namespace": "data"
+    },
+    "spec": {
+      "ports": [
+        {
+          "name": "api",
+          "port": 9000,
+          "targetPort": "api"
+        },
+        {
+          "name": "console",
+          "port": 9001,
+          "targetPort": "console"
+        }
+      ],
+      "selector": {
+        "app.kubernetes.io/instance": "minio",
+        "app.kubernetes.io/name": "minio"
+      },
+      "type": "ClusterIP"
+    }
+  },
+  "v1__Service__data__minio-external": {
+    "apiVersion": "v1",
+    "kind": "Service",
+    "metadata": {
+      "annotations": {
+        "service.beta.kubernetes.io/azure-load-balancer-resource-group": "${RESOURCE_GROUP}",
+        "service.beta.kubernetes.io/azure-pip-name": "${PUBLIC_IP_NAME}"
+      },
+      "labels": {
+        "app.kubernetes.io/instance": "minio",
+        "app.kubernetes.io/name": "minio",
+        "app.kubernetes.io/version": "2025.7.23"
+      },
+      "name": "minio-external",
+      "namespace": "data"
+    },
+    "spec": {
+      "loadBalancerSourceRanges": [
+        "${ALLOWED_CIDR}",
+        "${RUNNER_CIDR}"
+      ],
+      "ports": [
+        {
+          "name": "api",
+          "nodePort": 30900,
+          "port": 9000,
+          "targetPort": "api"
+        }
+      ],
+      "selector": {
+        "app.kubernetes.io/instance": "minio",
+        "app.kubernetes.io/name": "minio"
+      },
+      "type": "LoadBalancer"
+    }
+  },
+  "v1__Service__data__mlflow": {
+    "apiVersion": "v1",
+    "kind": "Service",
+    "metadata": {
+      "annotations": {
+        "service.beta.kubernetes.io/azure-load-balancer-resource-group": "${RESOURCE_GROUP}",
+        "service.beta.kubernetes.io/azure-pip-name": "${PUBLIC_IP_NAME}"
+      },
+      "labels": {
+        "app.kubernetes.io/instance": "mlflow",
+        "app.kubernetes.io/name": "mlflow"
+      },
+      "name": "mlflow",
+      "namespace": "data"
+    },
+    "spec": {
+      "loadBalancerSourceRanges": [
+        "${ALLOWED_CIDR}",
+        "${RUNNER_CIDR}"
+      ],
+      "ports": [
+        {
+          "name": "http",
+          "nodePort": 30500,
+          "port": 5000,
+          "targetPort": "http"
+        }
+      ],
+      "selector": {
+        "app.kubernetes.io/instance": "mlflow",
+        "app.kubernetes.io/name": "mlflow"
+      },
+      "type": "LoadBalancer"
+    }
+  },
+  "v1__Service__data__postgres": {
+    "apiVersion": "v1",
+    "kind": "Service",
+    "metadata": {
+      "labels": {
+        "app.kubernetes.io/instance": "postgres",
+        "app.kubernetes.io/name": "postgres",
+        "app.kubernetes.io/version": "16.15"
+      },
+      "name": "postgres",
+      "namespace": "data"
+    },
+    "spec": {
+      "ports": [
+        {
+          "name": "postgres",
+          "port": 5432,
+          "targetPort": "postgres"
+        }
+      ],
+      "selector": {
+        "app.kubernetes.io/instance": "postgres",
+        "app.kubernetes.io/name": "postgres"
+      },
+      "type": "ClusterIP"
+    }
+  },
+  "v1__Service__data__postgres-external": {
+    "apiVersion": "v1",
+    "kind": "Service",
+    "metadata": {
+      "labels": {
+        "app.kubernetes.io/instance": "postgres",
+        "app.kubernetes.io/name": "postgres",
+        "app.kubernetes.io/version": "16.15"
+      },
+      "name": "postgres-external",
+      "namespace": "data"
+    },
+    "spec": {
+      "ports": [
+        {
+          "name": "postgres",
+          "nodePort": 30432,
+          "port": 5432,
+          "targetPort": "postgres"
+        }
+      ],
+      "selector": {
+        "app.kubernetes.io/instance": "postgres",
+        "app.kubernetes.io/name": "postgres"
+      },
+      "type": "NodePort"
+    }
+  },
+  "v1__Service__data__redis": {
+    "apiVersion": "v1",
+    "kind": "Service",
+    "metadata": {
+      "labels": {
+        "app.kubernetes.io/instance": "redis",
+        "app.kubernetes.io/name": "redis",
+        "app.kubernetes.io/version": "7.2.16"
+      },
+      "name": "redis",
+      "namespace": "data"
+    },
+    "spec": {
+      "ports": [
+        {
+          "name": "redis",
+          "port": 6379,
+          "targetPort": "redis"
+        }
+      ],
+      "selector": {
+        "app.kubernetes.io/instance": "redis",
+        "app.kubernetes.io/name": "redis"
+      },
+      "type": "ClusterIP"
+    }
+  }
+}

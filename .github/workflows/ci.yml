@@ -27,16 +27,13 @@ jobs:
         with:
           terraform_version: "1.16.5"
           terraform_wrapper: false
-      - uses: azure/setup-helm@9bc31f4ebc9c6b171d7bfbaa5d006ae7abdb4310 # v5.0.1
-        with:
-          version: "v3.22.0"
       - name: Install locked dependencies and verified tools
         run: |
           uv sync --frozen --all-groups
           make tools TOOLSET="actionlint gitleaks hadolint kubeconform trivy"
           echo "$HOME/.local/bin" >> "$GITHUB_PATH"
       - name: Python, infrastructure, Actions, and credential checks
-        run: make lint test check-infra check-actions check-charts secret-scan
+        run: make lint test check-infra check-actions check-manifests secret-scan
       - name: Build and smoke all image targets
         run: make check-images image-scan
   security:

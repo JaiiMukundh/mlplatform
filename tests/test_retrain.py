@@ -123,8 +123,8 @@ def test_dispatch_github_mode_requires_credentials() -> None:
         )
 
 
-def test_dispatch_local_runs_the_release_script(tmp_path: Path) -> None:
-    """Local mode shells out to the release script with the version."""
+def test_dispatch_in_cluster_runs_the_release_script(tmp_path: Path) -> None:
+    """The AKS Job invokes the release script with the version."""
     stub = tmp_path / "release.sh"
     stub.write_text('#!/usr/bin/env bash\necho "releasing $1"\n')
     stub.chmod(0o755)
@@ -132,4 +132,4 @@ def test_dispatch_local_runs_the_release_script(tmp_path: Path) -> None:
         "9", release_script=str(stub), workdir=None
     )
 
-    assert mode == "local"
+    assert mode == "in_cluster"
