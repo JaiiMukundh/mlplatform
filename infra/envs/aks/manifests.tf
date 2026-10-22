@@ -20,6 +20,33 @@ locals {
     observability = jsondecode(templatefile("${path.module}/../../manifests/observability.json.tftpl", local.manifest_vars))
     app           = jsondecode(templatefile("${path.module}/../../manifests/app.json.tftpl", local.manifest_vars))
   }
+  all_manifests = merge(local.manifests.data, local.manifests.observability, local.manifests.app)
+
+  # The Kubernetes API normalizes optional empty/default fields and adds Job
+  # controller labels. Tell the provider to accept those exact returned fields
+  # while Terraform continues to own every explicitly configured setting.
+  api_normalized_fields = {
+    for key, manifest in local.all_manifests : key => concat(
+      ["metadata.labels", "metadata.annotations"],
+      try(manifest.spec.publishNotReadyAddresses, null) == null ? [] : ["spec.publishNotReadyAddresses"],
+      try(manifest.spec.template.metadata.labels, null) == null ? [] : ["spec.template.metadata.labels"],
+      try(manifest.spec.template.spec.topologySpreadConstraints, null) == null ? [] : ["spec.template.spec.topologySpreadConstraints"],
+      try(manifest.spec.template.spec.tolerations, null) == null ? [] : ["spec.template.spec.tolerations"],
+      try(manifest.spec.template.spec.initContainers, null) == null ? [] : ["spec.template.spec.initContainers"],
+      try(manifest.spec.template.spec.nodeSelector, null) == null ? [] : ["spec.template.spec.nodeSelector"],
+      try(manifest.spec.template.spec.hostIPC, null) == null ? [] : ["spec.template.spec.hostIPC"],
+      try(manifest.spec.template.spec.hostNetwork, null) == null ? [] : ["spec.template.spec.hostNetwork"],
+      flatten([
+        for index, container in try(manifest.spec.template.spec.containers, []) : concat(
+          try(container.resources.limits, null) == null ? [] : ["spec.template.spec.containers[${index}].resources.limits"],
+          try(container.resources.requests, null) == null ? [] : ["spec.template.spec.containers[${index}].resources.requests"],
+          try(container.resources.limits.cpu, null) == null ? [] : ["spec.template.spec.containers[${index}].resources.limits[\"cpu\"]"],
+          try(container.readinessProbe.initialDelaySeconds, null) == null ? [] : ["spec.template.spec.containers[${index}].readinessProbe.initialDelaySeconds"],
+          try(container.livenessProbe.initialDelaySeconds, null) == null ? [] : ["spec.template.spec.containers[${index}].livenessProbe.initialDelaySeconds"]
+        )
+      ])
+    )
+  }
 }
 
 resource "kubernetes_manifest" "crds" {
@@ -28,19 +55,22 @@ resource "kubernetes_manifest" "crds" {
 }
 
 resource "kubernetes_manifest" "data" {
-  for_each   = { for key, manifest in local.manifests.data : key => manifest if var.stage != "bootstrap" }
-  manifest   = each.value
-  depends_on = [kubernetes_namespace_v1.platform, kubernetes_secret_v1.postgres, kubernetes_secret_v1.minio]
+  for_each        = { for key, manifest in local.manifests.data : key => manifest if var.stage != "bootstrap" }
+  manifest        = each.value
+  computed_fields = local.api_normalized_fields[each.key]
+  depends_on      = [kubernetes_namespace_v1.platform, kubernetes_secret_v1.postgres, kubernetes_secret_v1.minio]
 }
 
 resource "kubernetes_manifest" "observability" {
-  for_each   = { for key, manifest in local.manifests.observability : key => manifest if var.stage != "bootstrap" }
-  manifest   = each.value
-  depends_on = [kubernetes_manifest.crds, kubernetes_secret_v1.grafana]
+  for_each        = { for key, manifest in local.manifests.observability : key => manifest if var.stage != "bootstrap" }
+  manifest        = each.value
+  computed_fields = local.api_normalized_fields[each.key]
+  depends_on      = [kubernetes_manifest.crds, kubernetes_secret_v1.grafana]
 }
 
 resource "kubernetes_manifest" "app" {
-  for_each   = { for key, manifest in local.manifests.app : key => manifest if var.stage == "app" }
-  manifest   = each.value
-  depends_on = [kubernetes_manifest.data, kubernetes_manifest.observability, kubernetes_secret_v1.dashboard_tls, kubernetes_secret_v1.dashboard_data, kubernetes_secret_v1.postgres_app]
+  for_each        = { for key, manifest in local.manifests.app : key => manifest if var.stage == "app" }
+  manifest        = each.value
+  computed_fields = local.api_normalized_fields[each.key]
+  depends_on      = [kubernetes_manifest.data, kubernetes_manifest.observability, kubernetes_secret_v1.dashboard_tls, kubernetes_secret_v1.dashboard_data, kubernetes_secret_v1.postgres_app]
 }

@@ -5,8 +5,8 @@ candidate run's own ``eval_set.parquet`` (the same hold-out for both), then
 applies five checks. Emits ``gate_report.json`` and exits 0/1.
 
 Model bytes are downloaded through MLflow, whose presigned artifact URLs are
-cluster-internal (see docs/DECISIONS.md): the scoring path runs in-cluster
-via ``make gate-candidate``. The pure ``evaluate_gate`` function is
+cluster-internal: the scoring path runs in-cluster via ``make gate-candidate``.
+The pure ``evaluate_gate`` function is
 dependency-free and unit-tested with synthetic models.
 """
 

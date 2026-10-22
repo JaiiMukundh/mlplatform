@@ -43,15 +43,16 @@ module "registry" {
 module "cluster" {
   source = "../../modules/cluster_aks"
 
-  cluster_name        = local.name
-  location            = var.location
-  resource_group_name = azurerm_resource_group.this.name
-  kubernetes_version  = var.kubernetes_version
-  node_count          = var.node_count
-  vm_size             = var.vm_size
-  vnet_subnet_id      = module.network.aks_subnet_id
-  acr_id              = module.registry.registry_id
-  tags                = local.tags
+  cluster_name                    = local.name
+  location                        = var.location
+  resource_group_name             = azurerm_resource_group.this.name
+  kubernetes_version              = var.kubernetes_version
+  node_count                      = var.node_count
+  vm_size                         = var.vm_size
+  vnet_subnet_id                  = module.network.aks_subnet_id
+  acr_id                          = module.registry.registry_id
+  api_server_authorized_ip_ranges = var.api_server_authorized_ip_ranges
+  tags                            = local.tags
 }
 
 # Cost guardrail for the demo window (P9.6 tears everything down).

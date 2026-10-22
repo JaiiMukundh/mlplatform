@@ -21,7 +21,6 @@ from typing import Annotated, Any
 import httpx
 import pandas as pd
 from fastapi import Depends, FastAPI, HTTPException, Request
-from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import HTMLResponse, PlainTextResponse, StreamingResponse
 from fastapi.security import HTTPBasic, HTTPBasicCredentials
 from mlp_common.logging import JsonFormatter
@@ -76,14 +75,6 @@ app = FastAPI(
     dependencies=[Depends(authenticate_dashboard)],
     title="MLPlatform Control Plane",
     version="1.0.0",
-)
-
-app.add_middleware(
-    CORSMiddleware,
-    allow_origins=["*"],
-    allow_credentials=True,
-    allow_methods=["*"],
-    allow_headers=["*"],
 )
 
 BASE_DIR = Path(__file__).resolve().parents[1]
@@ -374,28 +365,28 @@ async def get_system_status() -> dict[str, Any]:
 async def get_metrics() -> dict[str, Any]:
     """Query Prometheus for live golden signals and drift measurements."""
     metrics: dict[str, Any] = {
-        "rps": 0.0,
-        "p50_latency_ms": 0.0,
-        "p95_latency_ms": 0.0,
-        "error_rate_pct": 0.0,
-        "replicas_available": 2,
-        "replicas_desired": 2,
-        "model_drift_detected": 0,
-        "champion_auc": 0.835,
-        "candidate_auc": 0.0,
-        "feature_psi": {
-            "pay_0": 0.005,
-            "limit_bal": 0.008,
-            "bill_amt1": 0.003,
-            "pay_amt1": 0.004,
-            "age": 0.002,
-            "education": 0.001,
-        },
+        "rps": None,
+        "p50_latency_ms": None,
+        "p95_latency_ms": None,
+        "error_rate_pct": None,
+        "replicas_available": None,
+        "replicas_desired": None,
+        "model_drift_detected": None,
+        "champion_auc": None,
+        "candidate_auc": None,
+        "feature_psi": {},
+        "prometheus_online": False,
     }
 
     async with httpx.AsyncClient(timeout=2.0) as client:
+        try:
+            health = await client.get(f"{PROMETHEUS_URL}/-/healthy")
+            metrics["prometheus_online"] = health.status_code == 200
+        except httpx.HTTPError:
+            pass
+
         # Helper to query Prometheus scalar
-        async def prom_scalar(query: str, default: float = 0.0) -> float:
+        async def prom_scalar(query: str) -> float | None:
             try:
                 r = await client.get(
                     f"{PROMETHEUS_URL}/api/v1/query", params={"query": query}
@@ -406,7 +397,7 @@ async def get_metrics() -> dict[str, Any]:
                         return float(res[0].get("value", [0, 0])[1])
             except Exception:
                 pass
-            return default
+            return None
 
         # Query metrics concurrently
         p50_q = (
@@ -434,30 +425,36 @@ async def get_metrics() -> dict[str, Any]:
 
         tasks = [
             prom_scalar(
-                "sum(rate(http_requests_total{namespace='serving',path='/predict'}[1m]))",
-                0.0,
+                "sum(rate(http_requests_total{namespace='serving',path='/predict'}[1m]))"
             ),
-            prom_scalar(p50_q, 8.5),
-            prom_scalar(p95_q, 16.0),
-            prom_scalar(err_q, 0.0),
-            prom_scalar(rep_avail_q, 2.0),
-            prom_scalar(rep_des_q, 2.0),
-            prom_scalar(ACTIVE_DRIFT_QUERY, 0.0),
-            prom_scalar("model_champion_auc", 0.835),
-            prom_scalar("model_candidate_auc", 0.0),
+            prom_scalar(p50_q),
+            prom_scalar(p95_q),
+            prom_scalar(err_q),
+            prom_scalar(rep_avail_q),
+            prom_scalar(rep_des_q),
+            prom_scalar(ACTIVE_DRIFT_QUERY),
+            prom_scalar("model_champion_auc"),
+            prom_scalar("model_candidate_auc"),
         ]
 
         results = await asyncio.gather(*tasks)
 
-        metrics["rps"] = round(results[0], 2)
-        metrics["p50_latency_ms"] = round(max(results[1], 0.0), 1)
-        metrics["p95_latency_ms"] = round(max(results[2], 0.0), 1)
-        metrics["error_rate_pct"] = round(max(results[3], 0.0), 2)
-        metrics["replicas_available"] = int(results[4])
-        metrics["replicas_desired"] = int(results[5])
-        metrics["model_drift_detected"] = int(results[6])
-        metrics["champion_auc"] = round(results[7], 4)
-        metrics["candidate_auc"] = round(results[8], 4)
+        names = (
+            "rps",
+            "p50_latency_ms",
+            "p95_latency_ms",
+            "error_rate_pct",
+            "replicas_available",
+            "replicas_desired",
+            "model_drift_detected",
+            "champion_auc",
+            "candidate_auc",
+        )
+        digits = (2, 1, 1, 2, 0, 0, 0, 4, 4)
+        for name, value, places in zip(names, results, digits, strict=True):
+            metrics[name] = (
+                round(max(value, 0.0), places) if value is not None else None
+            )
 
         # Query PSI per feature if available
         try:
@@ -804,6 +801,8 @@ async def get_customer_profile(customer_id: int, env: str = "clean") -> dict[str
 @app.get("/api/score-diagnostic/{customer_id}")
 async def get_score_diagnostic(customer_id: int) -> dict[str, Any]:
     """Provide deep cognitive diagnostics: entropy, slurring, and logic inversion."""
+    if BASELINE_MODEL is None:
+        raise HTTPException(status_code=503, detail="Baseline model is unavailable")
     try:
         clean_file = BASE_DIR / "data" / "features.parquet"
         drift_file = BASE_DIR / "data" / "features_latest.parquet"
@@ -830,11 +829,8 @@ async def get_score_diagnostic(customer_id: int) -> dict[str, Any]:
         )
         r_drift = _apply_covariate_shock(r_drift)
 
-        p_clean = 0.05
-        p_drift = 0.55
-        if BASELINE_MODEL is not None:
-            p_clean = float(BASELINE_MODEL.predict_proba(r_clean)[0, 1])
-            p_drift = float(BASELINE_MODEL.predict_proba(r_drift)[0, 1])
+        p_clean = float(BASELINE_MODEL.predict_proba(r_clean)[0, 1])
+        p_drift = float(BASELINE_MODEL.predict_proba(r_drift)[0, 1])
 
         ent_clean = round(_shannon_entropy(p_clean), 3)
         ent_drift = round(_shannon_entropy(p_drift), 3)

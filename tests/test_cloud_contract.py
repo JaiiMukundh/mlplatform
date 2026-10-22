@@ -429,6 +429,43 @@ def test_dashboard_requires_configured_login_and_keeps_health_public(
         assert client.get("/").status_code == 401
         assert client.get("/", auth=("admin", "wrong")).status_code == 401
         assert client.get("/", auth=("admin", "demo-test-password")).status_code == 200
+        preflight = client.options(
+            "/api/status",
+            headers={
+                "Origin": "https://attacker.example",
+                "Access-Control-Request-Method": "GET",
+            },
+        )
+        assert "access-control-allow-origin" not in preflight.headers
+
+
+def test_dashboard_metrics_report_unavailable_prometheus_as_unknown(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    import httpx
+    from fastapi.testclient import TestClient
+
+    from ui import app as dashboard
+
+    original = httpx.AsyncClient
+
+    def unavailable(request: httpx.Request) -> httpx.Response:
+        return httpx.Response(503)
+
+    monkeypatch.setenv("DASHBOARD_PASSWORD", "metrics-test-password")
+    monkeypatch.setattr(
+        dashboard.httpx,
+        "AsyncClient",
+        lambda **kwargs: original(transport=httpx.MockTransport(unavailable), **kwargs),
+    )
+    with TestClient(dashboard.app) as client:
+        response = client.get("/api/metrics", auth=("admin", "metrics-test-password"))
+    assert response.status_code == 200
+    metrics = response.json()
+    assert metrics["prometheus_online"] is False
+    assert metrics["replicas_available"] is None
+    assert metrics["champion_auc"] is None
+    assert metrics["feature_psi"] == {}
 
 
 def test_dashboard_prediction_uses_cloud_service_endpoint(

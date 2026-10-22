@@ -14,6 +14,10 @@ resource "azurerm_kubernetes_cluster" "this" {
   oidc_issuer_enabled       = true
   workload_identity_enabled = true
 
+  api_server_access_profile {
+    authorized_ip_ranges = var.api_server_authorized_ip_ranges
+  }
+
   node_provisioning_profile {
     mode = "Manual"
   }
@@ -130,6 +134,15 @@ variable "acr_id" {
   description = "ACR resource ID for the AcrPull role assignment (empty skips it)."
   type        = string
   default     = ""
+}
+
+variable "api_server_authorized_ip_ranges" {
+  description = "Trusted client CIDRs for the public AKS API endpoint."
+  type        = list(string)
+  validation {
+    condition     = length(var.api_server_authorized_ip_ranges) > 0 && alltrue([for cidr in var.api_server_authorized_ip_ranges : can(cidrhost(cidr, 0))])
+    error_message = "At least one valid authorized API server CIDR is required."
+  }
 }
 
 variable "tags" {

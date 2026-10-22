@@ -1114,11 +1114,7 @@
     let isHealed = false;
 
     const PORTALS = [
-      ['3000', '3000', 'Grafana Dashboard', 'Live metrics: p95 latency, RPS, pod CPU/memory, error budget.', 'LAUNCH GRAFANA'],
-      ['5000', '5000', 'MLflow Registry', 'Model artifact store, parameters, gate tags, and champion lineage.', 'LAUNCH MLFLOW'],
-      ['8080/docs', '8080', 'Model API Docs', 'Interactive OpenAPI Swagger UI for /predict and /healthz.', 'OPEN SWAGGER'],
-      ['9001', '9001', 'MinIO Storage', 'S3 browser for Feast offline parquets and MLflow binaries.', 'LAUNCH MINIO'],
-      ['9093', '9093', 'Alertmanager', 'Active Prometheus alerts and webhook triggers to the remediator.', 'LAUNCH ALERTS']
+      ['8080/docs', '8080', 'Model API Docs', 'Interactive OpenAPI Swagger UI for /predict and /healthz.', 'OPEN SWAGGER']
     ];
 
     document.getElementById('portalGrid').innerHTML = PORTALS.map(([target, port, title, detail, action], index) => `
@@ -1270,25 +1266,29 @@
         if (!res.ok) return;
         const data = await res.json();
 
-        document.getElementById('metricRPS').innerText = data.rps.toFixed(1);
-        document.getElementById('metricErrors').innerText = data.error_rate_pct.toFixed(1) + '%';
-        document.getElementById('metricP95').innerText = data.p95_latency_ms !== null ? data.p95_latency_ms.toFixed(1) + 'ms' : '--';
-        document.getElementById('metricP50').innerText = data.p50_latency_ms !== null ? data.p50_latency_ms.toFixed(1) + ' ms' : '-- ms';
+        const metric = (value, digits = 1, suffix = '') => value === null || value === undefined ? `N/A${suffix}` : `${value.toFixed(digits)}${suffix}`;
+        document.getElementById('metricRPS').innerText = metric(data.rps, 1);
+        document.getElementById('metricErrors').innerText = metric(data.error_rate_pct, 1, '%');
+        document.getElementById('metricP95').innerText = metric(data.p95_latency_ms, 1, 'ms');
+        document.getElementById('metricP50').innerText = metric(data.p50_latency_ms, 1, ' ms');
 
         if (data.champion_auc !== undefined && data.champion_auc !== null) {
           const aucElem = document.getElementById('championAucMetric');
           if (aucElem) aucElem.innerText = `${data.champion_auc.toFixed(4)} (Pass Gate)`;
         }
 
-        const desired = data.replicas_desired || 2;
-        const available = data.replicas_available !== undefined ? data.replicas_available : 2;
+        const desired = data.replicas_desired;
+        const available = data.replicas_available;
 
         document.getElementById('metricReplicas').innerText = available;
         document.getElementById('metricDesired').innerText = desired;
         document.getElementById('subHeaderFleet').innerText = `${available} / ${desired} REPLICAS`;
 
         const badge = document.getElementById('metricReplicasBadge');
-        if (available < desired) {
+        if (available === null || desired === null) {
+          badge.innerText = 'METRICS UNAVAILABLE';
+          badge.className = 'font-bold text-[#66645D]';
+        } else if (available < desired) {
           badge.innerText = 'RECONCILING FLEET...';
           badge.className = 'font-bold text-[#B77900] animate-pulse';
         } else {

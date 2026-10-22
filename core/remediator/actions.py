@@ -26,8 +26,7 @@ def patch_hpa_min_replicas(
     """Raise an HPA's minReplicas by step, capped at its maxReplicas.
 
     HPA owns Deployment replicas, so a manual scale would fight the
-    controller; raising the HPA floor is the conflict-free equivalent
-    (documented in docs/DECISIONS.md).
+    controller; raising the HPA floor is the conflict-free equivalent.
     """
     hpa = autoscaling.read_namespaced_horizontal_pod_autoscaler(name, namespace)
     current_min = hpa.spec.min_replicas or 1

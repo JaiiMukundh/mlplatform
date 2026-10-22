@@ -214,6 +214,13 @@ OWNERSHIP_CHECK
   [[ -z "${GITHUB_STEP_SUMMARY:-}" ]] || echo "${message}" >> "${GITHUB_STEP_SUMMARY}"
   exit
 fi
+# Keep the public AKS API reachable only from the active GitHub runner and the
+# configured operator network. The runner address is also refreshed on deploy.
+RUNNER_CIDR="$(curl --fail --silent --show-error https://api.ipify.org)/32"
+export RUNNER_CIDR
+TF_VAR_api_server_authorized_ip_ranges="$(python3 -c 'import json,os; print(json.dumps([os.environ["RUNNER_CIDR"], os.environ["AZURE_ALLOWED_CIDR"]]))')"
+export TF_VAR_api_server_authorized_ip_ranges
+
 if [[ "${ACTION}" == deploy ]]; then
   : "${AZURE_ALLOWED_CIDR:?set the tester network CIDR in GitHub environment azure}"
   : "${TF_STATE_RESOURCE_GROUP:?set the project-owned backend resource group}"

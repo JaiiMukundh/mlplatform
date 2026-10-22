@@ -47,7 +47,7 @@ smoke-images: ## Import real service entry points and ensure models/data are abs
 	@docker run --rm --entrypoint bash mlp-check-retrain -c 'test -r infra/jobs/gate-job.yaml && for script in scripts/*.sh; do bash -n "$$script" || exit 1; done'
 
 security: ## Reject critical dependency vulnerabilities; report IaC findings.
-	@trivy fs --scanners vuln --file-patterns "pip:training.txt" --severity CRITICAL --exit-code 1 --skip-dirs .venv,.terraform .
+	@trivy fs --scanners vuln --severity HIGH,CRITICAL --exit-code 1 --skip-dirs .venv,.terraform .
 	@trivy config --severity HIGH,CRITICAL --exit-code 0 infra
 
 .PHONY: image-scan

@@ -5603,7 +5603,7 @@
             {
               "alert": "ModelApiDown",
               "annotations": {
-                "runbook": "docs/runbook.md#modelapidown",
+                "runbook": "README.md#model-api-down",
                 "summary": "model-api has no UP targets"
               },
               "expr": "sum(up{job=\"model-api\"}) == 0",
@@ -5615,7 +5615,7 @@
             {
               "alert": "PodCrashLooping",
               "annotations": {
-                "runbook": "docs/runbook.md#podcrashlooping",
+                "runbook": "README.md#pod-crash-looping",
                 "summary": "serving pods restarting"
               },
               "expr": "increase(kube_pod_container_status_restarts_total{namespace=\"serving\"}[10m]) > 2",
@@ -5627,7 +5627,7 @@
             {
               "alert": "HighErrorRate",
               "annotations": {
-                "runbook": "docs/runbook.md#higherrorrate",
+                "runbook": "README.md#high-error-rate",
                 "summary": "5xx ratio above 5%"
               },
               "expr": "sum(rate(http_requests_total{job=\"model-api\",status=~\"5..\"}[2m])) / sum(rate(http_requests_total{job=\"model-api\"}[2m])) > 0.05",
@@ -5639,7 +5639,7 @@
             {
               "alert": "HighP95Latency",
               "annotations": {
-                "runbook": "docs/runbook.md#highp95latency",
+                "runbook": "README.md#high-p95-latency",
                 "summary": "/predict p95 above 300ms"
               },
               "expr": "histogram_quantile(0.95, sum by (le)(rate(http_request_duration_seconds_bucket{job=\"model-api\",path=\"/predict\"}[2m]))) > 0.3",
@@ -5656,7 +5656,7 @@
             {
               "alert": "ModelDriftDetected",
               "annotations": {
-                "runbook": "docs/runbook.md#modeldriftdetected",
+                "runbook": "README.md#model-drift-detected",
                 "summary": "drift monitor raised the drift flag (P8)"
               },
               "expr": "max(model_drift_detected) == 1",
@@ -5668,7 +5668,7 @@
             {
               "alert": "RetrainFailed",
               "annotations": {
-                "runbook": "docs/runbook.md#retrainfailed",
+                "runbook": "README.md#retrain-failed",
                 "summary": "a retrain Job failed (P8)"
               },
               "expr": "kube_job_status_failed{namespace=\"data\",job_name=~\"retrain-.*\"} > 0",

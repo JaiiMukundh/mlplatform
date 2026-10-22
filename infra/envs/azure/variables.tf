@@ -3,6 +3,15 @@ variable "subscription_id" {
   type        = string
 }
 
+variable "api_server_authorized_ip_ranges" {
+  description = "Trusted CIDRs for the public AKS API endpoint: current GitHub runner and operator network."
+  type        = list(string)
+  validation {
+    condition     = length(var.api_server_authorized_ip_ranges) >= 2 && alltrue([for cidr in var.api_server_authorized_ip_ranges : can(cidrhost(cidr, 0))])
+    error_message = "Set valid CIDRs for both the GitHub runner and trusted operator network."
+  }
+}
+
 variable "project" {
   description = "Project prefix for resource names."
   type        = string
