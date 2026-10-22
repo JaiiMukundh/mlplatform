@@ -52,6 +52,15 @@ def test_loki_caches_fit_the_small_aks_node_pool() -> None:
         assert container["resources"]["limits"]["memory"] == f"{limit_mb}Mi"
 
 
+def test_azure_resolves_mlflow_aliases_from_registered_model_search() -> None:
+    """Initial deploy must not use a failing direct GET for a fresh MLflow alias."""
+    script = (ROOT / "scripts/azure.sh").read_text()
+    assert "model_alias_version champion" in script
+    assert "model_alias_version baseline" in script
+    assert "registered-models/search" in script
+    assert "registered-models/alias?name=" not in script
+
+
 def test_github_oidc_session_refreshes_for_long_azure_provisioning(
     tmp_path: Path,
 ) -> None:

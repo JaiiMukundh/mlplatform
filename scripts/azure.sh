@@ -402,10 +402,16 @@ kubectl -n data port-forward svc/mlflow 5000:5000 >/tmp/mlp-mlflow-forward.log 2
 curl --fail --silent --retry 30 --retry-all-errors --retry-delay 2 http://localhost:9000/minio/health/ready
 curl --fail --silent --retry 30 --retry-all-errors --retry-delay 2 http://localhost:5000/health
 # Do not overwrite existing drifted features or train extra versions on reruns.
-CHAMPION="$(curl --fail --silent 'http://localhost:5000/api/2.0/mlflow/registered-models/search' | python3 -c '
+model_alias_version() {
+  curl --fail --silent --show-error \
+    'http://localhost:5000/api/2.0/mlflow/registered-models/search' |
+    python3 -c '
 import json,sys
+alias=sys.argv[1]
 models=json.load(sys.stdin).get("registered_models",[])
-print(next((a["version"] for m in models if m["name"]=="loan-default" for a in m.get("aliases",[]) if a["alias"]=="champion"),""))')"
+print(next((a["version"] for m in models if m["name"]=="loan-default" for a in m.get("aliases",[]) if a["alias"]==alias),""))' "$1"
+}
+CHAMPION="$(model_alias_version champion)"
 export TRAINING_IMAGE="${ACR}/mlp-training:${TAG}"
 if [[ -z "${CHAMPION}" ]]; then
   make seed-data
@@ -415,9 +421,10 @@ if [[ -z "${CHAMPION}" ]]; then
     bash scripts/run_job.sh /tmp/mlp-feast-job.yaml data
   done
   bash scripts/train_mlflow.sh
-  CHAMPION="$(curl --fail --silent 'http://localhost:5000/api/2.0/mlflow/registered-models/alias?name=loan-default&alias=champion' | python3 -c 'import json,sys; print(json.load(sys.stdin)["model_version"]["version"])')"
+  CHAMPION="$(model_alias_version champion)"
+  [[ -n "${CHAMPION}" ]] || { echo "ERROR: training completed without a champion model alias" >&2; exit 1; }
 fi
-if ! curl --fail --silent 'http://localhost:5000/api/2.0/mlflow/registered-models/alias?name=loan-default&alias=baseline' >/dev/null; then
+if [[ -z "$(model_alias_version baseline)" ]]; then
   curl --fail --silent --show-error -H 'Content-Type: application/json' \
     -d "{\"name\":\"loan-default\",\"alias\":\"baseline\",\"version\":\"${CHAMPION}\"}" \
     http://localhost:5000/api/2.0/mlflow/registered-models/alias
