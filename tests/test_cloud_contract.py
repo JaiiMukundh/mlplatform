@@ -47,7 +47,7 @@ def test_loki_caches_fit_the_small_aks_node_pool() -> None:
             if item["kind"] == "StatefulSet" and item["metadata"]["name"] == name
         )
         container = workload["spec"]["template"]["spec"]["containers"][0]
-        assert f"-m {cache_mb}" in container["args"]
+        assert container["args"][:2] == ["-m", str(cache_mb)]
         assert container["resources"]["requests"]["memory"] == f"{request_mb}Mi"
         assert container["resources"]["limits"]["memory"] == f"{limit_mb}Mi"
 
