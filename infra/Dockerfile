@@ -134,6 +134,7 @@ USER 10001:10001
 FROM dashboard-tools AS dashboard
 COPY --from=dashboard-builder /opt/venv /opt/venv
 COPY --chown=10001:10001 core/mlp_common/ mlp_common/
+COPY --chown=10001:10001 core/ml/ ml/
 COPY --chown=10001:10001 ui/ ui/
 COPY --chown=10001:10001 scripts/ scripts/
 COPY --chown=10001:10001 infra/jobs/ infra/jobs/
