@@ -43,7 +43,8 @@ To stop and delete the project’s Azure app, AKS cluster and Terraform state, r
 gh workflow run cd.yml --ref main \
   -f action=kill \
   -f confirmation=KILL
-gh run watch --exit-status
+gh run list --workflow cd.yml --limit 3
+gh run watch <RUN_ID> --exit-status
 ```
 
 Deletion removes the project’s model and data history too. The GitHub OIDC identity is separate from the application resource groups and remains available for a future deployment.
@@ -84,7 +85,7 @@ From the repository checkout, run:
 ```bash
 gh workflow run cd.yml --ref main -f action=deploy -f confirmation=DEPLOY
 gh run list --workflow cd.yml --limit 3
-gh run watch --exit-status
+gh run watch <RUN_ID> --exit-status
 ```
 
 Alternatively, choose **Actions → azure → Run workflow** on GitHub, select `deploy`, and enter `DEPLOY`. The command dispatches [`.github/workflows/cd.yml`](.github/workflows/cd.yml) on a GitHub-hosted runner. Do not dispatch another deploy while one is running.
