@@ -1107,10 +1107,18 @@ async def stream_action_output(target: str):
             detail=f"Action or job '{target}' not found. Available actions: {avail}",
         )
 
+    if job:
+        if job.get("status") != "pending":
+            raise HTTPException(
+                status_code=409,
+                detail="This action has already started and cannot be replayed.",
+            )
+        # Claim the execution before yielding the response so EventSource
+        # reconnects or concurrent requests cannot launch the command twice.
+        job["status"] = "running"
+
     async def event_generator():
         yield f"data: $ {cmd}\n\n"
-        if job:
-            job["status"] = "running"
 
         try:
             process = await asyncio.create_subprocess_shell(

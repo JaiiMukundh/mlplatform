@@ -333,6 +333,10 @@ def test_dashboard_serves_page_and_runs_commands_from_repository(
         )
         assert "MLPlatform targets:" in output.text
         assert "COMPLETED SUCCESSFULLY (EXIT 0)" in output.text
+        replay = client.get(
+            f"/api/stream/{execution_id}", auth=("admin", "cloud-test-password")
+        )
+        assert replay.status_code == 409
 
 
 @pytest.mark.parametrize(
