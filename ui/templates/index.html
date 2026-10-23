@@ -1832,8 +1832,6 @@
       // creates a pending execution; /api/stream must be opened to run it.
       executeAction('simulate_drift');
 
-      // 3. Start active watchdog polling to monitor the autonomous Kubernetes job
-      startWatchdogPolling();
     }
 
     function renderDecision(state) {
@@ -2179,6 +2177,11 @@
     // Terminal Controller
     async function executeAction(actionName) {
       switchTab('terminal');
+      const monitorsHealing = ['simulate_drift', 'auto_heal'].includes(actionName);
+      if (monitorsHealing) {
+        isShockActive = true;
+        startWatchdogPolling();
+      }
       const term = document.getElementById('terminalOutput');
       const pill = document.getElementById('terminalStatusPill');
 
@@ -2195,6 +2198,7 @@
       }
 
       let isDone = false;
+      let processSucceeded = false;
 
       try {
         const response = await fetch('/api/action', {
@@ -2208,14 +2212,36 @@
         activeEventSource = new EventSource(`/api/stream/${encodeURIComponent(executionId)}`);
 
         activeEventSource.onmessage = (event) => {
+          if (event.data.startsWith('[PROCESS COMPLETED SUCCESSFULLY')) {
+            processSucceeded = true;
+          } else if (event.data.startsWith('[PROCESS FAILED')) {
+            processSucceeded = false;
+          }
           if (event.data === '[DONE]') {
             isDone = true;
             if (activeEventSource) {
               activeEventSource.close();
               activeEventSource = null;
             }
-            pill.innerText = 'STATUS: COMPLETED';
-            pill.className = 'text-[10px] bg-black text-[#C8FF5A] px-2 py-0.5 border border-[#C8FF5A] font-bold';
+            pill.innerText = processSucceeded ? 'STATUS: COMPLETED' : 'STATUS: FAILED';
+            pill.className = processSucceeded
+              ? 'text-[10px] bg-black text-[#C8FF5A] px-2 py-0.5 border border-[#C8FF5A] font-bold'
+              : 'text-[10px] bg-[#fed7aa] text-[#B52A24] px-2 py-0.5 border border-[#B52A24] font-bold';
+
+            if (!processSucceeded) {
+              if (monitorsHealing) {
+                isShockActive = false;
+                if (watchdogInterval) clearInterval(watchdogInterval);
+                watchdogInterval = null;
+                const btn = document.getElementById('injectDriftBtn');
+                if (btn) {
+                  btn.disabled = false;
+                  btn.classList.remove('opacity-50');
+                }
+                showToast('DRIFT ACTION FAILED', 'Check the terminal output. Retraining was not confirmed.', '⚠️');
+              }
+              return;
+            }
             
             pollSystemStatus();
             pollMetrics();

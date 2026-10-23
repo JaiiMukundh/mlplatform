@@ -315,6 +315,12 @@ def test_dashboard_serves_page_and_runs_commands_from_repository(
         page = client.get("/", auth=("admin", "cloud-test-password"))
         assert page.status_code == 200
         assert "<html" in page.text.lower()
+        assert "executeAction('simulate_drift')" in page.text
+        assert "await fetch('/api/action'" in page.text
+        assert (
+            "new EventSource(`/api/stream/${encodeURIComponent(executionId)}`)"
+            in page.text
+        )
         action = client.post(
             "/api/action",
             json={"action": "verify-layout"},
