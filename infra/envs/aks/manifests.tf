@@ -55,21 +55,21 @@ resource "kubernetes_manifest" "crds" {
 }
 
 resource "kubernetes_manifest" "data" {
-  for_each        = { for key, manifest in local.manifests.data : key => manifest if var.stage != "bootstrap" }
+  for_each        = local.manifests.data
   manifest        = each.value
   computed_fields = local.api_normalized_fields[each.key]
   depends_on      = [kubernetes_namespace_v1.platform, kubernetes_secret_v1.postgres, kubernetes_secret_v1.minio]
 }
 
 resource "kubernetes_manifest" "observability" {
-  for_each        = { for key, manifest in local.manifests.observability : key => manifest if var.stage != "bootstrap" }
+  for_each        = local.manifests.observability
   manifest        = each.value
   computed_fields = local.api_normalized_fields[each.key]
   depends_on      = [kubernetes_manifest.crds, kubernetes_secret_v1.grafana]
 }
 
 resource "kubernetes_manifest" "app" {
-  for_each        = { for key, manifest in local.manifests.app : key => manifest if var.stage == "app" }
+  for_each        = local.manifests.app
   manifest        = each.value
   computed_fields = local.api_normalized_fields[each.key]
   depends_on      = [kubernetes_manifest.data, kubernetes_manifest.observability, kubernetes_secret_v1.dashboard_tls, kubernetes_secret_v1.dashboard_data, kubernetes_secret_v1.postgres_app]

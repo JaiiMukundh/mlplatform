@@ -30,8 +30,24 @@ aks_vars() {
 }
 
 aks_apply() {
-  export TF_VAR_stage="$1"
-  "${AKS_TF[@]}" apply -input=false -auto-approve
+  case "$1" in
+    bootstrap)
+      "${AKS_TF[@]}" apply -input=false -auto-approve \
+        -target=kubernetes_manifest.crds
+      ;;
+    platform)
+      "${AKS_TF[@]}" apply -input=false -auto-approve \
+        -target=kubernetes_manifest.data \
+        -target=kubernetes_manifest.observability
+      ;;
+    app)
+      "${AKS_TF[@]}" apply -input=false -auto-approve
+      ;;
+    *)
+      echo "Unknown AKS apply stage: $1" >&2
+      return 2
+      ;;
+  esac
 }
 
 if [[ "${ACTION}" == connect ]]; then
@@ -283,7 +299,6 @@ if [[ "${ACTION}" == destroy ]]; then
   refresh_azure_oidc_login
   az aks get-credentials --resource-group "${RG}" --name "${CLUSTER}" --overwrite-existing
   aks_vars
-  export TF_VAR_stage=app
   aks_init
   "${AKS_TF[@]}" destroy -input=false -auto-approve
   "${TF[@]}" plan -destroy -out=destroy.tfplan

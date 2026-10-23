@@ -13,6 +13,17 @@ from retrain.dispatch import dispatch_candidate
 ROOT = Path(__file__).resolve().parents[1]
 
 
+def test_staged_terraform_applies_do_not_prune_other_platform_stages() -> None:
+    """Target each deployment phase while keeping every manifest in one state."""
+    azure_script = (ROOT / "scripts/azure.sh").read_text()
+    manifests = (ROOT / "infra/envs/aks/manifests.tf").read_text()
+
+    assert "-target=kubernetes_manifest.crds" in azure_script
+    assert "-target=kubernetes_manifest.data" in azure_script
+    assert "-target=kubernetes_manifest.observability" in azure_script
+    assert "if var.stage" not in manifests
+
+
 def test_public_service_exposes_only_configured_port() -> None:
     """Terraform's shared Azure IP uses one external port per Service."""
     manifest = ROOT / "infra/manifests/observability.json.tftpl"

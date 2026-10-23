@@ -3,14 +3,6 @@ variable "kubeconfig" {
   default = "~/.kube/config"
 }
 
-variable "stage" {
-  type = string
-  validation {
-    condition     = contains(["bootstrap", "platform", "app"], var.stage)
-    error_message = "stage must be bootstrap, platform, or app"
-  }
-}
-
 variable "acr" {
   type = string
 }
