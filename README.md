@@ -40,6 +40,87 @@ gh run watch --exit-status
 
 Deletion removes the project’s model and data history too. The GitHub OIDC identity is separate from the application resource groups and remains available for a future deployment.
 
+## From source code to a working app
+
+The following is the actual deployment path. **Pushing code runs CI; it does not deploy Azure resources.** Deployment is a separate, confirmed GitHub Actions run. Your computer only needs GitHub CLI to dispatch it and a browser to use the result.
+
+```mermaid
+flowchart LR
+    A[Push main] --> B[CI: tests, scans, image smoke]
+    B --> C[Confirmed Azure workflow]
+    C --> D[Terraform: Azure network, ACR, AKS, IP]
+    D --> E[Build and push seven images]
+    E --> F[Terraform: namespaces, CRDs, services]
+    F --> G[Feast data and initial MLflow champion]
+    G --> H[Terraform: API, dashboard, monitors]
+    H --> I[Readiness, prediction, metrics, dashboard checks]
+    I --> J[Dashboard URL in run summary]
+```
+
+### 1. Prepare the repository and Azure identity
+
+The deploy workflow reads [`main`](https://github.com/JaiiMukundh/mlplatform/tree/main). For a new subscription, sign in with Azure CLI and GitHub CLI, then run `make azure-connect` once. [`scripts/azure.sh`](scripts/azure.sh) configures a GitHub OIDC identity and the `azure` GitHub Environment variables, including the permitted operator network. GitHub receives a short-lived Azure token during each run; there is no Azure client secret in this repository. The subscription needs capacity for the AKS node SKUs in [`infra/modules/cluster_aks/main.tf`](infra/modules/cluster_aks/main.tf).
+
+The one-time connection does **not** start the app. It does create an Azure identity, so review the Azure subscription and GitHub Environment before using it.
+
+### 2. Push a change and pass CI
+
+Push the reviewed change to `main`. [`.github/workflows/ci.yml`](.github/workflows/ci.yml) runs `quality` and `security`. It installs the frozen [`uv.lock`](uv.lock) dependency graph, runs Python tests and lint, validates Terraform, GitHub Actions and Kubernetes manifests, checks for secrets and vulnerabilities, then builds and import-smokes all seven targets in [`infra/Dockerfile`](infra/Dockerfile). Those Docker builds are CI checks; they do not start a local app.
+
+The Azure workflow checks that **both CI jobs succeeded for its exact commit SHA**. If either fails, inspect that CI run first; the Azure job will not continue to provisioning.
+
+### 3. Dispatch deployment
+
+From the repository checkout, run:
+
+```bash
+gh workflow run cd.yml --ref main -f action=deploy -f confirmation=DEPLOY
+gh run list --workflow cd.yml --limit 3
+gh run watch --exit-status
+```
+
+Alternatively, choose **Actions → azure → Run workflow** on GitHub, select `deploy`, and enter `DEPLOY`. The command dispatches [`.github/workflows/cd.yml`](.github/workflows/cd.yml) on a GitHub-hosted runner. Do not dispatch another deploy while one is running.
+
+### 4. Provision Azure, then Kubernetes
+
+[`infra/envs/azure/`](infra/envs/azure/) uses Terraform to create the project resource group, network, Azure Container Registry (ACR), AKS, budget alert, and public IP. The GitHub runner builds and pushes the seven tagged images to ACR. [`infra/envs/aks/`](infra/envs/aks/) then applies Kubernetes resources in dependency order:
+
+| Stage | What becomes available | Source |
+|---|---|---|
+| Bootstrap | Namespaces, service accounts and required custom resource definitions | [`infra/envs/aks/`](infra/envs/aks/) |
+| Platform | PostgreSQL, Redis, MinIO, MLflow, Prometheus, Alertmanager, Grafana, Loki and Alloy | [`infra/manifests/`](infra/manifests/) |
+| Application | Model API, dashboard, drift monitor, remediator, services and release Job templates | [`infra/manifests/`](infra/manifests/) |
+
+Terraform manages the cluster resources directly. There is no Helm deployment. Kubernetes schedules the containers and Jobs; Azure load balancing exposes the dashboard and API.
+
+### 5. Seed features and create the first model
+
+On the **first** deployment, [`scripts/azure.sh`](scripts/azure.sh) publishes the credit data to MinIO, runs the Feast apply/materialize/verify Jobs, trains the baseline model through [`scripts/train_mlflow.sh`](scripts/train_mlflow.sh), and registers it in MLflow with a `champion` alias. Only then does the app stage start the API with that version. On later deploys, the script checks the existing alias and keeps the model and data history instead of training a fresh version each time.
+
+The API reads online features from Feast/Redis, loads the registered model, and writes prediction records to PostgreSQL. The dashboard starts after its data and model dependencies are available.
+
+### 6. Prove the deployment is working
+
+The deployment run waits for the API and dashboard rollouts. Its verification checks API `/readyz`, authenticated `/model-info` and `/predict`, API `/metrics`, dashboard `/healthz`, and dashboard status showing ready nodes, a serving model, Prometheus, MLflow and MinIO. **A successful CI run alone is not proof that the app is deployed.** The Azure run must finish successfully and show the dashboard URL in its summary.
+
+Afterward, open the dashboard URL, sign in as `admin`, and use **Monitoring** for service health, active alerts and Grafana. The dashboard password is stored in the `observability/grafana-admin` Kubernetes Secret. If you have authorized `kubectl` access, retrieve it without echoing it:
+
+```bash
+DASHBOARD_PASSWORD="$(kubectl -n observability get secret grafana-admin -o jsonpath='{.data.admin-password}' | base64 -d)"
+curl -k -u "admin:${DASHBOARD_PASSWORD}" "https://<dashboard-ip>/api/status"
+unset DASHBOARD_PASSWORD
+```
+
+The test dashboard uses a self-signed HTTPS certificate, so a browser may show a certificate warning. Use the **current run summary** for its IP; an IP from a previous deployment may no longer belong to this app. The authenticated dashboard and `/grafana/` share one URL. The model API is a separate endpoint because client applications use its bearer token.
+
+### 7. Exercise drift and model release
+
+In the dashboard, run **Simulate drift**. [`scripts/simulate_drift.py`](scripts/simulate_drift.py) publishes shifted features, a Feast Job materializes them in Redis, and [`scripts/traffic.py`](scripts/traffic.py) sends prediction traffic. [`core/drift_monitor/main.py`](core/drift_monitor/main.py) compares recent predictions with the champion reference and, after two consecutive breaches, creates a retraining Job. [`core/retrain/main.py`](core/retrain/main.py) registers a candidate in MLflow. [`scripts/model_release.sh`](scripts/model_release.sh) runs the evaluation gate, deploys and load-checks staging, changes the MLflow `champion` alias, rolls production one pod at a time, and verifies production predictions. The dashboard's status shows the serving version; the Kubernetes Job status and logs show whether retraining and release actually completed.
+
+### 8. Stop the test session
+
+The deploy run tags the app and Terraform state groups with an expiry **two hours after deployment finishes**. [`.github/workflows/expiry.yml`](.github/workflows/expiry.yml) checks every 15 minutes and deletes expired test resources; scheduling can be delayed. Use the `kill` command above to end the session sooner. Both expiry and `kill` remove the test data, model history, AKS resources and Terraform state. Check the current run summary for the actual expiry time rather than assuming an old session is still running.
+
 ## What the platform does
 
 1. Prepares historical credit card data and trains a model.
