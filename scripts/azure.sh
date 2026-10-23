@@ -304,23 +304,23 @@ esac
 # Add only that runner /32 to the AKS API allowlist for this job, then restore
 # the previous list even if a smoke check fails.
 restore_aks_api_access() {
-  local status=0
-  if [[ "${RESTORE_VERIFY_INGRESS:-0}" == 1 ]]; then
-    kubectl -n serving patch service model-api --type merge \
-      -p "$(python3 -c 'import json,sys; print(json.dumps({"spec":{"loadBalancerSourceRanges":json.loads(sys.argv[1])}}))' "${ORIGINAL_MODEL_API_RANGES}")" \
-      || status=1
-    kubectl -n observability patch service dashboard --type merge \
-      -p "$(python3 -c 'import json,sys; print(json.dumps({"spec":{"loadBalancerSourceRanges":json.loads(sys.argv[1])}}))' "${ORIGINAL_DASHBOARD_RANGES}")" \
-      || status=1
-  fi
   if [[ "${RESTORE_API_SERVER_ACCESS:-0}" == 1 ]]; then
     az aks update --resource-group "${RG}" --name "${CLUSTER}" \
       --api-server-authorized-ip-ranges "${ORIGINAL_API_SERVER_RANGES}" \
-      --output none || status=1
+      --output none
   fi
-  return "${status}"
 }
-if [[ "${ACTION}" == verify ]]; then
+MODEL_API_PF_PID=""
+DASHBOARD_PF_PID=""
+cleanup_verify() {
+  [[ -z "${MODEL_API_PF_PID}" ]] || kill "${MODEL_API_PF_PID}" 2>/dev/null || true
+  [[ -z "${DASHBOARD_PF_PID}" ]] || kill "${DASHBOARD_PF_PID}" 2>/dev/null || true
+  restore_aks_api_access
+}
+if [[ "${ACTION}" == verify || "${ACTION}" == dashboard ]]; then
+  trap cleanup_verify EXIT
+fi
+if [[ "${ACTION}" == verify || "${ACTION}" == dashboard ]]; then
   original_ranges_json="$(az aks show --resource-group "${RG}" --name "${CLUSTER}" \
     --query apiServerAccessProfile.authorizedIpRanges -o json)"
   ORIGINAL_API_SERVER_RANGES="$(python3 -c '
@@ -333,7 +333,7 @@ ranges=json.loads(sys.argv[1]) or []
 ranges.append(sys.argv[2])
 print(",".join(dict.fromkeys(ranges)))' "${original_ranges_json}" "${RUNNER_CIDR}")"
     export ORIGINAL_API_SERVER_RANGES RESTORE_API_SERVER_ACCESS=1
-    trap restore_aks_api_access EXIT
+    trap cleanup_verify EXIT
     az aks update --resource-group "${RG}" --name "${CLUSTER}" \
       --api-server-authorized-ip-ranges "${extended_ranges}" --output none
   fi
@@ -346,21 +346,6 @@ export PUBLIC_IP_NAME="$("${TF[@]}" output -raw public_ip_name)"
 export PUBLIC_HOST="$("${TF[@]}" output -raw public_host)"
 export AZURE_RESOURCE_GROUP="${RG}"
 
-if [[ "${ACTION}" == verify ]]; then
-  ORIGINAL_MODEL_API_RANGES="$(kubectl -n serving get service model-api -o json | python3 -c 'import json,sys; print(json.dumps(json.load(sys.stdin)["spec"].get("loadBalancerSourceRanges", [])))')"
-  ORIGINAL_DASHBOARD_RANGES="$(kubectl -n observability get service dashboard -o json | python3 -c 'import json,sys; print(json.dumps(json.load(sys.stdin)["spec"].get("loadBalancerSourceRanges", [])))')"
-  MODEL_API_RANGES="$(python3 -c 'import json,sys; ranges=json.loads(sys.argv[1]); ranges.append(sys.argv[2]); print(json.dumps(list(dict.fromkeys(ranges))))' "${ORIGINAL_MODEL_API_RANGES}" "${RUNNER_CIDR}")"
-  DASHBOARD_RANGES="$(python3 -c 'import json,sys; ranges=json.loads(sys.argv[1]); ranges.append(sys.argv[2]); print(json.dumps(list(dict.fromkeys(ranges))))' "${ORIGINAL_DASHBOARD_RANGES}" "${RUNNER_CIDR}")"
-  if [[ "${MODEL_API_RANGES}" != "${ORIGINAL_MODEL_API_RANGES}" || "${DASHBOARD_RANGES}" != "${ORIGINAL_DASHBOARD_RANGES}" ]]; then
-    export ORIGINAL_MODEL_API_RANGES ORIGINAL_DASHBOARD_RANGES RESTORE_VERIFY_INGRESS=1
-    trap restore_aks_api_access EXIT
-    kubectl -n serving patch service model-api --type merge \
-      -p "$(python3 -c 'import json,sys; print(json.dumps({"spec":{"loadBalancerSourceRanges":json.loads(sys.argv[1])}}))' "${MODEL_API_RANGES}")"
-    kubectl -n observability patch service dashboard --type merge \
-      -p "$(python3 -c 'import json,sys; print(json.dumps({"spec":{"loadBalancerSourceRanges":json.loads(sys.argv[1])}}))' "${DASHBOARD_RANGES}")"
-  fi
-fi
-
 verify_dashboard() {
   if ! kubectl -n observability rollout status deployment/dashboard --timeout=600s; then
     echo 'Dashboard rollout did not become ready; collecting pod diagnostics.' >&2
@@ -370,9 +355,11 @@ verify_dashboard() {
     kubectl -n observability get events --sort-by=.lastTimestamp >&2 || true
     return 1
   fi
-  curl --insecure --fail --silent --show-error --connect-timeout 10 --max-time 15 \
-    --retry 30 --retry-all-errors --retry-delay 5 \
-    "https://${PUBLIC_HOST}/healthz"
+  kubectl -n observability port-forward service/dashboard 18443:443 \
+    >/tmp/mlp-dashboard-port-forward.log 2>&1 &
+  DASHBOARD_PF_PID=$!
+  curl --insecure --fail --silent --show-error --connect-timeout 2 --max-time 5 \
+    --retry 30 --retry-all-errors --retry-delay 2 https://127.0.0.1:18443/healthz
   password="$(kubectl -n observability get secret grafana-admin -o jsonpath='{.data.admin-password}' | base64 -d)"
   kubectl -n observability exec deploy/dashboard -- curl --fail --silent --insecure \
     --user "admin:${password}" https://localhost:8050/api/status > /tmp/mlp-dashboard-status.json
@@ -397,13 +384,17 @@ verify() {
   [[ -n "${address}" ]] || { echo 'Azure LoadBalancer has no address' >&2; exit 1; }
   MODEL_API_TOKEN="$(kubectl -n serving get secret model-api-token -o jsonpath='{.data.token}' | base64 -d)"
   export MODEL_API_TOKEN
-  curl --fail --silent --show-error --connect-timeout 5 --max-time 15 \
-    --retry 30 --retry-all-errors --retry-delay 5 "http://${address}:8080/readyz"
-  curl --fail --silent --show-error -H "Authorization: Bearer ${MODEL_API_TOKEN}" "http://${address}:8080/model-info"
+  kubectl -n serving port-forward service/model-api 18080:8080 \
+    >/tmp/mlp-model-api-port-forward.log 2>&1 &
+  MODEL_API_PF_PID=$!
+  api_url="http://127.0.0.1:18080"
+  curl --fail --silent --show-error --connect-timeout 2 --max-time 5 \
+    --retry 30 --retry-all-errors --retry-delay 2 "${api_url}/readyz"
+  curl --fail --silent --show-error -H "Authorization: Bearer ${MODEL_API_TOKEN}" "${api_url}/model-info"
   curl --fail --silent --show-error -H 'Content-Type: application/json' \
     -H "Authorization: Bearer ${MODEL_API_TOKEN}" \
-    -d '{"customer_ids":[7]}' "http://${address}:8080/predict"
-  metrics="$(curl --fail --silent --show-error "http://${address}:8080/metrics")"
+    -d '{"customer_ids":[7]}' "${api_url}/predict"
+  metrics="$(curl --fail --silent --show-error "${api_url}/metrics")"
   grep -q '^http_requests_total' <<<"${metrics}"
   grep -q '^model_info{' <<<"${metrics}"
   echo "Model API metrics: request and loaded-model series are present"

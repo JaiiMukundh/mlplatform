@@ -64,22 +64,20 @@ def test_azure_resolves_mlflow_aliases_from_registered_model_search() -> None:
 def test_azure_verification_checks_live_model_api_metrics() -> None:
     """Cloud verification must exercise metrics from the deployed API process."""
     script = (ROOT / "scripts/azure.sh").read_text()
-    assert "http://${address}:8080/metrics" in script
+    assert '"${api_url}/metrics"' in script
     assert "^http_requests_total" in script
     assert "^model_info{" in script
 
 
-def test_azure_verify_temporarily_allows_and_restores_its_runner() -> None:
-    """Read-only cloud checks work across ephemeral runner IP changes."""
+def test_azure_verify_restores_runner_allowlist_and_uses_port_forwarding() -> None:
+    """Cloud checks avoid public ingress while cleaning up runner access."""
     script = (ROOT / "scripts/azure.sh").read_text()
-    assert 'if [[ "${ACTION}" == verify ]]' in script
+    assert 'if [[ "${ACTION}" == verify || "${ACTION}" == dashboard ]]' in script
     assert "--api-server-authorized-ip-ranges" in script
-    assert "trap restore_aks_api_access EXIT" in script
-    assert "patch service model-api" in script
-    assert "patch service dashboard" in script
-    assert "ORIGINAL_MODEL_API_RANGES" in script
-    assert "ORIGINAL_DASHBOARD_RANGES" in script
-    assert "--retry 30 --retry-all-errors --retry-delay 5" in script
+    assert "trap cleanup_verify EXIT" in script
+    assert "port-forward service/model-api 18080:8080" in script
+    assert "port-forward service/dashboard 18443:443" in script
+    assert "--retry 30 --retry-all-errors --retry-delay 2" in script
 
 
 def test_github_oidc_session_refreshes_for_long_azure_provisioning(
@@ -192,8 +190,8 @@ def test_dashboard_action_keeps_the_terraform_allowlist() -> None:
     workflow = (ROOT / ".github/workflows/cd.yml").read_text()
     deploy_script = (ROOT / "scripts/azure.sh").read_text()
     assert "inputs.action == 'deploy' || inputs.action == 'dashboard'" in workflow
-    assert "https://${PUBLIC_HOST}/healthz" in deploy_script
-    assert "--connect-timeout 10 --max-time 15" in deploy_script
+    assert "https://127.0.0.1:18443/healthz" in deploy_script
+    assert "port-forward service/dashboard 18443:443" in deploy_script
     dashboard_container = deployment["spec"]["template"]["spec"]["containers"][0]
     assert dashboard_container["startupProbe"]["failureThreshold"] == 120
     assert "deployment/dashboard --timeout=600s" in deploy_script
@@ -201,7 +199,7 @@ def test_dashboard_action_keeps_the_terraform_allowlist() -> None:
 
 
 def test_model_api_ingress_waits_for_azure_rule_updates() -> None:
-    """Cilium preserves client CIDR; checks wait for Azure ingress reconciliation."""
+    """Cilium preserves client CIDR for public traffic from the configured network."""
     resources = json.loads((ROOT / "infra/manifests/app.json.tftpl").read_text())
     service = next(
         item
@@ -214,8 +212,8 @@ def test_model_api_ingress_waits_for_azure_rule_updates() -> None:
         "${RUNNER_CIDR}",
     ]
     deploy_script = (ROOT / "scripts/azure.sh").read_text()
-    assert "--connect-timeout 5 --max-time 15" in deploy_script
-    assert "--retry 30 --retry-all-errors --retry-delay 5" in deploy_script
+    assert '"${api_url}/readyz"' in deploy_script
+    assert "port-forward service/model-api 18080:8080" in deploy_script
 
 
 def test_release_rejects_shell_payloads() -> None:
