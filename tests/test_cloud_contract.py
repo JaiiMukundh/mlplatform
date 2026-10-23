@@ -315,8 +315,15 @@ def test_dashboard_serves_page_and_runs_commands_from_repository(
         page = client.get("/", auth=("admin", "cloud-test-password"))
         assert page.status_code == 200
         assert "<html" in page.text.lower()
+        action = client.post(
+            "/api/action",
+            json={"action": "verify-layout"},
+            auth=("admin", "cloud-test-password"),
+        )
+        assert action.status_code == 200
+        execution_id = action.json()["execution_id"]
         output = client.get(
-            "/api/stream/verify-layout", auth=("admin", "cloud-test-password")
+            f"/api/stream/{execution_id}", auth=("admin", "cloud-test-password")
         )
         assert "MLPlatform targets:" in output.text
         assert "COMPLETED SUCCESSFULLY (EXIT 0)" in output.text

@@ -1828,16 +1828,9 @@
 
       showToast('DRIFT SHOCK INJECTED', 'Covariate shock written to Feast Redis. Streaming live prediction traffic to cluster...', '💥');
 
-      // 2. Dispatch real in-cluster drift simulation & traffic via API
-      try {
-        fetch('/api/action', {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ action: 'simulate_drift' })
-        });
-      } catch (e) {
-        console.error('Failed to trigger drift action:', e);
-      }
+      // 2. Start and stream the real simulation. A POST to /api/action only
+      // creates a pending execution; /api/stream must be opened to run it.
+      executeAction('simulate_drift');
 
       // 3. Start active watchdog polling to monitor the autonomous Kubernetes job
       startWatchdogPolling();
@@ -2078,13 +2071,7 @@
     async function resetBaselineAction() {
       setReality('baseline');
       showToast('BASELINE RESTORED', 'Feature vector and scoring model restored to clean baseline.', '🔄');
-      try {
-        fetch('/api/action', {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ action: 'reset_demo' })
-        });
-      } catch (e) {}
+      executeAction('reset_demo');
     }
 
     function pickBorrower(id) {
@@ -2210,7 +2197,15 @@
       let isDone = false;
 
       try {
-        activeEventSource = new EventSource(`/api/stream/${actionName}`);
+        const response = await fetch('/api/action', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ action: actionName })
+        });
+        if (!response.ok) throw new Error(`Action request failed (${response.status})`);
+        const { execution_id: executionId } = await response.json();
+        if (!executionId) throw new Error('Action request returned no execution ID');
+        activeEventSource = new EventSource(`/api/stream/${encodeURIComponent(executionId)}`);
 
         activeEventSource.onmessage = (event) => {
           if (event.data === '[DONE]') {
