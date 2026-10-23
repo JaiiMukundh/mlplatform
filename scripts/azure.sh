@@ -240,6 +240,10 @@ export TF_VAR_api_server_authorized_ip_ranges
 if [[ "${ACTION}" == deploy ]]; then
   : "${AZURE_ALLOWED_CIDR:?set the tester network CIDR in GitHub environment azure}"
   : "${TF_STATE_RESOURCE_GROUP:?set the project-owned backend resource group}"
+  # A failed update must preserve an existing deployment and its model/data history.
+  if [[ "$(az group exists --name "${TF_VAR_project}-${TF_VAR_environment}-rg")" == true ]]; then
+    touch /tmp/mlp-preexisting-deployment
+  fi
   python3 - "${AZURE_ALLOWED_CIDR}" <<'CIDR_CHECK'
 import ipaddress,sys
 ipaddress.ip_network(sys.argv[1], strict=False)
@@ -454,7 +458,12 @@ kubectl -n data rollout status statefulset/postgres --timeout=10m
 kubectl -n data rollout status deployment/minio --timeout=10m
 kubectl -n data wait --for=condition=complete job/postgres-init --timeout=10m
 kubectl -n data wait --for=condition=complete job/minio-buckets --timeout=10m
-kubectl -n data rollout status deployment/mlflow --timeout=10m
+if ! kubectl -n data rollout status deployment/mlflow --timeout=10m; then
+  kubectl -n data get pods -o wide >&2 || true
+  kubectl -n data describe pods -l app.kubernetes.io/instance=mlflow >&2 || true
+  kubectl -n data get events --sort-by=.lastTimestamp >&2 || true
+  exit 1
+fi
 
 # Port-forwards exist only on the ephemeral Actions runner, never on the laptop.
 PF_PIDS=()

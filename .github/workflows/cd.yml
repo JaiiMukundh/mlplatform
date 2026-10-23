@@ -137,6 +137,8 @@ jobs:
         env:
           GH_TOKEN: ${{ github.token }}
         run: |
-          if test -e /tmp/mlp-startup-started; then
+          if test -e /tmp/mlp-startup-started && ! test -e /tmp/mlp-preexisting-deployment; then
             make azure ACTION=kill CONFIRMATION=KILL
+          else
+            echo "Existing deployment preserved for diagnosis and repair."
           fi

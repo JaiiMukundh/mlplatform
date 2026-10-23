@@ -24,6 +24,26 @@ def test_staged_terraform_applies_do_not_prune_other_platform_stages() -> None:
     assert "if var.stage" not in manifests
 
 
+def test_failed_update_preserves_existing_cloud_deployment() -> None:
+    deploy_script = (ROOT / "scripts/azure.sh").read_text()
+    workflow = (ROOT / ".github/workflows/cd.yml").read_text()
+    assert "touch /tmp/mlp-preexisting-deployment" in deploy_script
+    assert (
+        "test -e /tmp/mlp-startup-started && ! test -e /tmp/mlp-preexisting-deployment"
+        in workflow
+    )
+
+
+def test_mlflow_update_does_not_require_an_extra_pod() -> None:
+    resources = json.loads((ROOT / "infra/manifests/data.json.tftpl").read_text())
+    mlflow = next(
+        item
+        for item in resources.values()
+        if item["kind"] == "Deployment" and item["metadata"]["name"] == "mlflow"
+    )
+    assert mlflow["spec"]["strategy"]["type"] == "Recreate"
+
+
 def test_public_service_exposes_only_configured_port() -> None:
     """Terraform's shared Azure IP uses one external port per Service."""
     manifest = ROOT / "infra/manifests/observability.json.tftpl"
