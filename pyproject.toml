@@ -29,13 +29,16 @@ model-api = [
   "uvicorn==0.54.0",
 ]
 drift-monitor = [
+  "boto3==1.43.106",
   "fastapi==0.142.2",
   "httpx==0.28.1",
   "kubernetes==36.0.3",
+  "mlflow==3.16.1",
   "numpy==2.4.6",
   "pandas==3.0.6",
   "prometheus-client==0.26.0",
   "psycopg[binary]==3.3.6",
+  "pyarrow==25.0.1",
   "pydantic==2.13.5",
   "pydantic-settings==2.15.0",
   "scipy==1.17.1",

@@ -21,7 +21,13 @@ from typing import Annotated, Any
 import httpx
 import pandas as pd
 from fastapi import Depends, FastAPI, HTTPException, Request
-from fastapi.responses import HTMLResponse, PlainTextResponse, StreamingResponse
+from fastapi.responses import (
+    HTMLResponse,
+    PlainTextResponse,
+    RedirectResponse,
+    Response,
+    StreamingResponse,
+)
 from fastapi.security import HTTPBasic, HTTPBasicCredentials
 from mlp_common.logging import JsonFormatter
 from pydantic import BaseModel
@@ -98,6 +104,9 @@ PROMETHEUS_URL = os.environ.get(
 )
 MLFLOW_URL = os.environ.get("MLFLOW_TRACKING_URI", "http://mlflow.data.svc:5000")
 MINIO_URL = os.environ.get("MINIO_ENDPOINT", "http://minio.data.svc:9000")
+GRAFANA_URL = os.environ.get(
+    "GRAFANA_URL", "http://kube-prometheus-stack-grafana.observability.svc:3000"
+)
 BASELINE_VERSION = ""
 
 
@@ -279,6 +288,70 @@ async def serve_index() -> HTMLResponse:
     if public_host:
         page = page.replace("__PUBLIC_HOST__", public_host)
     return HTMLResponse(content=page)
+
+
+@app.get("/grafana")
+async def grafana_root() -> RedirectResponse:
+    return RedirectResponse("/grafana/")
+
+
+@app.api_route(
+    "/grafana/{path:path}", methods=["GET", "POST", "PUT", "PATCH", "DELETE"]
+)
+async def grafana_proxy(path: str, request: Request) -> Response:
+    """Serve Grafana through the dashboard's authenticated origin."""
+    excluded = {"authorization", "connection", "host", "content-length"}
+    headers = {k: v for k, v in request.headers.items() if k.lower() not in excluded}
+    headers["x-forwarded-proto"] = "https"
+    headers["x-forwarded-prefix"] = "/grafana"
+    try:
+        async with httpx.AsyncClient(timeout=30, follow_redirects=False) as client:
+            upstream = await client.request(
+                request.method,
+                f"{GRAFANA_URL}/grafana/{path}",
+                params=request.query_params,
+                content=await request.body(),
+                headers=headers,
+            )
+    except httpx.HTTPError as exc:
+        logger.warning("Grafana proxy unavailable: %s", exc)
+        raise HTTPException(status_code=502, detail="Grafana unavailable") from exc
+    response_headers = {
+        k: v
+        for k, v in upstream.headers.items()
+        if k.lower()
+        not in {"content-encoding", "content-length", "connection", "transfer-encoding"}
+    }
+    return Response(
+        upstream.content, status_code=upstream.status_code, headers=response_headers
+    )
+
+
+@app.get("/api/alerts")
+async def get_alerts() -> dict[str, Any]:
+    """Report active Prometheus alerts in the central dashboard."""
+    try:
+        async with httpx.AsyncClient(timeout=3) as client:
+            response = await client.get(f"{PROMETHEUS_URL}/api/v1/alerts")
+            response.raise_for_status()
+            alerts = response.json().get("data", {}).get("alerts", [])
+    except (httpx.HTTPError, ValueError) as exc:
+        logger.warning("Prometheus alerts unavailable: %s", exc)
+        raise HTTPException(
+            status_code=502, detail="Prometheus alerts unavailable"
+        ) from exc
+    return {
+        "alerts": [
+            {
+                "name": item.get("labels", {}).get("alertname", "Unknown"),
+                "severity": item.get("labels", {}).get("severity", "info"),
+                "state": item.get("state", "unknown"),
+                "summary": item.get("annotations", {}).get("summary", ""),
+            }
+            for item in alerts
+            if item.get("state") == "firing"
+        ]
+    }
 
 
 @app.get("/api/status")

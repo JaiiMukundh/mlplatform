@@ -44,6 +44,7 @@ smoke-images: ## Import real service entry points and ensure models/data are abs
 		docker run --rm --entrypoint python "mlp-check-$$service" -c "import $$module; print('$$service entry point OK')" || exit 1; \
 	done
 	@docker run --rm --entrypoint python mlp-check-dashboard scripts/simulate_drift.py --help >/dev/null
+	@docker run --rm --entrypoint python mlp-check-drift-monitor -c 'import mlflow, pyarrow; from drift_monitor.main import evaluate_once; print("drift evaluation dependencies OK")'
 	@docker run --rm --entrypoint sh mlp-check-model-api -c 'test ! -e /app/data/features.parquet && test ! -e /app/artifacts/model.joblib'
 	@docker run --rm --entrypoint bash mlp-check-retrain -c 'test -r infra/jobs/gate-job.yaml && for script in scripts/*.sh; do bash -n "$$script" || exit 1; done'
 

@@ -573,6 +573,72 @@ def test_dashboard_metrics_report_unavailable_prometheus_as_unknown(
     assert metrics["feature_psi"] == {}
 
 
+def test_monitoring_is_available_through_authenticated_dashboard(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    import httpx
+    from fastapi.testclient import TestClient
+
+    from ui import app as dashboard
+
+    original = httpx.AsyncClient
+    upstream_requests: list[httpx.Request] = []
+
+    def upstream(request: httpx.Request) -> httpx.Response:
+        upstream_requests.append(request)
+        if request.url.path == "/grafana/":
+            return httpx.Response(200, text="Grafana home")
+        return httpx.Response(
+            200,
+            json={
+                "data": {
+                    "alerts": [
+                        {
+                            "state": "firing",
+                            "labels": {
+                                "alertname": "ModelDrift",
+                                "severity": "warning",
+                            },
+                            "annotations": {"summary": "Model drift detected"},
+                        }
+                    ]
+                }
+            },
+        )
+
+    monkeypatch.setenv("DASHBOARD_PASSWORD", "monitoring-test-password")
+    monkeypatch.setattr(
+        dashboard.httpx,
+        "AsyncClient",
+        lambda **kwargs: original(transport=httpx.MockTransport(upstream), **kwargs),
+    )
+    with TestClient(dashboard.app) as client:
+        assert client.get("/grafana/").status_code == 401
+        page = client.get("/", auth=("admin", "monitoring-test-password"))
+        assert 'id="grafanaFrame"' in page.text
+        response = client.get("/grafana/", auth=("admin", "monitoring-test-password"))
+        assert response.status_code == 200
+        assert response.text == "Grafana home"
+        alerts = client.get("/api/alerts", auth=("admin", "monitoring-test-password"))
+        assert alerts.json()["alerts"][0]["name"] == "ModelDrift"
+    assert "authorization" not in upstream_requests[0].headers
+
+    manifests = json.loads(
+        (ROOT / "infra/manifests/observability.json.tftpl").read_text()
+    )
+    grafana = manifests[
+        "apps_v1__Deployment__observability__kube-prometheus-stack-grafana"
+    ]
+    container = next(
+        item
+        for item in grafana["spec"]["template"]["spec"]["containers"]
+        if item["name"] == "grafana"
+    )
+    env = {item["name"]: item["value"] for item in container["env"] if "value" in item}
+    assert env["GF_SERVER_ROOT_URL"] == "https://${PUBLIC_HOST}/grafana/"
+    assert env["GF_SECURITY_ALLOW_EMBEDDING"] == "true"
+
+
 def test_dashboard_prediction_uses_cloud_service_endpoint(
     monkeypatch: pytest.MonkeyPatch,
 ) -> None:

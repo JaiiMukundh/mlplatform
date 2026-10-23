@@ -804,6 +804,30 @@
                   }
                 },
                 {
+                  "name": "GF_SERVER_ROOT_URL",
+                  "value": "https://${PUBLIC_HOST}/grafana/"
+                },
+                {
+                  "name": "GF_SERVER_SERVE_FROM_SUB_PATH",
+                  "value": "true"
+                },
+                {
+                  "name": "GF_SECURITY_ALLOW_EMBEDDING",
+                  "value": "true"
+                },
+                {
+                  "name": "GF_AUTH_ANONYMOUS_ENABLED",
+                  "value": "true"
+                },
+                {
+                  "name": "GF_AUTH_ANONYMOUS_ORG_ROLE",
+                  "value": "Viewer"
+                },
+                {
+                  "name": "GF_SECURITY_CSRF_TRUSTED_ORIGINS",
+                  "value": "https://${PUBLIC_HOST}"
+                },
+                {
                   "name": "GF_PATHS_DATA",
                   "value": "/var/lib/grafana/"
                 },

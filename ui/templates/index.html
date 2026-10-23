@@ -242,7 +242,7 @@
         <!-- Cluster Status Badge -->
         <div id="clusterHealthBadge" class="hidden md:flex items-center gap-2 px-2 py-0.5 bg-[#F8F6F0] border-2 border-black font-mono text-[11px] font-bold text-black">
           <span class="w-2 h-2 bg-[#1D7A4D]"></span>
-          <span>AKS // 3 NODES READY</span>
+          <span>AKS // CHECKING</span>
         </div>
       </div>
 
@@ -264,7 +264,7 @@
           05 // CONSOLE
         </button>
         <button id="tab-ecosystem" onclick="switchTab('ecosystem')" class="cypher-tab text-xs py-1.5 px-3">
-          06 // PORTALS
+          06 // MONITORING
         </button>
       </nav>
 
@@ -369,9 +369,7 @@
               <span class="text-[#66645D]">MLflow Run ID:</span>
               <span id="metaRunId" class="text-black font-bold ml-1">561bbd7f190f4cb6965f3b86f9db6188</span>
             </div>
-            <a href="http://__PUBLIC_HOST__:5000" target="_blank" class="text-black underline font-bold hover:text-[#1D7A4D]">
-              OPEN IN MLFLOW &rarr;
-            </a>
+            <button onclick="switchTab('ecosystem')" class="text-black underline font-bold hover:text-[#1D7A4D]">VIEW MODEL OPERATIONS &rarr;</button>
           </div>
         </div>
 
@@ -385,19 +383,19 @@
           <div class="space-y-1.5 text-xs font-mono">
             <div class="flex items-center justify-between p-2 bg-[#F8F6F0] border border-black">
               <span>Cluster Nodes</span>
-              <strong class="text-[#1D7A4D]">3 / 3 READY</strong>
+              <strong id="infraNodes">CHECKING</strong>
             </div>
             <div class="flex items-center justify-between p-2 bg-[#F8F6F0] border border-black">
               <span>Prometheus + Alertmanager</span>
-              <strong class="text-[#1D7A4D]">ONLINE (9090)</strong>
+              <strong id="infraPrometheus">CHECKING</strong>
             </div>
             <div class="flex items-center justify-between p-2 bg-[#F8F6F0] border border-black">
               <span>MLflow Model Registry</span>
-              <strong class="text-[#1D7A4D]">ONLINE (5000)</strong>
+              <strong id="infraMlflow">CHECKING</strong>
             </div>
             <div class="flex items-center justify-between p-2 bg-[#F8F6F0] border border-black">
               <span>MinIO S3 Artifact Store</span>
-              <strong class="text-[#1D7A4D]">ONLINE (9000)</strong>
+              <strong id="infraMinio">CHECKING</strong>
             </div>
           </div>
 
@@ -915,17 +913,31 @@
 
     </div>
 
-    <!-- ================= PAGE 6: PORTALS ================= -->
+    <!-- ================= PAGE 6: MONITORING ================= -->
     <div id="view-ecosystem" class="view-panel hidden space-y-3.5">
       
       <div class="border-b-2 border-black pb-3">
         <span class="micro-label text-black bg-[#C8FF5A] px-2 py-0.5 border border-black inline-block mb-1">
-          06 // ECOSYSTEM
+          06 // MONITORING
         </span>
-        <h1 class="text-2xl sm:text-3xl font-black uppercase text-black">Supporting Cluster Portals</h1>
+        <h1 class="text-2xl sm:text-3xl font-black uppercase text-black">Platform Operations</h1>
       </div>
 
-      <div id="portalGrid" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4"></div>
+      <div class="grid grid-cols-2 lg:grid-cols-5 gap-2 text-xs font-mono">
+        <div class="cypher-panel p-3"><span class="micro-label">AKS</span><p id="opsCluster" class="font-bold mt-2">CHECKING</p></div>
+        <div class="cypher-panel p-3"><span class="micro-label">MODEL API</span><p id="opsModel" class="font-bold mt-2">CHECKING</p></div>
+        <div class="cypher-panel p-3"><span class="micro-label">PROMETHEUS</span><p id="opsPrometheus" class="font-bold mt-2">CHECKING</p></div>
+        <div class="cypher-panel p-3"><span class="micro-label">MLFLOW</span><p id="opsMlflow" class="font-bold mt-2">CHECKING</p></div>
+        <div class="cypher-panel p-3"><span class="micro-label">MINIO</span><p id="opsMinio" class="font-bold mt-2">CHECKING</p></div>
+      </div>
+      <div class="grid grid-cols-1 lg:grid-cols-2 gap-3">
+        <div class="cypher-panel p-4"><h2 class="font-black uppercase">Active alerts</h2><div id="opsAlerts" class="mt-3 text-xs font-mono">Loading Prometheus alerts…</div></div>
+        <div class="cypher-panel p-4"><h2 class="font-black uppercase">Model release</h2><div id="opsRelease" class="mt-3 text-xs font-mono">Loading MLflow and retraining state…</div></div>
+      </div>
+      <div class="cypher-panel p-3">
+        <div class="flex justify-between items-center gap-3 mb-2"><h2 class="font-black uppercase">Grafana dashboards</h2><a href="/grafana/" target="_blank" rel="noopener" class="font-mono text-xs underline">FULL VIEW ↗</a></div>
+        <iframe id="grafanaFrame" title="Grafana monitoring dashboards" class="w-full h-[680px] border-2 border-black bg-white" loading="lazy" data-src="/grafana/"></iframe>
+      </div>
 
     </div>
 
@@ -1113,25 +1125,6 @@
     let survivingPodName = null;
     let isHealed = false;
 
-    const PORTALS = [
-      ['8080/docs', '8080', 'Model API Docs', 'Interactive OpenAPI Swagger UI for /predict and /healthz.', 'OPEN SWAGGER']
-    ];
-
-    document.getElementById('portalGrid').innerHTML = PORTALS.map(([target, port, title, detail, action], index) => `
-      <a href="http://__PUBLIC_HOST__:${target}" target="_blank" class="cypher-panel p-3.5 flex flex-col justify-between hover:bg-[#F8F6F0] transition group">
-        <div>
-          <div class="flex items-center justify-between border-b-2 border-black pb-2 mb-2">
-            <span class="micro-label">PORTAL 06.0${index + 1}</span>
-            <span class="font-mono text-xs font-bold text-black bg-[#C8FF5A] px-2 py-0.5 border border-black">:${port}</span>
-          </div>
-          <h3 class="text-base font-black uppercase text-black">${title}</h3>
-          <p class="text-xs text-[#66645D] mt-1">${detail}</p>
-        </div>
-        <div class="mt-2.5 pt-1.5 border-t-2 border-black flex items-center justify-between text-xs font-bold text-black uppercase">
-          <span>${action}</span><span>&rarr;</span>
-        </div>
-      </a>`).join('');
-
     const GOLDEN_METRICS = [
       ['01.01 // THROUGHPUT', 'metricRPS', '0.0', 'REQ/SEC', 'RATE(1M)'],
       ['01.02 // P95 LATENCY', 'metricP95', '--', 'SLA: &lt; 50MS', ''],
@@ -1186,6 +1179,11 @@
       if (activeBtn) activeBtn.classList.add('active');
 
       if (tabId === 'chaos') loadPods();
+      if (tabId === 'ecosystem') {
+        const grafana = document.getElementById('grafanaFrame');
+        if (!grafana.src) grafana.src = grafana.dataset.src;
+        loadOperations();
+      }
       if (tabId === 'scoring') {
         const id = document.getElementById('inputCustomerId')?.value || '7';
         loadCustomerProfile(id);
@@ -1211,6 +1209,9 @@
       setInterval(pollSystemStatus, 5000);
       setInterval(pollMetrics, 2500);
       setInterval(() => {
+        if (currentTab === 'ecosystem') loadOperations();
+      }, 15000);
+      setInterval(() => {
         if (currentTab === 'chaos') loadPods();
       }, 3000);
     });
@@ -1222,6 +1223,42 @@
       document.getElementById('toastIcon').innerText = icon;
       toast.classList.remove('hidden');
       setTimeout(() => toast.classList.add('hidden'), 4000);
+    }
+
+    async function loadOperations() {
+      const results = await Promise.allSettled([
+        fetch('/api/status').then(r => { if (!r.ok) throw new Error('status'); return r.json(); }),
+        fetch('/api/alerts').then(r => { if (!r.ok) throw new Error('alerts'); return r.json(); }),
+        fetch('/api/retrain-status').then(r => { if (!r.ok) throw new Error('release'); return r.json(); })
+      ]);
+      const status = results[0].status === 'fulfilled' ? results[0].value : null;
+      const labels = {
+        opsCluster: status ? `${status.nodes_ready}/${status.nodes_total} READY` : 'UNAVAILABLE',
+        opsModel: status?.serving_model ? `v${status.serving_model.version}` : 'UNAVAILABLE',
+        opsPrometheus: status?.prometheus_online ? 'ONLINE' : 'UNAVAILABLE',
+        opsMlflow: status?.mlflow_online ? 'ONLINE' : 'UNAVAILABLE',
+        opsMinio: status?.minio_online ? 'ONLINE' : 'UNAVAILABLE'
+      };
+      for (const [id, label] of Object.entries(labels)) document.getElementById(id).textContent = label;
+
+      const alerts = document.getElementById('opsAlerts');
+      alerts.replaceChildren();
+      if (results[1].status === 'fulfilled') {
+        const active = results[1].value.alerts;
+        if (!active.length) alerts.textContent = 'No firing alerts.';
+        for (const alert of active) {
+          const row = document.createElement('p');
+          row.className = 'border-t border-black py-2';
+          row.textContent = `${alert.severity.toUpperCase()} · ${alert.name} — ${alert.summary}`;
+          alerts.appendChild(row);
+        }
+      } else alerts.textContent = 'Alert data unavailable.';
+
+      const release = document.getElementById('opsRelease');
+      if (results[2].status === 'fulfilled') {
+        const data = results[2].value;
+        release.textContent = `Champion v${data.champion_version} · Serving v${data.serving_version} · Candidate v${data.candidate_version} · Latest retrain: ${data.latest_job?.state || 'none'}`;
+      } else release.textContent = 'Release data unavailable.';
     }
 
     async function pollSystemStatus() {
@@ -1244,9 +1281,15 @@
         }
 
         const pill = document.getElementById('clusterHealthBadge');
+        document.getElementById('infraNodes').textContent = `${data.nodes_ready} / ${data.nodes_total} READY`;
+        document.getElementById('infraPrometheus').textContent = data.prometheus_online ? 'ONLINE' : 'UNAVAILABLE';
+        document.getElementById('infraMlflow').textContent = data.mlflow_online ? 'ONLINE' : 'UNAVAILABLE';
+        document.getElementById('infraMinio').textContent = data.minio_online ? 'ONLINE' : 'UNAVAILABLE';
         if (data.nodes_ready === data.nodes_total && data.nodes_total > 0) {
           pill.className = 'hidden sm:flex items-center gap-2 px-2.5 py-1 bg-[#F8F6F0] border-2 border-black font-mono text-xs font-bold text-black';
           pill.innerHTML = `<span class="w-2 h-2 bg-[#1D7A4D]"></span><span>AKS // ${data.nodes_ready}/${data.nodes_total} NODES READY</span>`;
+        } else {
+          pill.textContent = `AKS // ${data.nodes_ready}/${data.nodes_total} NODES READY`;
         }
 
         const driftPill = document.getElementById('driftStatePill');
