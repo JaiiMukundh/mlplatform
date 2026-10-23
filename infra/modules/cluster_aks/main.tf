@@ -28,7 +28,7 @@ resource "azurerm_kubernetes_cluster" "this" {
     node_count      = var.node_count
     vm_size         = var.vm_size
     vnet_subnet_id  = var.vnet_subnet_id
-    os_disk_size_gb = 30
+    os_disk_size_gb = 128
     max_pods        = 50
   }
 
@@ -62,7 +62,7 @@ resource "azurerm_kubernetes_cluster_node_pool" "auxiliary" {
   node_count            = 1
   mode                  = "User"
   vnet_subnet_id        = var.vnet_subnet_id
-  os_disk_size_gb       = 30
+  os_disk_size_gb       = 128
   max_pods              = 30
   tags                  = var.tags
 }
