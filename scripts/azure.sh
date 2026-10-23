@@ -443,14 +443,44 @@ kubectl -n data rollout status deployment/mlflow --timeout=10m
 
 # Port-forwards exist only on the ephemeral Actions runner, never on the laptop.
 PF_PIDS=()
-cleanup() { for pid in "${PF_PIDS[@]}"; do kill "${pid}" 2>/dev/null || true; done; }
+MLFLOW_PF_PID=""
+cleanup() {
+  for pid in "${PF_PIDS[@]}"; do kill "${pid}" 2>/dev/null || true; done
+  if [[ -n "${MLFLOW_PF_PID}" ]]; then
+    kill "${MLFLOW_PF_PID}" 2>/dev/null || true
+    wait "${MLFLOW_PF_PID}" 2>/dev/null || true
+  fi
+}
 trap cleanup EXIT
 kubectl -n data port-forward svc/minio 9000:9000 >/tmp/mlp-minio-forward.log 2>&1 & PF_PIDS+=("$!")
-kubectl -n data port-forward svc/mlflow 5000:5000 >/tmp/mlp-mlflow-forward.log 2>&1 & PF_PIDS+=("$!")
+start_mlflow_port_forward() {
+  if [[ -n "${MLFLOW_PF_PID}" ]]; then
+    kill "${MLFLOW_PF_PID}" 2>/dev/null || true
+    wait "${MLFLOW_PF_PID}" 2>/dev/null || true
+  fi
+  kubectl -n data port-forward --address 127.0.0.1 svc/mlflow 5000:5000 \
+    >/tmp/mlp-mlflow-forward.log 2>&1 &
+  MLFLOW_PF_PID=$!
+  for attempt in $(seq 1 30); do
+    if curl --fail --silent --max-time 2 http://127.0.0.1:5000/health >/dev/null; then
+      return 0
+    fi
+    if ! kill -0 "${MLFLOW_PF_PID}" 2>/dev/null; then
+      cat /tmp/mlp-mlflow-forward.log >&2
+      return 1
+    fi
+    sleep 2
+  done
+  echo "MLflow port-forward did not become healthy" >&2
+  cat /tmp/mlp-mlflow-forward.log >&2
+  return 1
+}
 curl --fail --silent --retry 30 --retry-all-errors --retry-delay 2 http://localhost:9000/minio/health/ready
-curl --fail --silent --retry 30 --retry-all-errors --retry-delay 2 http://localhost:5000/health
 # Do not overwrite existing drifted features or train extra versions on reruns.
 model_alias_version() {
+  # Long-running Feast or training Jobs can outlast the API server's idle
+  # timeout and leave kubectl's otherwise-live port-forward unusable.
+  start_mlflow_port_forward
   curl --fail --silent --show-error \
     'http://localhost:5000/api/2.0/mlflow/registered-models/search' |
     python3 -c '
@@ -473,6 +503,7 @@ if [[ -z "${CHAMPION}" ]]; then
   [[ -n "${CHAMPION}" ]] || { echo "ERROR: training completed without a champion model alias" >&2; exit 1; }
 fi
 if [[ -z "$(model_alias_version baseline)" ]]; then
+  start_mlflow_port_forward
   curl --fail --silent --show-error -H 'Content-Type: application/json' \
     -d "{\"name\":\"loan-default\",\"alias\":\"baseline\",\"version\":\"${CHAMPION}\"}" \
     http://localhost:5000/api/2.0/mlflow/registered-models/alias
