@@ -9,7 +9,9 @@ from __future__ import annotations
 import asyncio
 import json
 import logging
+import math
 import os
+import random
 import secrets
 import sys
 import time
@@ -99,6 +101,10 @@ MODEL_API_HEADERS = (
     if os.environ.get("MODEL_API_TOKEN")
     else {}
 )
+try:
+    DEMO_HEARTBEAT_SECONDS = float(os.environ.get("DEMO_HEARTBEAT_SECONDS", "10"))
+except ValueError:
+    DEMO_HEARTBEAT_SECONDS = 10.0
 PROMETHEUS_URL = os.environ.get(
     "PROMETHEUS_URL", "http://kube-prometheus-stack-prometheus.observability.svc:9090"
 )
@@ -108,6 +114,32 @@ GRAFANA_URL = os.environ.get(
     "GRAFANA_URL", "http://kube-prometheus-stack-grafana.observability.svc:3000"
 )
 BASELINE_VERSION = ""
+
+
+async def _demo_heartbeat() -> None:
+    """Send low-rate real predictions so the golden signals stay populated."""
+    rng = random.Random(7)
+    async with httpx.AsyncClient(timeout=10.0) as client:
+        while True:
+            try:
+                customer_ids = rng.sample(range(20_000), 5)
+                response = await client.post(
+                    f"{MODEL_API_URL}/predict",
+                    json={"customer_ids": customer_ids},
+                    headers=MODEL_API_HEADERS,
+                )
+                if response.status_code != 200:
+                    logger.debug("Demo heartbeat returned %s", response.status_code)
+            except Exception as exc:  # keep the heartbeat running after API hiccups
+                logger.debug("Demo heartbeat failed: %s", exc)
+            await asyncio.sleep(DEMO_HEARTBEAT_SECONDS)
+
+
+@app.on_event("startup")
+async def start_demo_heartbeat() -> None:
+    """Start the traffic heartbeat only in the cloud demo deployment."""
+    if os.environ.get("DEPLOY_TARGET") == "azure" and DEMO_HEARTBEAT_SECONDS > 0:
+        app.state.demo_heartbeat = asyncio.create_task(_demo_heartbeat())
 
 
 def load_cloud_demo_data() -> str:
@@ -537,7 +569,9 @@ async def get_metrics() -> dict[str, Any]:
         digits = (2, 1, 1, 2, 0, 0, 0, 4, 4)
         for name, value, places in zip(names, results, digits, strict=True):
             metrics[name] = (
-                round(max(value, 0.0), places) if value is not None else None
+                round(max(value, 0.0), places)
+                if value is not None and math.isfinite(value)
+                else None
             )
 
         # Query PSI per feature if available
