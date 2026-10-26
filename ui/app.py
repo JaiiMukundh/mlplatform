@@ -300,8 +300,12 @@ async def grafana_root() -> RedirectResponse:
 )
 async def grafana_proxy(path: str, request: Request) -> Response:
     """Serve Grafana through the dashboard's authenticated origin."""
-    excluded = {"authorization", "connection", "host", "content-length"}
+    # Grafana validates the Origin header against the request Host for CSRF.
+    # Forward the public Host instead of letting httpx rewrite it to the
+    # in-cluster service name, which makes authenticated queries return 403.
+    excluded = {"authorization", "connection", "content-length"}
     headers = {k: v for k, v in request.headers.items() if k.lower() not in excluded}
+    headers["host"] = os.environ.get("PUBLIC_HOST") or request.headers["host"]
     headers["x-forwarded-proto"] = "https"
     headers["x-forwarded-prefix"] = "/grafana"
     try:
