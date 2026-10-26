@@ -13,6 +13,7 @@ spec:
   template:
     spec:
       restartPolicy: OnFailure
+      nodeSelector: {agentpool: default}
       securityContext:
         runAsNonRoot: true
         runAsUser: 10001
@@ -26,7 +27,7 @@ spec:
           image: __TRAINING_IMAGE__
           # Cloud image is injected by the Azure deployment.
           resources:
-            requests: {cpu: 500m, memory: 1Gi}
+            requests: {cpu: 100m, memory: 512Mi}
             limits: {cpu: 1900m, memory: 3Gi}
           imagePullPolicy: Always
           securityContext:

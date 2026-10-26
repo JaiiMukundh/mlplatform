@@ -175,11 +175,11 @@ ACTION_COMMANDS: dict[str, str] = {
     "chaos_pod_kill": "bash scripts/chaos_pod.sh",
     "demo_infra": "bash scripts/chaos_alert.sh",
     "simulate_drift": (
-        "python scripts/simulate_drift.py --scenario covariate && "
+        "python scripts/simulate_drift.py --scenario both && "
         f"python scripts/traffic.py --rps 30 --duration 12 --url {MODEL_API_URL}"
     ),
     "auto_heal": (
-        "python scripts/simulate_drift.py --scenario covariate && "
+        "python scripts/simulate_drift.py --scenario both && "
         f"python scripts/traffic.py --rps 30 --duration 12 --url {MODEL_API_URL}"
     ),
     "demo_model": "bash scripts/retrain_and_release.sh",

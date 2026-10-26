@@ -137,7 +137,18 @@ def main() -> int:
                         "after": data_end,
                     },
                 )
-                window = post_parent_window(full_labels, data_end)
+                try:
+                    window = post_parent_window(full_labels, data_end)
+                except ValueError as exc:
+                    # A forced retrain immediately after reset_demo has no
+                    # labels newer than the baseline champion. Fall back to the
+                    # latest window so the operator action still produces a
+                    # gate-scored candidate instead of failing the Job.
+                    LOGGER.warning(
+                        "post-parent window unavailable; using latest window",
+                        extra={"reason": str(exc), "parent": settings.parent_champion},
+                    )
+                    window = latest_label_window(Path(labels_path))
             else:
                 window = latest_label_window(Path(labels_path))
             window.to_parquet(window_path, index=False)

@@ -75,6 +75,61 @@ def _run(*command: str) -> None:
     subprocess.run(command, check=True)
 
 
+def _scale_drift_monitor(replicas: int) -> None:
+    """Scale the drift monitor to pause or resume autonomous retraining.
+
+    Patch the Deployment instead of the ``deployments/scale`` subresource:
+    the dashboard ClusterRole grants patch on Deployments but not scale.
+    """
+    _run(
+        "kubectl",
+        "-n",
+        "observability",
+        "patch",
+        "deployment/drift-monitor",
+        "--type",
+        "merge",
+        "-p",
+        f'{{"spec":{{"replicas":{replicas}}}}}',
+    )
+
+
+def _pause_drift_monitor() -> None:
+    """Stop the monitor so it cannot create a retrain Job during the reset.
+
+    The monitor keeps its drift decision in memory between evaluation cycles.
+    Deleting retrain Jobs while it is still running lets it recreate one from a
+    pre-reset drift report, and that Job fails because the freshly reset data
+    has no labels newer than the baseline champion's training window.
+    """
+    _scale_drift_monitor(0)
+    _run(
+        "kubectl",
+        "-n",
+        "observability",
+        "wait",
+        "--for=delete",
+        "pod",
+        "-l",
+        "app.kubernetes.io/name=drift-monitor",
+        "--timeout=120s",
+    )
+
+
+def _resume_drift_monitor() -> None:
+    """Start a fresh monitor pod that reloads the cleared drift state."""
+    _scale_drift_monitor(1)
+    _run(
+        "kubectl",
+        "-n",
+        "observability",
+        "rollout",
+        "status",
+        "deployment/drift-monitor",
+        "--timeout=180s",
+    )
+
+
 def _has_alias(alias: str) -> bool:
     """Return whether the registry currently binds one alias."""
     payload = _mlflow("/api/2.0/mlflow/registered-models/get?name=loan-default")
@@ -112,93 +167,89 @@ def main() -> int:
     version = _resolve_version(args.version)
     end_date = _model_data_end(version)
 
-    _run(
-        sys.executable,
-        "-m",
-        "ml.data.generate",
-        "--out",
-        "data",
-        "--seed",
-        "42",
-        "--end-date",
-        end_date.isoformat(),
-    )
-    repo_root = Path(__file__).resolve().parents[1]
-    publish_sh = repo_root / "scripts" / "publish_feast_data.sh"
-    run_job_sh = repo_root / "scripts" / "run_job.sh"
-    remat_yaml = repo_root / "infra" / "jobs" / "feast-rematerialize-job.yaml"
-    deploy_sh = repo_root / "scripts" / "deploy.sh"
+    _pause_drift_monitor()
+    try:
+        _run(
+            sys.executable,
+            "-m",
+            "ml.data.generate",
+            "--out",
+            "data",
+            "--seed",
+            "42",
+            "--end-date",
+            end_date.isoformat(),
+        )
+        repo_root = Path(__file__).resolve().parents[1]
+        publish_sh = repo_root / "scripts" / "publish_feast_data.sh"
+        run_job_sh = repo_root / "scripts" / "run_job.sh"
+        remat_yaml = repo_root / "infra" / "jobs" / "feast-rematerialize-job.yaml"
+        deploy_sh = repo_root / "scripts" / "deploy.sh"
 
-    _run("bash", str(publish_sh))
-    # Feast's full rematerialization does not overwrite Redis keys whose
-    # timestamps are newer than the reset snapshot.  Flush the demo-only
-    # ephemeral online store so no drifted values survive the reset.
-    _run("kubectl", "-n", "data", "exec", "deploy/redis", "--", "redis-cli", "FLUSHALL")
-    _run("bash", str(run_job_sh), str(remat_yaml))
+        _run("bash", str(publish_sh))
+        # Feast's full rematerialization does not overwrite Redis keys whose
+        # timestamps are newer than the reset snapshot.  Flush the demo-only
+        # ephemeral online store so no drifted values survive the reset.
+        _run(
+            "kubectl",
+            "-n",
+            "data",
+            "exec",
+            "deploy/redis",
+            "--",
+            "redis-cli",
+            "FLUSHALL",
+        )
+        _run("bash", str(run_job_sh), str(remat_yaml))
 
-    _mlflow(
-        "/api/2.0/mlflow/registered-models/alias",
-        method="POST",
-        payload=(
-            f'{{"name":"loan-default","alias":"champion","version":"{version}"}}'
-        ).encode(),
-    )
-    _mlflow(
-        "/api/2.0/mlflow/registered-models/alias",
-        method="DELETE",
-        payload=b'{"name":"loan-default","alias":"candidate"}',
-    ) if _has_alias("candidate") else None
-    _run(
-        "bash",
-        str(deploy_sh),
-        "model-api",
-        "serving",
-        os.environ.get("IMAGE_TAG", "dev"),
-        version,
-    )
-    _run(
-        "kubectl",
-        "-n",
-        "data",
-        "delete",
-        "job",
-        "-l",
-        "app=retrain",
-        "--ignore-not-found",
-        "--wait=true",
-    )
-    _run(
-        "kubectl",
-        "-n",
-        "data",
-        "exec",
-        "postgres-0",
-        "--",
-        "psql",
-        "-U",
-        "mlp",
-        "-d",
-        "mlp",
-        "-c",
-        "TRUNCATE prediction_log; DELETE FROM drift_state; DELETE FROM drift_meta;",
-    )
-    _run(
-        "kubectl",
-        "-n",
-        "observability",
-        "rollout",
-        "restart",
-        "deployment/drift-monitor",
-    )
-    _run(
-        "kubectl",
-        "-n",
-        "observability",
-        "rollout",
-        "status",
-        "deployment/drift-monitor",
-        "--timeout=120s",
-    )
+        _mlflow(
+            "/api/2.0/mlflow/registered-models/alias",
+            method="POST",
+            payload=(
+                f'{{"name":"loan-default","alias":"champion","version":"{version}"}}'
+            ).encode(),
+        )
+        _mlflow(
+            "/api/2.0/mlflow/registered-models/alias",
+            method="DELETE",
+            payload=b'{"name":"loan-default","alias":"candidate"}',
+        ) if _has_alias("candidate") else None
+        _run(
+            "bash",
+            str(deploy_sh),
+            "model-api",
+            "serving",
+            os.environ.get("IMAGE_TAG", "dev"),
+            version,
+        )
+        _run(
+            "kubectl",
+            "-n",
+            "data",
+            "delete",
+            "job",
+            "-l",
+            "app=retrain",
+            "--ignore-not-found",
+            "--wait=true",
+        )
+        _run(
+            "kubectl",
+            "-n",
+            "data",
+            "exec",
+            "postgres-0",
+            "--",
+            "psql",
+            "-U",
+            "mlp",
+            "-d",
+            "mlp",
+            "-c",
+            "TRUNCATE prediction_log; DELETE FROM drift_state; DELETE FROM drift_meta;",
+        )
+    finally:
+        _resume_drift_monitor()
     print(f"reset_demo complete: baseline data through {end_date}, champion v{version}")
     return 0
 

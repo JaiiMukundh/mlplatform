@@ -973,6 +973,7 @@ dashboard = [
     { name = "pydantic" },
     { name = "scikit-learn" },
     { name = "uvicorn" },
+    { name = "xlrd" },
 ]
 dev = [
     { name = "pre-commit" },
@@ -1041,6 +1042,7 @@ dashboard = [
     { name = "pydantic", specifier = "==2.13.5" },
     { name = "scikit-learn", specifier = "==1.9.1" },
     { name = "uvicorn", specifier = "==0.54.0" },
+    { name = "xlrd", specifier = "==2.0.1" },
 ]
 dev = [
     { name = "pre-commit", specifier = "==4.6.2" },
