@@ -485,6 +485,10 @@ async def get_metrics() -> dict[str, Any]:
         "p50_latency_ms": None,
         "p95_latency_ms": None,
         "error_rate_pct": None,
+        "predict_requests_2m": None,
+        "predict_errors_2m": None,
+        "predict_requests_total": None,
+        "predict_errors_total": None,
         "replicas_available": None,
         "replicas_desired": None,
         "model_drift_detected": None,
@@ -527,8 +531,9 @@ async def get_metrics() -> dict[str, Any]:
             ")) by (le)) * 1000"
         )
         err_q = (
-            "(sum(rate(http_requests_total{namespace='serving',status=~'5..'}[2m])) "
-            "or vector(0)) / (sum(rate(http_requests_total{namespace='serving'}[2m])) "
+            "(sum(rate(http_requests_total{namespace='serving',path='/predict',"
+            "status=~'5..'}[2m])) or vector(0)) / "
+            "(sum(rate(http_requests_total{namespace='serving',path='/predict'}[2m])) "
             "or vector(1)) * 100"
         )
         rep_avail_q = (
@@ -546,6 +551,22 @@ async def get_metrics() -> dict[str, Any]:
             prom_scalar(p50_q),
             prom_scalar(p95_q),
             prom_scalar(err_q),
+            prom_scalar(
+                "sum(increase(http_requests_total{namespace='serving',"
+                "path='/predict'}[2m]))"
+            ),
+            prom_scalar(
+                "(sum(increase(http_requests_total{namespace='serving',"
+                "path='/predict',status=~'5..'}[2m])) or vector(0))"
+            ),
+            prom_scalar(
+                "(sum(http_requests_total{namespace='serving',"
+                "path='/predict'}) or vector(0))"
+            ),
+            prom_scalar(
+                "(sum(http_requests_total{namespace='serving',"
+                "path='/predict',status=~'5..'}) or vector(0))"
+            ),
             prom_scalar(rep_avail_q),
             prom_scalar(rep_des_q),
             prom_scalar(ACTIVE_DRIFT_QUERY),
@@ -560,13 +581,17 @@ async def get_metrics() -> dict[str, Any]:
             "p50_latency_ms",
             "p95_latency_ms",
             "error_rate_pct",
+            "predict_requests_2m",
+            "predict_errors_2m",
+            "predict_requests_total",
+            "predict_errors_total",
             "replicas_available",
             "replicas_desired",
             "model_drift_detected",
             "champion_auc",
             "candidate_auc",
         )
-        digits = (2, 1, 1, 2, 0, 0, 0, 4, 4)
+        digits = (2, 1, 1, 2, 0, 0, 0, 0, 0, 0, 0, 4, 4)
         for name, value, places in zip(names, results, digits, strict=True):
             metrics[name] = (
                 round(max(value, 0.0), places)

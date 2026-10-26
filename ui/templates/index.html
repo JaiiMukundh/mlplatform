@@ -1147,6 +1147,8 @@
           </div>`;
         const noteMarkup = id === 'metricP95'
           ? '<span class="text-black font-bold">P50: <span id="metricP50">-- ms</span></span>'
+          : id === 'metricErrors'
+          ? '<span class="text-[#1D7A4D] font-bold">HEALTHY · <span id="metricErrorsCount">0/0</span> REQ</span>'
           : `<span class="${note === 'HEALTHY' ? 'text-[#1D7A4D]' : 'text-black'} font-bold">${note}</span>`;
         return `
           <div class="cypher-panel-bright p-3 sm:p-3.5 flex flex-col justify-between">
@@ -1312,6 +1314,10 @@
         const metric = (value, digits = 1, suffix = '') => value === null || value === undefined ? `N/A${suffix}` : `${value.toFixed(digits)}${suffix}`;
         document.getElementById('metricRPS').innerText = metric(data.rps, 1);
         document.getElementById('metricErrors').innerText = metric(data.error_rate_pct, 1, '%');
+        const errorsCountElem = document.getElementById('metricErrorsCount');
+        if (errorsCountElem) {
+          errorsCountElem.innerText = `${data.predict_errors_total ?? 0}/${data.predict_requests_total ?? 0}`;
+        }
         document.getElementById('metricP95').innerText = metric(data.p95_latency_ms, 1, 'ms');
         document.getElementById('metricP50').innerText = metric(data.p50_latency_ms, 1, ' ms');
 
