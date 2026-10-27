@@ -151,7 +151,7 @@ make check-images
 | [`scripts/`](scripts/) | Cloud orchestration, release, smoke checks, and demo tools |
 | [`.github/workflows/`](.github/workflows/) | CI, manual Azure operations, and scheduled expiry |
 | [`tests/`](tests/) | Unit and cloud contract tests |
-
+| [`Makefile`](Makefile) | Local lint,test,infra,security,and image checks |
 ## Scope and limitations
 
 - The project demonstrates an MLOps workflow, not a clinically or financially validated credit decision system. Do not use its predictions for real lending decisions.
