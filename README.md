@@ -154,7 +154,7 @@ make check-images
 | [`Makefile`](Makefile) | Local lint,test,infra,security,and image checks |
 ## Scope and limitations
 
-- The project demonstrates an MLOps workflow, not a clinically or financially validated credit decision system. Do not use its predictions for real lending decisions.
+- The project demonstrates an MLOps workflow, not a clinically or financially validated credit decision system. Do not use its predictions for any real lending decisions.
 - UCI labels and simulated feature timelines make the workflow reproducible, but they do not establish live-data performance or temporal validity.
 - Drift and failure injection are controlled demonstrations. Retraining still requires a candidate to pass the evaluation gate before promotion.
 - A successful CI run proves source checks passed for that commit. A successful Azure deploy run and its smoke checks are required to confirm that the cloud application started.
